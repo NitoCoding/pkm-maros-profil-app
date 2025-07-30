@@ -1,16 +1,15 @@
 import React from 'react'
 import {useForm, Controller} from 'react-hook-form'
 import {zodResolver} from '@hookform/resolvers/zod'
+
 import dynamic from 'next/dynamic'
 import {z} from 'zod'
+import { ClassicEditor } from 'ckeditor5'
 
-// Dynamic import CKEditor (agar tidak error di SSR Next.js)
-const CKEditor = dynamic(
-	() => import('@ckeditor/ckeditor5-react').then(mod => mod.CKEditor),
-	{ssr: false},
-)
-const ClassicEditor = dynamic(
-	() => import('@ckeditor/ckeditor5-build-classic'),
+
+// Dynamic import CKEditorWrapper
+const CKEditorWrapper = dynamic(
+	() => import('../ckeditor/CKEditorWrapper'),
 	{ssr: false},
 )
 
@@ -79,14 +78,10 @@ export default function BeritaForm() {
 					name='isi'
 					control={control}
 					render={({field}) => (
-						<CKEditor
-							editor={ClassicEditor}
-							data={field.value}
-							onChange={(_, editor) => {
-								setValue('isi', editor.getData())
-							}}
-							onBlur={(_, editor) => {
-								setValue('isi', editor.getData(), {shouldValidate: true})
+						<CKEditorWrapper
+							value={field.value}
+							onChange={(value) => {
+								setValue('isi', value)
 							}}
 						/>
 					)}
