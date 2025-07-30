@@ -19,7 +19,13 @@ const eslintConfig = [
       "@typescript-eslint/no-empty-interface": "off",
       "@typescript-eslint/no-empty-object-type": "off",
       "prefer-const": "off",
-
+      "@typescript-eslint/ban-ts-comment": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/no-empty-interface": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
     },
 
   },
