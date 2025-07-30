@@ -23,9 +23,9 @@ const Editor = dynamic(
     // Mengembalikan komponen React yang akan merender CKEditor.
     // Penting: 'editorModule.CKEditor' adalah komponen React-nya,
     // dan 'editorBuildModule.default' adalah konstruktor editor CKEditor 5 itu sendiri.
-    return ({ value, onChange }: CKEditorWrapperProps) => (
+    const EditorComponent = ({ value, onChange }: CKEditorWrapperProps) => (
       <editorModule.CKEditor
-        // @ts-ignore - Ignore type mismatch between CKEditor versions
+        // @ts-expect-error - Ignore type mismatch between CKEditor versions
         editor={editorBuildModule.default}
         data={value}
         onChange={(_, editor: any) => {
@@ -34,6 +34,9 @@ const Editor = dynamic(
         }}
       />
     );
+    
+    EditorComponent.displayName = 'CKEditorComponent';
+    return EditorComponent;
   },
   {
     // Pastikan komponen ini hanya dirender di sisi klien (browser).
