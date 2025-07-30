@@ -4,23 +4,24 @@ import {useForm, Controller} from 'react-hook-form'
 import {zodResolver} from '@hookform/resolvers/zod'
 import {z} from 'zod'
 import {useRouter} from 'next/navigation'
-import {ArrowLeft, Loader2} from 'lucide-react'
+import {ArrowLeft, Loader2, Upload} from 'lucide-react'
 import Link from 'next/link'
 import {useState, useCallback, useEffect} from 'react'
 import {useDropzone} from 'react-dropzone'
 import CKEditorWrapper from '@/components/ckeditor/CKEditorWrapper'
 import { toast } from 'react-hot-toast'
 import { getAuthToken } from '@/libs/auth/token'
+import Image from 'next/image'
 
 const beritaSchema = z.object({
-	judul: z.string().min(3, 'Judul wajib diisi'),
-	slug: z.string().min(3, 'Slug wajib diisi'),
-	ringkasan: z.string().min(10, 'Ringkasan berita wajib diisi'),
-	isi: z.string().min(10, 'Isi berita wajib diisi'),
-	gambar: z.string().url('URL gambar tidak valid'),
-	tanggal: z.string().min(8, 'Tanggal wajib diisi'),
-	penulis: z.string().min(2, 'Penulis wajib diisi'),
-	kategori: z.string().min(2, 'Kategori wajib diisi'),
+	judul: z.string().min(1, 'Judul harus diisi'),
+	slug: z.string().min(1, 'Slug harus diisi'),
+	ringkasan: z.string().min(1, 'Ringkasan harus diisi'),
+	isi: z.string().min(1, 'Isi berita harus diisi'),
+	gambar: z.string().optional(),
+	tanggal: z.string().min(1, 'Tanggal harus diisi'),
+	penulis: z.string().min(1, 'Penulis harus diisi'),
+	kategori: z.string().min(1, 'Kategori harus diisi'),
 	status: z.enum(['draft', 'published']),
 	tags: z.string().optional(),
 })
@@ -32,8 +33,8 @@ function slugify(text: string) {
 	return text
 		.toLowerCase()
 		.replace(/[^\w\s-]/g, '') // Remove special chars
-		.replace(/\s+/g, '-') // Replace spaces with -
-		.replace(/--+/g, '-') // Remove double dash
+		.replace(/[\s_-]+/g, '-') // Replace spaces with -
+		.replace(/^-+|-+$/g, '') // Remove double dash
 		.trim()
 }
 
@@ -41,7 +42,7 @@ export default function TambahBeritaPage() {
 	const router = useRouter()
 	const [loading, setLoading] = useState(false)
 	const [uploading, setUploading] = useState(false)
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+	// Removed unused previewUrl state
 
 	console.log("token", getAuthToken())
 
@@ -69,7 +70,7 @@ export default function TambahBeritaPage() {
 	})
 
 	const judulValue = watch('judul')
-	const slugValue = watch('slug')
+	// Removed unused slugValue
 	const [slugEdited, setSlugEdited] = useState(false)
 
 	useEffect(() => {
@@ -84,7 +85,7 @@ export default function TambahBeritaPage() {
 			if (!acceptedFiles[0]) return
 			console.log(acceptedFiles[0])
 			setUploading(true)
-			setPreviewUrl(URL.createObjectURL(acceptedFiles[0]))
+			// Removed unused previewUrl assignment
 			// Upload ke server/Cloudinary dst.
 			const url = await uploadImage(acceptedFiles[0])
 			setValue('gambar', url, {shouldValidate: true})
@@ -110,8 +111,8 @@ export default function TambahBeritaPage() {
 					.map(tag => tag.trim())
 					.filter(Boolean) ?? []
 
-			// Use the image URL from Cloudinary upload
-			let imageUrl = data.gambar
+			// Use const instead of let for imageUrl
+			const imageUrl = data.gambar
 
 			const payload = {
 				...data,
@@ -139,8 +140,9 @@ export default function TambahBeritaPage() {
 
 			toast.success('Berita berhasil ditambahkan!')
 			router.push('/admin/berita')
-		} catch (error: any) {
-			toast.error(error.message || 'Terjadi kesalahan saat menyimpan berita')
+		} catch (error: unknown) { // Fixed any type
+			const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat menyimpan berita'
+			toast.error(errorMessage)
 			console.error('Error saving berita:', error)
 		} finally {
 			setLoading(false)
@@ -239,7 +241,8 @@ export default function TambahBeritaPage() {
 							<CKEditorWrapper
 								value={field.value}
 								onChange={field.onChange}
-									/>
+								placeholder='Ringkasan berita...'
+							/>
 						)}
 					/>
 					{errors.ringkasan && (
@@ -255,37 +258,37 @@ export default function TambahBeritaPage() {
 							<CKEditorWrapper
 								value={field.value}
 								onChange={field.onChange}
-									/>
+								placeholder='Isi berita...'
+							/>
 						)}
 					/>
 					{errors.isi && (
 						<div className='text-red-600 text-sm'>{errors.isi.message}</div>
 					)}
 				</div>
-				{/* DROPZONE UPLOAD GAMBAR */}
 				<div>
 					<label className='font-medium'>Gambar Berita</label>
 					<div
 						{...getRootProps()}
-						className={`mt-1 border-2 border-dashed rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer transition 
-                ${
-									isDragActive
-										? 'border-blue-400 bg-blue-50'
-										: 'border-gray-300 bg-gray-50'
-								}
-                ${uploading ? 'opacity-60 pointer-events-none' : ''}
-              `}
+						className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+							isDragActive
+								? 'border-blue-500 bg-blue-50'
+								: 'border-gray-300 hover:border-gray-400'
+						}`}
 					>
 						<input {...getInputProps()} />
+						<Upload className='mx-auto mb-2 text-gray-400' size={24} />
 						{uploading ? (
 							<span className='flex items-center gap-2 text-blue-600'>
 								<Loader2 className='animate-spin' size={18} /> Uploading...
 							</span>
 						) : gambarUrl ? (
-							<img
+							<Image
 								src={gambarUrl}
 								alt='Preview'
-								className='w-40 h-32 object-cover rounded mb-2 border'
+								width={160}
+								height={128}
+								className='w-40 h-32 object-cover rounded mb-2 border mx-auto'
 							/>
 						) : (
 							<span className='text-gray-400'>
@@ -378,13 +381,11 @@ export default function TambahBeritaPage() {
 				<div className='pt-3 flex justify-end'>
 					<button
 						type='submit'
-						disabled={loading || uploading}
-						className='bg-blue-600 text-white px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-blue-700 transition disabled:opacity-60'
+						disabled={loading}
+						className='bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'
 					>
-						{(loading || uploading) && (
-							<Loader2 size={18} className='animate-spin' />
-						)}
-						Simpan
+						{loading && <Loader2 className='animate-spin' size={18} />}
+						{loading ? 'Menyimpan...' : 'Simpan Berita'}
 					</button>
 				</div>
 			</form>

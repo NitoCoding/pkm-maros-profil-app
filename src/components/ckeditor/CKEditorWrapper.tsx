@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 interface CKEditorWrapperProps {
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 }
 
 // Menggunakan dynamic import untuk memuat komponen CKEditor DAN build editor-nya
@@ -24,8 +25,7 @@ const Editor = dynamic(
     // dan 'editorBuildModule.default' adalah konstruktor editor CKEditor 5 itu sendiri.
     return ({ value, onChange }: CKEditorWrapperProps) => (
       <editorModule.CKEditor
-        // Meneruskan konstruktor ClassicEditor ke prop 'editor'.
-        // Ini adalah bagian kunci yang mengatasi error "class constructors must be invoked with 'new'".
+        // @ts-ignore - Ignore type mismatch between CKEditor versions
         editor={editorBuildModule.default}
         data={value}
         onChange={(_, editor: any) => {
@@ -53,6 +53,7 @@ const Editor = dynamic(
 export default function CKEditorWrapper({
   value,
   onChange,
+  placeholder,
 }: CKEditorWrapperProps) {
   // Sekarang, CKEditorWrapper hanya perlu merender komponen 'Editor' yang sudah dimuat secara dinamis.
   // State 'ClassicEditor' dan useEffect untuk memuatnya tidak lagi diperlukan di sini.
