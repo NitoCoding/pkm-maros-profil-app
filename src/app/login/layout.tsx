@@ -1,7 +1,14 @@
 import type {Metadata} from 'next'
 
 export const metadata: Metadata = {
-	title: 'Kelurahan Bilokka ⋅ Login',
+	title: 'Login',
+	description: 'Login to your account',
+	keywords: 'login, account, admin',
+	openGraph: {
+		title: 'Login',
+		description: 'Login to your account',
+		type: 'website',
+	},
 }
 
 export default function LoginLayout({

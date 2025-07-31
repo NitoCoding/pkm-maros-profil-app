@@ -18,7 +18,7 @@ import CardStokLite from "@/components/CardStokLite";
 import { getCardStokImageUrl } from "@/libs/utils/cloudinary";
 import { MapPin } from "lucide-react";
 
-export default function SejarahPage() {
+export default function TentangPageClient() {
   const { profil: visi, loading: loadingVisi } = useVisi();
   const { profil: misi, loading: loadingMisi } = useMisi();
   const { profil: sejarah, loading: loadingSejarah } = useSejarah();
@@ -36,11 +36,7 @@ export default function SejarahPage() {
 
   return (
     <>
-      <PageHead 
-        title="Tentang Kelurahan Bilokka"
-        description="Sejarah, visi, misi, dan struktur organisasi Kelurahan Bilokka"
-        keywords="tentang, sejarah, visi, misi, kelurahan, bilokka"
-      />
+
       <div className="pt-12 min-h-screen pb-3">
         <Main>
           <div className="px-4 sm:px-6 lg:px-8">

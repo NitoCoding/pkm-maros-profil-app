@@ -4,20 +4,13 @@ import { useBerita } from '@/hooks/useBerita'
 import BeritaCard from '@/components/CardBerita'
 import HeaderPage from '@/components/HeaderPage'
 import Main from '@/components/Main'
-import PageHead from '@/components/PageHead'
 import { Loader2 } from 'lucide-react'
 
-export default function BeritaPage() {
+export default function BeritaPageClient() {
 	const { berita, loading, error, hasMore, loadMore } = useBerita({ pageSize: 12 })
 
 	return (
-		<>
-			<PageHead 
-				title="Berita Kelurahan Bilokka"
-				description="Berita dan informasi terkini seputar Kelurahan Bilokka"
-				keywords="berita, kelurahan, bilokka, informasi"
-			/>
-			<div className='pt-12 min-h-screen'>
+		<div className='pt-12 min-h-screen pb-3'>
 			<Main>
 				<div className='px-4 sm:px-6 lg:px-8'>
 					<div className='container mx-auto max-w-7xl'>
@@ -84,7 +77,6 @@ export default function BeritaPage() {
 					</div>
 				</div>
 			</Main>
-			</div>
-		</>
+		</div>
 	)
 }

@@ -13,6 +13,7 @@ import { toast } from 'react-hot-toast'
 import { makeAuthenticatedRequest } from '@/libs/auth/token'
 import { IBerita } from '@/types/berita'
 import { formatDateForInput } from '@/libs/utils/date'
+import { beritaKategori } from '@/libs/constant/beritaKategori'
 
 const beritaSchema = z.object({
 	judul: z.string().min(3, 'Judul wajib diisi'),
@@ -470,13 +471,19 @@ export default function EditBeritaPage() {
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
 					<div>
 						<label className='font-medium'>Kategori</label>
-						<input
+						<select
 							{...register('kategori')}
 							className={`border w-full px-3 py-2 rounded mt-1 ${
 								errors.kategori && 'border-red-500'
 							}`}
-							placeholder='Kategori berita'
-						/>
+						>
+							<option value=''>Pilih kategori</option>
+							{beritaKategori.map((kategori) => (
+								<option key={kategori} value={kategori}>
+									{kategori}
+								</option>
+							))}
+						</select>
 						{errors.kategori && (
 							<div className='text-red-600 text-sm'>
 								{errors.kategori.message}

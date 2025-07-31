@@ -156,7 +156,7 @@ export function useHeroCached() {
 			const response = await fetch('/api/dashboard');
 			const result = await response.json();
 
-			console.log('[HERO] API Response:', result);
+			// console.log('[HERO] API Response:', result);
 
 			if (!response.ok) {
 				throw new Error(result.error || 'Failed to fetch hero data');
@@ -168,7 +168,7 @@ export function useHeroCached() {
 					title: result.data.hero.title || 'Selamat Datang Di Website Kelurahan Bilokka',
 					subtitle: result.data.hero.subtitle || 'Kelurahan Bilokka, Kecamatan Panca Lautang, Kabupaten Sidrap'
 				};
-				console.log('[HERO] Processed hero data:', heroData);
+				// console.log('[HERO] Processed hero data:', heroData);
 				return heroData;
 			} else {
 				// Fallback data if no hero info found
@@ -211,7 +211,7 @@ export function useSambutanCached() {
 			const response = await fetch('/api/dashboard');
 			const result = await response.json();
 
-			console.log('[SAMBUTAN] API Response:', result);
+			// console.log('[SAMBUTAN] API Response:', result);
 
 			if (!response.ok) {
 				throw new Error(result.error || 'Failed to fetch sambutan data');
@@ -223,7 +223,7 @@ export function useSambutanCached() {
 					isi: result.data.sambutan.isi || 'Selamat datang di website resmi Kelurahan Bilokka...',
 					gambar: result.data.sambutan.gambar || ''
 				};
-				console.log('[SAMBUTAN] Processed sambutan data:', sambutanData);
+				// console.log('[SAMBUTAN] Processed sambutan data:', sambutanData);
 				return sambutanData;
 			} else {
 				// Fallback data if no sambutan found
@@ -266,7 +266,7 @@ export function useFooterCached() {
 			const response = await fetch('/api/dashboard');
 			const result = await response.json();
 
-			console.log('[FOOTER] API Response:', result);
+			// console.log('[FOOTER] API Response:', result);
 
 			if (!response.ok) {
 				throw new Error(result.error || 'Failed to fetch footer data');
@@ -284,7 +284,7 @@ export function useFooterCached() {
 						youtube: result.data.contact.youtube || ''
 					}
 				};
-				console.log('[FOOTER] Processed footer data:', footerData);
+				// console.log('[FOOTER] Processed footer data:', footerData);
 				return footerData;
 			} else {
 				// Fallback data if no contact info found

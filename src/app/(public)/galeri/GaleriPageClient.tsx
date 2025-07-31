@@ -7,7 +7,7 @@ import PageHead from '@/components/PageHead'
 import { useGaleri } from '@/hooks/useGaleri'
 import { Loader2 } from 'lucide-react'
 
-export default function GaleriPage() {
+export default function GaleriPageClient() {
     const { galeri, loading, error, hasMore, loadMore } = useGaleri({ pageSize: 12 })
 
     return (
@@ -17,14 +17,14 @@ export default function GaleriPage() {
                 description="Dokumentasi dan galeri foto kegiatan Kelurahan Bilokka"
                 keywords="galeri, foto, dokumentasi, kelurahan, bilokka"
             />
-            <div className='pt-12 min-h-screen'>
+            <div className='pt-12 min-h-screen pb-3'>
                 <Main>
                     <div className='px-4 sm:px-6 lg:px-8'>
                         <div className='container mx-auto max-w-7xl'>
                             <div className=' decoration-2 text-green-700'>
                                 <HeaderPage
                                     title='Galeri'
-                                    description=''
+                                    description='Dokumentasi dan galeri foto kegiatan Kelurahan Bilokka'
                                     customClass='mx-auto text-center'
                                 />
                             </div>

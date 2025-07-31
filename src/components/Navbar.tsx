@@ -14,8 +14,8 @@ const MENU_ITEMS: IMenu[] = [
 		show: true,
 		children: [
 			{label: 'Tentang', href: '/profil/tentang', show: true},
-			{label: 'Infografi', href: '/profil/infografi', show: true},
-			{label: 'Geografi', href: '/profil/geografi', show: true},
+			{label: 'Infografis', href: '/profil/infografis', show: true},
+			{label: 'Geografis', href: '/profil/geografis', show: true},
 		],
 	},
 	// {

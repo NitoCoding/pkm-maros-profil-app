@@ -14,7 +14,7 @@ export default function UmkmPage() {
         <div className='pt-12 min-h-screen pb-3'>
             <Main>
                 <HeaderPage
-                    title='UMKM Kelurahan Bilokka'
+                    title='UMKM'
                     description='Usaha Mikro, Kecil, dan Menengah di Kelurahan Bilokka'
                     customClass='mx-auto text-center'
                 />

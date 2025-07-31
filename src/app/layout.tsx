@@ -1,65 +1,55 @@
-'use client'
+// app/layout.jsx
+import { Geist, Geist_Mono } from 'next/font/google';
+import './globals.css';
+import { Metadata } from 'next';
 
-import {Geist, Geist_Mono} from 'next/font/google'
-import './globals.css'
-import Footer from '@/components/Footer'
-import Navbar from '@/components/Navbar'
-import { usePathname } from 'next/navigation'
-import FooterCached from '@/components/FooterCached'
-import CacheDebugger from '@/components/CacheDebugger'
+export const metadata: Metadata = {
+    title: {
+        default: 'Kelurahan Bilokka',
+        template: '%s ⋅ Kelurahan Bilokka',
+    },
+    description: 'Website resmi Kelurahan Bilokka',
+    keywords: ['kelurahan', 'bilokka', 'website resmi', 'informasi publik'],
+    openGraph: {
+        title: 'Kelurahan Bilokka - Website Resmi',
+        description: 'Website resmi Kelurahan Bilokka, menyediakan informasi dan layanan untuk masyarakat.',
+        type: 'website',
+        locale: 'id_ID',
+        url: 'https://www.kelurahanbilokka.my.id',
+        siteName: 'Kelurahan Bilokka',
+        images: [
+            {
+                url: '/favicon.svg',
+                width: 1200,
+                height: 630,
+                alt: 'Kelurahan Bilokka',
+            },
+        ],
+    },
+    manifest: '/site.webmanifest',
+    icons: {
+        icon: '/favicon.svg',
+        apple: '/apple-touch-icon.png',
+        shortcut: '/web-app-manifest-192x192.png',
+    },
+};
 
 const geistSans = Geist({
-	variable: '--font-geist-sans',
-	subsets: ['latin'],
-})
+    variable: '--font-geist-sans',
+    subsets: ['latin'],
+});
 
 const geistMono = Geist_Mono({
-	variable: '--font-geist-mono',
-	subsets: ['latin'],
-})
+    variable: '--font-geist-mono',
+    subsets: ['latin'],
+});
 
-// export const metadata: Metadata = {
-// 	title: 'Kelurahan Bilokka',
-// 	description: 'Website resmi Kelurahan Bilokka',
-// }
-
-export default function PublicLayout({children}: {children: React.ReactNode}) {
-	const pathname = usePathname()
-
-	// Check if the current path is the admin path
-	const isAdminPath = pathname.startsWith('/admin') || pathname.startsWith('/login')
-	// If it's an admin path, return the admin layout
-	if (isAdminPath) {
-		return (
-			<html lang='en'>
-				<body
-					className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-				>
-					{children}
-				</body>
-			</html>
-		)
-	}
-
-	return (
-		<html lang='en'>
-			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-			>
-				{/* NAVBAR PUBLIK */}
-				<Navbar />
-
-				{/* Konten Publik */}
-
-				{/* Konten Umum */}
-				<main>{children}</main>
-
-				{/* FOOTER PUBLIK */}
-				<FooterCached />
-
-				{/* Cache Debugger (Development Only) */}
-				{/* <CacheDebugger /> */}
-			</body>
-		</html>
-	)
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <html lang="id">
+            <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+                {children}
+            </body>
+        </html>
+    );
 }

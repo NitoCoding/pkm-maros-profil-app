@@ -37,24 +37,24 @@ export function useSambutan() {
 			// Process profil data (sambutan text)
 			if (profilResponse.ok && profilResult.success && profilResult.data) {
 				const profilSambutan = profilResult.data;
-                console.log('profilSambutan',profilSambutan);
+                // console.log('profilSambutan',profilSambutan);
 				sambutanData.judul = profilSambutan.judul || 'Sambutan Lurah';
 				sambutanData.isi = profilSambutan.isi || sambutanData.isi;
 				sambutanData.gambar = profilSambutan.gambar || '';
 			}
-            console.log(profilResult);
-            console.log(sambutanData);
+            // console.log(profilResult);
+            // console.log(sambutanData);
 
 			// Process dashboard data (lurah info)
 			if (dashboardResponse.ok && dashboardResult.success && dashboardResult.data?.lurah) {
 				const lurahData = dashboardResult.data.lurah;
-                console.log('lurahData',lurahData);
+                // console.log('lurahData',lurahData);
 				sambutanData.namaLurah = lurahData.name || 'H. ALIMUDDIN, S.Sos.';
 				sambutanData.jabatanLurah = lurahData.position || 'Lurah';
                 sambutanData.gambar = lurahData.photo || '';
 			}
-            console.log('dashboardResult',dashboardResult);
-            console.log(sambutanData);
+            // console.log('dashboardResult',dashboardResult);
+            // console.log(sambutanData);
 
 			setSambutan(sambutanData);
 		} catch (err: any) {

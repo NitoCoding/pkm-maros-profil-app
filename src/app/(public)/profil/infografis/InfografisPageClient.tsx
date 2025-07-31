@@ -25,11 +25,6 @@ export default function InfografiPage() {
 
   return (
     <>
-      <PageHead 
-        title="Infografi Kelurahan Bilokka"
-        description="Data demografi dan statistik Kelurahan Bilokka"
-        keywords="infografi, demografi, statistik, kelurahan, bilokka"
-      />
       <div className="pt-12 min-h-screen pb-3">
         <Main>
           <div className='px-4 sm:px-6 lg:px-8'>

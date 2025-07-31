@@ -127,6 +127,35 @@ export async function initializeUmumData(): Promise<void> {
 				}
 			},
 			updatedAt: new Date().toISOString()
+		},
+		{
+			id: 'geografi',
+			jenis: 'geografi',
+			judul: 'Geografi',
+			deskripsi: 'Data geografis Kelurahan Bilokka',
+			data: {
+				geografi: {
+					luasWilayah: 1243,
+					jumlahDusun: 2,
+					batasUtara: 'Desa Lise',
+					batasSelatan: 'Kabupaten Soppeng',
+					batasTimur: 'Desa Wanio',
+					batasBarat: 'Desa Corowali',
+					koordinat: {
+						latitude: -7.123456,
+						longitude: 110.123456
+					},
+					kondisiGeografis: 'Daerah pegunungan dengan sungai yang mengalir di tengahnya.',
+					potensiAlam: 'Pertanian',
+					penggunaanLahan: {
+						pertanian: 60,
+						perumahan: 20,
+						hutan: 15,
+						lainnya: 5
+					}
+				}
+			},
+			updatedAt: new Date().toISOString()
 		}
 	];
 	

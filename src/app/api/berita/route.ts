@@ -3,10 +3,12 @@ import { adminAuth } from "@/libs/firebase-admin";
 import {
   tambahBerita,
   ambilBeritaPaginate,
+  ambilBeritaPaginateAdmin,
   ambilBeritaById,
   updateBerita,
   hapusBerita,
   ambilBeritaBySlug,
+  ambilBeritaBySlugAdmin,
 } from "@/libs/api/berita";
 
 // Verify Firebase ID Token using Firebase Admin SDK
@@ -111,11 +113,14 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
     const cursor = searchParams.get("cursor");
+    const isAdmin = searchParams.get("admin") === "true";
 
     // If slug is provided, get single berita by slug
     const slug = searchParams.get("slug");
     if (slug) {
-      const berita = await ambilBeritaBySlug(slug);
+      const berita = isAdmin 
+        ? await ambilBeritaBySlugAdmin(slug)
+        : await ambilBeritaBySlug(slug);
       return NextResponse.json({ success: true, data: berita });
     }
 
@@ -127,10 +132,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Otherwise return paginated list
-    const result = await ambilBeritaPaginate(
-      pageSize,
-      cursor ? JSON.parse(cursor) : null
-    );
+    const result = isAdmin
+      ? await ambilBeritaPaginateAdmin(
+          pageSize,
+          cursor ? JSON.parse(cursor) : null
+        )
+      : await ambilBeritaPaginate(
+          pageSize,
+          cursor ? JSON.parse(cursor) : null
+        );
     return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
     console.error("Error fetching berita:", error);

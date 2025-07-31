@@ -1,6 +1,6 @@
 export interface IUmum {
   id: string;
-  jenis: 'infografi' | 'penduduk' | 'saranaPendidikan' | 'saranaKesehatan';
+  jenis: 'infografi' | 'penduduk' | 'saranaPendidikan' | 'saranaKesehatan' | 'geografi';
   judul: string;
   deskripsi?: string;
   gambar?: string;
@@ -36,6 +36,28 @@ export interface IUmum {
       posyandu: number;
       puskesdes: number;
     };
+
+    // Untuk geografi
+    geografi?: {
+      luasWilayah: number;
+      jumlahDusun: number;
+      batasUtara: string;
+      batasSelatan: string;
+      batasTimur: string;
+      batasBarat: string;
+      koordinat: {
+        latitude: number;
+        longitude: number;
+      };
+      kondisiGeografis: string;
+      potensiAlam: string;
+      penggunaanLahan: {
+        pertanian: number;
+        perumahan: number;
+        hutan: number;
+        lainnya: number;
+      };
+    };
   };
   updatedAt: string;
 }
@@ -66,4 +88,25 @@ export interface ISaranaKesehatan {
   pustu: number;
   posyandu: number;
   puskesdes: number;
+} 
+
+export interface IGeografi {
+  luasWilayah: number;
+  jumlahDusun: number;
+  batasUtara: string;
+  batasSelatan: string;
+  batasTimur: string;
+  batasBarat: string;
+  koordinat: {
+    latitude: number;
+    longitude: number;
+  };
+  kondisiGeografis: string;
+  potensiAlam: string;
+  penggunaanLahan: {
+    pertanian: number;
+    perumahan: number;
+    hutan: number;
+    lainnya: number;
+  };
 } 

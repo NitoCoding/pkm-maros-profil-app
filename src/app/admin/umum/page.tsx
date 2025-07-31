@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { useUmum, useUmumMutation } from '@/hooks/useUmum';
 import { IUmum } from '@/types/umum';
 import CardPenduduk from '@/components/CardPenduduk';
-import { BarChart3, Users, School, Heart, Edit, Save, X } from 'lucide-react';
+import { BarChart3, Users, School, Heart, MapPin, Edit, Save, X } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import CKEditorWrapper from '@/components/ckeditor/CKEditorWrapper';
+import { toast } from 'react-hot-toast';
 
 export default function AdminUmumPage() {
   const { umum, loading, error, refresh } = useUmum();
@@ -36,6 +37,7 @@ export default function AdminUmumPage() {
     try {
       const success = await updateUmumByJenis(editingSection as IUmum['jenis'], formData);
       if (success) {
+        toast.success('Data berhasil disimpan');
         setEditingSection(null);
         setFormData({});
         refresh();
@@ -177,6 +179,96 @@ export default function AdminUmumPage() {
                 <CardPenduduk kategori="Pustu" jumlah={getDataByJenis('saranaKesehatan')!.data.saranaKesehatan!.pustu} color="pink" />
                 <CardPenduduk kategori="Posyandu" jumlah={getDataByJenis('saranaKesehatan')!.data.saranaKesehatan!.posyandu} color="purple" />
                 <CardPenduduk kategori="Puskesdes" jumlah={getDataByJenis('saranaKesehatan')!.data.saranaKesehatan!.puskesdes} color="indigo" />
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Geografi Section */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-6 h-6 text-teal-600" />
+              <h2 className="text-xl font-bold">Geografi</h2>
+            </div>
+            <button
+              onClick={() => openEditModal('geografi')}
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+            >
+              <Edit className="w-4 h-4" />
+              Edit
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {getDataByJenis('geografi')?.data.geografi && (
+              <>
+                <div className="space-y-4">
+                  <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                    <div className="text-2xl font-bold text-teal-600">{getDataByJenis('geografi')!.data.geografi!.luasWilayah} Ha</div>
+                    <div className="text-sm text-gray-600">Luas Wilayah</div>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div className="text-2xl font-bold text-blue-600">{getDataByJenis('geografi')!.data.geografi!.jumlahDusun}</div>
+                    <div className="text-sm text-gray-600">Jumlah Lingkungan</div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-800">Batas Wilayah</h3>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+                        <span>Utara: {getDataByJenis('geografi')!.data.geografi!.batasUtara}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                        <span>Selatan: {getDataByJenis('geografi')!.data.geografi!.batasSelatan}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 bg-yellow-500 rounded-full"></span>
+                        <span>Timur: {getDataByJenis('geografi')!.data.geografi!.batasTimur}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+                        <span>Barat: {getDataByJenis('geografi')!.data.geografi!.batasBarat}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-800">Penggunaan Lahan</h3>
+                    <div className="space-y-2">
+                      {getDataByJenis('geografi')!.data.geografi!.penggunaanLahan && Object.entries(getDataByJenis('geografi')!.data.geografi!.penggunaanLahan).map(([key, value]) => (
+                        <div key={key} className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600 capitalize">{key}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-teal-500 h-2 rounded-full" 
+                                style={{ width: `${value}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-medium">{value}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-800">Kondisi Geografis</h3>
+                    <p className="text-sm text-gray-600">{getDataByJenis('geografi')!.data.geografi!.kondisiGeografis}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-800">Potensi Alam</h3>
+                    <p className="text-sm text-gray-600">{getDataByJenis('geografi')!.data.geografi!.potensiAlam}</p>
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -515,6 +607,324 @@ export default function AdminUmumPage() {
                       })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                  </div>
+                </div>
+              )}
+
+              {editingSection === 'geografi' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Luas Wilayah (Ha)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.data?.geografi?.luasWilayah || 0}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              luasWilayah: parseInt(e.target.value) || 0
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Jumlah Lingkungan
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.data?.geografi?.jumlahDusun || 0}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              jumlahDusun: parseInt(e.target.value) || 0
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Batas Utara
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.data?.geografi?.batasUtara || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              batasUtara: e.target.value
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Batas Selatan
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.data?.geografi?.batasSelatan || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              batasSelatan: e.target.value
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Batas Timur
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.data?.geografi?.batasTimur || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              batasTimur: e.target.value
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Batas Barat
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.data?.geografi?.batasBarat || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              batasBarat: e.target.value
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Latitude
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={formData.data?.geografi?.koordinat?.latitude || 0}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              koordinat: {
+                                ...formData.data?.geografi?.koordinat,
+                                latitude: parseFloat(e.target.value) || 0
+                              }
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Longitude
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={formData.data?.geografi?.koordinat?.longitude || 0}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              koordinat: {
+                                ...formData.data?.geografi?.koordinat,
+                                longitude: parseFloat(e.target.value) || 0
+                              }
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Kondisi Geografis
+                    </label>
+                    <textarea
+                      value={formData.data?.geografi?.kondisiGeografis || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        data: {
+                          ...formData.data,
+                          geografi: {
+                            ...formData.data?.geografi,
+                            kondisiGeografis: e.target.value
+                          }
+                        }
+                      })}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Potensi Alam
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.data?.geografi?.potensiAlam || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        data: {
+                          ...formData.data,
+                          geografi: {
+                            ...formData.data?.geografi,
+                            potensiAlam: e.target.value
+                          }
+                        }
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Pertanian (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.data?.geografi?.penggunaanLahan?.pertanian || 0}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              penggunaanLahan: {
+                                ...formData.data?.geografi?.penggunaanLahan,
+                                pertanian: parseInt(e.target.value) || 0
+                              }
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Perumahan (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.data?.geografi?.penggunaanLahan?.perumahan || 0}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              penggunaanLahan: {
+                                ...formData.data?.geografi?.penggunaanLahan,
+                                perumahan: parseInt(e.target.value) || 0
+                              }
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Hutan (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.data?.geografi?.penggunaanLahan?.hutan || 0}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              penggunaanLahan: {
+                                ...formData.data?.geografi?.penggunaanLahan,
+                                hutan: parseInt(e.target.value) || 0
+                              }
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Lainnya (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.data?.geografi?.penggunaanLahan?.lainnya || 0}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          data: {
+                            ...formData.data,
+                            geografi: {
+                              ...formData.data?.geografi,
+                              penggunaanLahan: {
+                                ...formData.data?.geografi?.penggunaanLahan,
+                                lainnya: parseInt(e.target.value) || 0
+                              }
+                            }
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
                 </div>
               )}

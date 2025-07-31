@@ -12,6 +12,7 @@ import CKEditorWrapper from '@/components/ckeditor/CKEditorWrapper'
 import { toast } from 'react-hot-toast'
 import { getAuthToken } from '@/libs/auth/token'
 import Image from 'next/image'
+import { beritaKategori } from '@/libs/constant/beritaKategori'
 
 const beritaSchema = z.object({
 	judul: z.string().min(1, 'Judul harus diisi'),
@@ -336,13 +337,19 @@ export default function TambahBeritaPage() {
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
 					<div>
 						<label className='font-medium'>Kategori</label>
-						<input
+						<select
 							{...register('kategori')}
 							className={`border w-full px-3 py-2 rounded mt-1 ${
 								errors.kategori && 'border-red-500'
 							}`}
-							placeholder='Kategori berita'
-						/>
+						>
+							<option value=''>Pilih kategori</option>
+							{beritaKategori.map((kategori) => (
+								<option key={kategori} value={kategori}>
+									{kategori}
+								</option>
+							))}
+						</select>
 						{errors.kategori && (
 							<div className='text-red-600 text-sm'>
 								{errors.kategori.message}
