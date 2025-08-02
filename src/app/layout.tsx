@@ -74,6 +74,9 @@ export const metadata: Metadata = {
     verification: {
         google: 'google123456789', // Ganti dengan kode verifikasi Google Search Console yang sebenarnya
     },
+    icons: {
+        icon: '/favicon.svg',
+    },
 };
 
 const geistSans = Geist({
