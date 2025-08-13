@@ -11,7 +11,7 @@ import HomePageClient from './HomePageClient';
 export const metadata: Metadata = {
 	title: 'Beranda',
 	description: 'Website resmi Kelurahan Bilokka',
-	keywords: 'kelurahan, bilokka, pemerintah, desa',
+	keywords: 'kelurahan, bilokka, kelurahan bilokka, pemerintah, desa',
 	openGraph: {
 		title: 'Kelurahan Bilokka',
 		description: 'Website resmi Kelurahan Bilokka',
