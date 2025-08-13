@@ -39,7 +39,7 @@ export default function CardUmkm({ umkm }: CardUmkmProps) {
 	}
 
 	return (
-		<div className='bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300'>
+		<div className='bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 w-full h-full flex flex-col'>
 			{/* Image */}
 			<div className='relative h-48 w-full'>
 				<Image
@@ -52,7 +52,7 @@ export default function CardUmkm({ umkm }: CardUmkmProps) {
 			</div>
 
 			{/* Content */}
-			<div className='p-4'>
+			<div className='p-4 flex-1 flex flex-col'>
 				{/* Category Badge */}
 				<div className='mb-2'>
 					<span className='inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded'>
@@ -66,7 +66,7 @@ export default function CardUmkm({ umkm }: CardUmkmProps) {
 				</h3>
 
 				{/* Description */}
-				<p className='text-gray-600 text-sm mb-3 line-clamp-3'>
+				<p className='text-gray-600 text-sm mb-3 line-clamp-3 flex-1'>
 					{umkm.deskripsi}
 				</p>
 
@@ -85,15 +85,15 @@ export default function CardUmkm({ umkm }: CardUmkmProps) {
 				</div>
 
 				{/* Location */}
-				<div className='flex items-start gap-2 mb-4'>
-					<MapPin size={16} className='text-gray-500 mt-0.5' />
+				<div className='flex items-start gap-2 mb-4 min-h-[40px]'>
+					<MapPin size={16} className='text-gray-500 mt-0.5 flex-shrink-0' />
 					<span className='text-gray-700 text-sm line-clamp-2'>
 						{umkm.lokasi.alamat}
 					</span>
 				</div>
 
 				{/* Action Buttons */}
-				<div className='flex gap-2'>
+				<div className='flex gap-2 mt-auto'>
 					{/* WhatsApp Button */}
 					<button
 						onClick={handleWhatsAppClick}

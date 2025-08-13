@@ -33,14 +33,19 @@ export default function GaleriCard({ galeri }: { galeri: IGaleri }) {
 				{/* Content Overlay */}
 				<div className="absolute inset-0 flex flex-col justify-end p-4">
 					{/* Caption - always visible */}
+					{/* <div className="mb-2 transform transition-all duration-300 group-hover:translate-y-0">
+						<h3 className="text-white text-sm font-semibold leading-tight line-clamp-2 drop-shadow-lg">
+							{galeri.caption || 'Tidak ada deskripsi'}
+						</h3>
+					</div> */}
+
+					{/* Additional Info - slides up on hover */}
+					<div className="transform translate-y-6 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 delay-150 space-y-3">
 					<div className="mb-2 transform transition-all duration-300 group-hover:translate-y-0">
 						<h3 className="text-white text-sm font-semibold leading-tight line-clamp-2 drop-shadow-lg">
 							{galeri.caption || 'Tidak ada deskripsi'}
 						</h3>
 					</div>
-
-					{/* Additional Info - slides up on hover */}
-					<div className="transform translate-y-6 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 delay-150 space-y-3">
 						{/* Date */}
 						<div className="flex items-center text-white/90 text-xs">
 							<Calendar className="mr-2" size={14} />

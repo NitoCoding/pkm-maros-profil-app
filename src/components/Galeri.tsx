@@ -67,7 +67,7 @@ export default function Galeri() {
 					<>
 						<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12'>
 							{galeri.map(item => (
-								<div key={item.id} className='max-w-[360px] mx-auto'>
+								<div key={item.id} className='w-full'>
 									<GaleriCard galeri={item} />
 								</div>
 							))}
@@ -76,7 +76,7 @@ export default function Galeri() {
 						<div className='text-center'>
 							<Link
 								href='/galeri'
-								className='inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors'
+								className='inline-flex items-center px-6 py-3  text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors'
 							>
 								Lihat Semua Galeri
 							</Link>

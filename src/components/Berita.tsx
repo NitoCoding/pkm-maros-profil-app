@@ -59,7 +59,7 @@ export default function Berita() {
 					</div>
 				) : (
 					<>
-						<div className='flex flex-col items-center space-y-6 md:grid md:grid-cols-2 md:space-y-0 md:gap-6 lg:grid-cols-3'>
+						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
 							{berita.map(item => (
 								<BeritaCard key={item.id} berita={item} />
 							))}

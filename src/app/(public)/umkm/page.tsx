@@ -49,10 +49,10 @@ export default function UmkmPage() {
                 {/* UMKM Grid */}
                 {!loading && !error && umkm.length > 0 && (
                     <>
-                        <div className='w-full flex justify-center'>
-                            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full max-w-[1400px] px-4'>
+                        <div className='w-full px-4'>
+                            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-7xl mx-auto'>
                                 {umkm.map(item => (
-                                    <div key={item.id} className='max-w-[350px] mx-auto'>
+                                    <div key={item.id} className='w-full'>
                                         <CardUmkm umkm={item} />
                                     </div>
                                 ))}
