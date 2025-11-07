@@ -3,13 +3,38 @@
 import HeaderPage from "@/components/HeaderPage";
 import Main from "@/components/Main";
 import { IGeografi } from "@/types/geografi";
+import { IUmum } from "@/types/umum";
 import { MapPin } from "lucide-react";
 import MapSimple from "@/components/MapSimple";
 import { useUmumByJenis } from "@/hooks/useUmum";
+import PageHead from "@/components/PageHead";
 
 export default function GeografiPage() {
   const { umum, loading, error } = useUmumByJenis("geografi");
-  const geografi: IGeografi | undefined = umum?.data?.geografi;
+
+  // Helper function untuk mengurai data JSON
+  const parseUmumData = (umumData: IUmum | null) => {
+    if (!umumData) return null;
+    
+    // Buat salinan objek untuk tidak mengubah state asli
+    const parsedData = { ...umumData };
+    
+    // Jika data adalah string, urai menjadi objek
+    if (typeof parsedData.data === 'string') {
+      try {
+        parsedData.data = JSON.parse(parsedData.data);
+      } catch (e) {
+        console.error("Failed to parse data JSON:", e);
+        // parsedData.data = null; // Atur ke null jika gagal mengurai
+      }
+    }
+    
+    return parsedData;
+  };
+
+  // Gunakan fungsi pembantu untuk mengurai data
+  const parsedUmum = parseUmumData(umum);
+  const geografi: IGeografi | undefined = parsedUmum?.data?.geografi;
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -17,9 +42,13 @@ export default function GeografiPage() {
 
   return (
     <>
+      <PageHead 
+        title="Geografi Desa Benteng Gajah" 
+        description="Data geografis Desa Benteng Gajah" 
+      />
       <div className="pt-12 min-h-screen pb-3">
         <Main>
-          <div className="px-4 sm:px-6 lg:px-8 ">
+          <div className="mt-5 px-4 sm:px-6 lg:px-8 ">
             <div className="container mx-auto max-w-7xl">
               <div className="decoration-2 text-green-700">
                 <HeaderPage

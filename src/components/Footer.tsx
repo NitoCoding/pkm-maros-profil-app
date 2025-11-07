@@ -22,11 +22,11 @@ export default function Footer() {
 						<div className='flex items-center mb-4'>
 							{/* <Leaf className='h-6 w-6 text-accent mr-2' /> */}
 							<span className='font-heading font-bold text-xl'>
-								Kelurahan Bilokka
+								Desa Benteng Gajah
 							</span>
 						</div>
 						<p className='mb-4'>
-							Website {/*resmi*/} Kelurahan Bilokka yang menyediakan informasi desa
+							Website {/*resmi*/} Desa Benteng Gajah yang menyediakan informasi desa
 							dan mendukung pemberdayaan UMKM lokal.
 						</p>
 						<div className='flex space-x-4'>

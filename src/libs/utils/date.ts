@@ -17,11 +17,11 @@ export const formatDateTime = (dateString: string) => {
 }
 
 export const formatDateLong = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('id-ID', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  return new Date(dateString.replace(' ', 'T')).toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
 }
 
 export const formatDateForInput = (dateString: string) => {

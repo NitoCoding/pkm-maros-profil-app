@@ -13,9 +13,10 @@ export default function UmkmPage() {
     return (
         <div className='pt-12 min-h-screen pb-3'>
             <Main>
+                <div className='mt-5 px-4 sm:px-6 lg:px-8'>
                 <HeaderPage
                     title='UMKM'
-                    description='Usaha Mikro, Kecil, dan Menengah di Kelurahan Bilokka'
+                    description='Usaha Mikro, Kecil, dan Menengah di Desa Benteng Gajah'
                     customClass='mx-auto text-center'
                 />
 
@@ -50,13 +51,14 @@ export default function UmkmPage() {
                 {!loading && !error && umkm.length > 0 && (
                     <>
                         <div className='w-full px-4'>
-                            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-7xl mx-auto'>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
                                 {umkm.map(item => (
-                                    <div key={item.id} className='w-full'>
+                                    <div key={item.id} className="w-full">
                                         <CardUmkm umkm={item} />
                                     </div>
                                 ))}
                             </div>
+
                         </div>
 
                         {/* Load More Button */}
@@ -74,6 +76,7 @@ export default function UmkmPage() {
                         )}
                     </>
                 )}
+            </div>
             </Main>
         </div>
     )

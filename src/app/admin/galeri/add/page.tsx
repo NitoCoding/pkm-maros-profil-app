@@ -1,15 +1,14 @@
 'use client'
 
-import {useForm} from 'react-hook-form'
-import {zodResolver} from '@hookform/resolvers/zod'
-import {z} from 'zod'
-import {useRouter} from 'next/navigation'
-import {ArrowLeft, Loader2} from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import {useState, useCallback} from 'react'
-import {useDropzone} from 'react-dropzone'
+import { useState, useCallback } from 'react'
+import { useDropzone } from 'react-dropzone'
 import { toast } from 'react-hot-toast'
-import { makeAuthenticatedRequest } from '@/libs/auth/token'
 
 const galeriSchema = z.object({
     caption: z.string().min(3, 'Caption wajib diisi'),
@@ -32,7 +31,7 @@ export default function TambahGaleriPage() {
         handleSubmit,
         setValue,
         watch,
-        formState: {errors},
+        formState: { errors },
     } = useForm<GaleriFormValues>({
         resolver: zodResolver(galeriSchema),
         defaultValues: {
@@ -76,14 +75,14 @@ export default function TambahGaleriPage() {
     const onDrop = useCallback(
         async (acceptedFiles: File[]) => {
             if (!acceptedFiles[0]) return
-            
+
             console.log('Uploading file:', acceptedFiles[0])
             setUploading(true)
             setPreviewUrl(URL.createObjectURL(acceptedFiles[0]))
-            
+
             try {
                 const url = await uploadImage(acceptedFiles[0])
-                setValue('src', url, {shouldValidate: true})
+                setValue('src', url, { shouldValidate: true })
                 toast.success('Gambar berhasil diupload')
             } catch (error) {
                 // Error already handled in uploadImage function
@@ -95,9 +94,9 @@ export default function TambahGaleriPage() {
         [setValue],
     )
 
-    const {getRootProps, getInputProps, isDragActive} = useDropzone({
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
-        accept: {'image/*': []},
+        accept: { 'image/*': [] },
         multiple: false,
         maxSize: 10 * 1024 * 1024, // 10MB for HD images
     })
@@ -123,7 +122,7 @@ export default function TambahGaleriPage() {
             console.log('📤 Sending payload:', payload)
 
             // Use makeAuthenticatedRequest for automatic token refresh
-            const response = await makeAuthenticatedRequest('/api/galeri', {
+            const response = await fetch('/api/galeri', {
                 method: 'POST',
                 body: JSON.stringify(payload),
             })
@@ -148,10 +147,10 @@ export default function TambahGaleriPage() {
             }
         } catch (error: any) {
             console.error('❌ Submit error:', error)
-            
+
             // Don't show error toast if user was redirected to login
-            if (error.message !== 'NO_TOKEN' && 
-                error.message !== 'TOKEN_REFRESH_FAILED' && 
+            if (error.message !== 'NO_TOKEN' &&
+                error.message !== 'TOKEN_REFRESH_FAILED' &&
                 error.message !== 'TOKEN_STILL_INVALID') {
                 toast.error(error.message || 'Terjadi kesalahan saat menyimpan galeri')
             }
@@ -167,10 +166,10 @@ export default function TambahGaleriPage() {
                 onSubmit={handleSubmit(onSubmit)}
                 className='bg-white rounded-xl border border-gray-200 shadow px-6 py-8 space-y-5'
             >
-                <div className='flex items-center gap-2 mb-6'>
+                <div className='flex items-center mb-8'>
                     <Link
                         href='/admin/galeri'
-                        className='flex items-center gap-1 text-sm text-blue-600 hover:underline'
+                        className='flex items-center text-gray-600 hover:text-gray-900 mb-4'
                     >
                         <ArrowLeft size={18} />
                         Kembali
@@ -183,9 +182,8 @@ export default function TambahGaleriPage() {
                         <label className='font-medium'>Caption</label>
                         <input
                             {...register('caption')}
-                            className={`border w-full px-3 py-2 rounded mt-1 ${
-                                errors.caption && 'border-red-500'
-                            }`}
+                            className={`border w-full px-3 py-2 rounded mt-1 ${errors.caption && 'border-red-500'
+                                }`}
                             placeholder='Deskripsi gambar'
                         />
                         {errors.caption && (
@@ -193,7 +191,7 @@ export default function TambahGaleriPage() {
                         )}
                     </div>
 
-                    <div>
+                    {/* <div>
                         <label className='font-medium'>Alt Text</label>
                         <input
                             {...register('alt')}
@@ -205,6 +203,20 @@ export default function TambahGaleriPage() {
                         {errors.alt && (
                             <div className='text-red-600 text-sm'>{errors.alt.message}</div>
                         )}
+                    </div> */}
+
+                    <div>
+                        <label className='font-medium'>
+                            Tags{' '}
+                            <span className='text-xs text-gray-400'>
+                                (pisahkan dengan koma)
+                            </span>
+                        </label>
+                        <input
+                            {...register('tags')}
+                            className='border w-full px-3 py-2 rounded mt-1'
+                            placeholder='kegiatan, dokumentasi, kelurahan'
+                        />
                     </div>
                 </div>
 
@@ -214,11 +226,10 @@ export default function TambahGaleriPage() {
                     <div
                         {...getRootProps()}
                         className={`mt-1 border-2 border-dashed rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer transition 
-                        ${
-                            isDragActive
+                        ${isDragActive
                                 ? 'border-blue-400 bg-blue-50'
                                 : 'border-gray-300 bg-gray-50'
-                        }
+                            }
                         ${uploading ? 'opacity-60 pointer-events-none' : ''}
                         `}
                     >
@@ -255,7 +266,7 @@ export default function TambahGaleriPage() {
 
                 {/* Tanggal dan Tags */}
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <div>
+                    {/* <div>
                         <label className='font-medium'>Tanggal</label>
                         <input
                             {...register('tanggal')}
@@ -269,9 +280,9 @@ export default function TambahGaleriPage() {
                                 {errors.tanggal.message}
                             </div>
                         )}
-                    </div>
+                    </div> */}
 
-                    <div>
+                    {/* <div>
                         <label className='font-medium'>
                             Tags{' '}
                             <span className='text-xs text-gray-400'>
@@ -283,7 +294,7 @@ export default function TambahGaleriPage() {
                             className='border w-full px-3 py-2 rounded mt-1'
                             placeholder='kegiatan, dokumentasi, kelurahan'
                         />
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Submit Button */}

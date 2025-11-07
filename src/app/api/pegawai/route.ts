@@ -1,5 +1,5 @@
+// src/app/api/pegawai/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/libs/firebase-admin";
 import {
   tambahPegawai,
   ambilPegawaiPaginate,
@@ -7,61 +7,39 @@ import {
   updatePegawai,
   hapusPegawai,
 } from "@/libs/api/pegawai";
+import { IPegawaiUpdate } from "@/types/pegawai";
 
-// Verify Firebase ID Token using Firebase Admin SDK
-async function verifyFirebaseToken(request: NextRequest) {
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+// Middleware akan menangani autentikasi dan menambahkan info user ke header
+function getUserFromRequest(request: NextRequest) {
+  const userId = request.headers.get('x-user-id');
+  const userEmail = request.headers.get('x-user-email');
+  const userName = request.headers.get('x-user-name');
+
+  if (!userId || !userEmail) {
     return null;
   }
-  
-  const idToken = authHeader.substring(7);
-  
-  try {
-    // Verify the Firebase ID token using Admin SDK
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    return decodedToken;
-  } catch (error) {
-    console.error("Token verification error:", error);
-    return null;
-  }
+
+  return { userId, userEmail, userName };
 }
 
 // POST /api/pegawai - Create new pegawai
 export async function POST(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { 
-          error: "Unauthorized - Invalid or expired token",
-          details: "Please login again to get a valid token"
-        },
-        { status: 401 }
-      );
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const data = await request.json();
 
-    // Convert urutanTampil to number
     const pegawaiData = {
       ...data,
-      urutanTampil: parseInt(data.urutanTampil) || 0,
-      createdAt: new Date().toISOString(),
-      createdBy: decodedToken.uid,
-      authorEmail: decodedToken.email || 'unknown@email.com',
+      createdBy: user.userId,
+      authorName: user.userName,
+      authorEmail: user.userEmail,
     };
 
-    console.log("Creating pegawai with verified user:", {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      nama: pegawaiData.nama
-    });
-
     const result = await tambahPegawai(pegawaiData);
-    
-    console.log("Pegawai created successfully with ID:", result.id);
     
     return NextResponse.json({
       success: true,
@@ -71,66 +49,36 @@ export async function POST(request: NextRequest) {
     
   } catch (error: any) {
     console.error("Error creating pegawai:", error);
-    
-    // Handle specific Firebase errors
-    if (error.code === 'auth/id-token-expired') {
-      return NextResponse.json(
-        { 
-          error: "Token expired - Please login again",
-          code: "TOKEN_EXPIRED"
-        },
-        { status: 401 }
-      );
-    }
-    
-    if (error.code === 'auth/argument-error') {
-      return NextResponse.json(
-        { 
-          error: "Invalid token format",
-          code: "INVALID_TOKEN"
-        },
-        { status: 401 }
-      );
-    }
-    
     return NextResponse.json(
-      { 
-        error: error.message || "Failed to create pegawai",
-        details: error.toString(),
-        code: error.code || "UNKNOWN_ERROR"
-      },
+      { error: error.message || "Failed to create pegawai" },
       { status: 500 }
     );
   }
 }
 
-// GET /api/pegawai - Get paginated pegawai list (Public access)
+// GET /api/pegawai - Get paginated pegawai list or single pegawai
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
     const cursor = searchParams.get("cursor");
-
-    // If id is provided, get single pegawai by id
     const id = searchParams.get("id");
+
     if (id) {
       const pegawai = await ambilPegawaiById(id);
+      if (!pegawai) {
+        return NextResponse.json({ error: "Pegawai not found" }, { status: 404 });
+      }
       return NextResponse.json({ success: true, data: pegawai });
     }
 
-    // Otherwise return paginated list
-    const result = await ambilPegawaiPaginate(
-      pageSize,
-      cursor ? JSON.parse(cursor) : null
-    );
+    const result = await ambilPegawaiPaginate(pageSize, cursor);
+      
     return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
     console.error("Error fetching pegawai:", error);
     return NextResponse.json(
-      { 
-        success: false,
-        error: error.message || "Failed to fetch pegawai" 
-      },
+      { error: error.message || "Failed to fetch pegawai" },
       { status: 500 }
     );
   }
@@ -139,13 +87,9 @@ export async function GET(request: NextRequest) {
 // PUT /api/pegawai - Update pegawai
 export async function PUT(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: "Unauthorized - Invalid or expired token" },
-        { status: 401 }
-      );
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const data = await request.json();
@@ -155,19 +99,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    // Convert urutanTampil to number if provided
-    if (updateData.urutanTampil) {
-      updateData.urutanTampil = parseInt(updateData.urutanTampil) || 0;
-    }
-
-    // Add metadata
-    const dataWithTimestamp = {
+    const dataWithTimestamp: IPegawaiUpdate = {
       ...updateData,
-      updatedAt: new Date().toISOString(),
-      updatedBy: decodedToken.uid,
+      updatedBy: user.userId,
     };
 
-    await updatePegawai(id, dataWithTimestamp);
+    const success = await updatePegawai(id, dataWithTimestamp);
+    
+    if (!success) {
+      return NextResponse.json({ error: "Failed to update pegawai or no changes made" }, { status: 400 });
+    }
+
     return NextResponse.json({ 
       success: true,
       message: "Pegawai updated successfully" 
@@ -184,13 +126,9 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/pegawai - Delete pegawai
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: "Unauthorized - Invalid or expired token" },
-        { status: 401 }
-      );
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -200,7 +138,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    await hapusPegawai(id);
+    const success = await hapusPegawai(parseInt(id));
+    
+    if (!success) {
+      return NextResponse.json({ error: "Pegawai not found" }, { status: 404 });
+    }
+
     return NextResponse.json({ 
       success: true,
       message: "Pegawai deleted successfully" 
@@ -212,4 +155,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

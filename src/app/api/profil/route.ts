@@ -1,154 +1,156 @@
+// src/app/api/profil/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-	getProfilKelurahan, 
-	updateProfilKelurahan, 
-	getProfilByJenis, 
-	updateProfilByJenis,
-	initializeProfilData
+import {
+	getProfilKelurahan,
+	upsertProfil,
+	getProfilByJenis,
+	deleteProfilByJenis
 } from '@/libs/api/profil';
-import { IProfil } from '@/types/profil';
+// import { getUserFromRequest } from '@/libs/auth/token'; // Pastikan Anda memiliki fungsi ini
 
-export async function GET(req: NextRequest) {
-	try {
-		const { searchParams } = new URL(req.url);
-		const jenis = searchParams.get('jenis');
+// Middleware akan menangani autentikasi dan menambahkan info user ke header
+function getUserFromRequest(request: NextRequest) {
+	const userId = request.headers.get('x-user-id');
+	const userEmail = request.headers.get('x-user-email');
+	const userName = request.headers.get('x-user-name');
 
-		if (jenis) {
-			// Get specific profil by jenis
-			const data = await getProfilByJenis(jenis as IProfil['jenis']);
-			if (!data) {
-				return NextResponse.json(
-					{ success: false, error: 'Profil tidak ditemukan' }, 
-					{ status: 404 }
-				);
-			}
-			return NextResponse.json({ success: true, data });
-		} else {
-			// Get all profil data
-			let data = await getProfilKelurahan();
-			
-			// Jika belum ada data, inisialisasi dengan data default
-			if (!data || data.length === 0) {
-				await initializeProfilData();
-				data = await getProfilKelurahan();
-			}
-			
-			return NextResponse.json({ success: true, data });
-		}
-	} catch (error) {
-		console.error('Error in GET /api/profil:', error);
-		return NextResponse.json(
-			{ success: false, error: 'Internal server error' }, 
-			{ status: 500 }
-		);
+	if (!userId || !userEmail) {
+		return null;
 	}
+
+	return { userId, userEmail, userName };
 }
 
-export async function POST(req: NextRequest) {
-	try {
-		const body = await req.json();
-		
-		// Validate request body
-		if (!body || !Array.isArray(body)) {
-			return NextResponse.json(
-				{ success: false, error: 'Invalid request body. Expected array of profil data.' }, 
-				{ status: 400 }
-			);
-		}
+const allowedJenis = ["visi", "misi", "sejarah", "struktur", "sambutan", "video", "lainnya"] as const;
+type JenisProfil = typeof allowedJenis[number];
 
-		// Validate each profil item
-		for (const item of body) {
-			if (!item.jenis) {
-				return NextResponse.json(
-					{ success: false, error: 'Each profil item must have jenis' }, 
-					{ status: 400 }
-				);
-			}
-		}
-
-		await updateProfilKelurahan(body);
-		return NextResponse.json({ success: true, message: 'Profil berhasil diperbarui' });
-	} catch (error) {
-		console.error('Error in POST /api/profil:', error);
-		return NextResponse.json(
-			{ success: false, error: 'Internal server error' }, 
-			{ status: 500 }
-		);
-	}
+function isValidJenis(value: any): value is JenisProfil {
+	return allowedJenis.includes(value);
 }
 
-export async function PUT(req: NextRequest) {
+// GET /api/profil - Get all or specific profil
+export async function GET(request: NextRequest) {
 	try {
-		const body = await req.json();
-		const { searchParams } = new URL(req.url);
+		const { searchParams } = new URL(request.url);
 		const jenis = searchParams.get('jenis');
 
-		if (!jenis) {
+		if (!jenis || !isValidJenis(jenis)) {
 			return NextResponse.json(
-				{ success: false, error: 'Jenis parameter is required' }, 
+				{ success: false, error: 'Parameter jenis tidak valid' },
 				{ status: 400 }
 			);
 		}
 
-		// Validate request body
-		if (!body || typeof body !== 'object') {
+		// ✅ Sekarang TypeScript tahu jenis adalah JenisProfil
+		const profil = await getProfilByJenis(jenis);
+		if (!profil) {
 			return NextResponse.json(
-				{ success: false, error: 'Invalid request body' }, 
-				{ status: 400 }
-			);
-		}
-
-		// Update specific profil by jenis
-		await updateProfilByJenis(jenis as IProfil['jenis'], body);
-		return NextResponse.json({ 
-			success: true, 
-			message: `Profil ${jenis} berhasil diperbarui` 
-		});
-	} catch (error) {
-		console.error('Error in PUT /api/profil:', error);
-		return NextResponse.json(
-			{ success: false, error: 'Internal server error' }, 
-			{ status: 500 }
-		);
-	}
-}
-
-export async function DELETE(req: NextRequest) {
-	try {
-		const { searchParams } = new URL(req.url);
-		const jenis = searchParams.get('jenis');
-
-		if (!jenis) {
-			return NextResponse.json(
-				{ success: false, error: 'Jenis parameter is required' }, 
-				{ status: 400 }
-			);
-		}
-
-		// Get current data
-		const currentData = await getProfilKelurahan();
-		if (!currentData) {
-			return NextResponse.json(
-				{ success: false, error: 'No profil data found' }, 
+				{ success: false, error: 'Profil tidak ditemukan' },
 				{ status: 404 }
 			);
 		}
 
-		// Filter out the item to delete
-		const updatedData = currentData.filter(item => item.jenis !== jenis);
-		
-		// Update with filtered data
-		await updateProfilKelurahan(updatedData);
-		
-		return NextResponse.json({ 
-			success: true, 
-			message: `Profil ${jenis} berhasil dihapus` 
-		});
-	} catch (error) {
-		console.error('Error in DELETE /api/profil:', error);
+		return NextResponse.json({ success: true, data: profil });
+	} catch (error: any) {
+		console.error('Error in GET /api/profil:', error);
 		return NextResponse.json(
-			{ success: false, error: 'Internal server error' }, 
+			{ success: false, error: 'Internal server error' },
 			{ status: 500 }
 		);
+	}
+}
+
+// POST /api/profil - Create or update profil
+export async function POST(request: NextRequest) {
+	try {
+		const user = getUserFromRequest(request);
+		if (!user) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		const data = await request.json();
+
+		// Cek apakah `data` adalah array (untuk bulk update) atau objek tunggal
+		if (Array.isArray(data)) {
+			// Bulk update
+			for (const item of data) {
+				await upsertProfil(item);
+			}
+			return NextResponse.json({ success: true, message: 'Profil berhasil diperbarui' });
+		} else if (typeof data === 'object' && data !== null) {
+			// Single update/insert
+			const result = await upsertProfil(data);
+			return NextResponse.json({ success: true, message: 'Profil berhasil diperbarui' });
+		} else {
+			return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 });
+		}
+	} catch (error: any) {
+		console.error('Error in POST /api/profil:', error);
+		return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+	}
+}
+
+// PUT /api/profil - Update profil by jenis
+export async function PUT(request: NextRequest) {
+	try {
+		const user = getUserFromRequest(request);
+		if (!user) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		const { jenis, ...updateData } = await request.json();
+
+		if (!jenis) {
+			return NextResponse.json({ error: 'Jenis parameter is required' }, { status: 400 });
+		}
+
+		const success = await upsertProfil({ ...updateData, jenis });
+
+		if (!success) {
+			return NextResponse.json({ error: 'Failed to update profil' }, { status: 400 });
+		}
+
+		return NextResponse.json({
+			success: true,
+			message: `Profil ${jenis} berhasil diperbarui`
+		});
+	} catch (error: any) {
+		console.error('Error in PUT /api/profil:', error);
+		return NextResponse.json({ success: false, error: 'Internal server error' }, {
+			status: 500
+		});
+	}
+}
+
+// DELETE /api/profil - Delete profil by jenis
+export async function DELETE(request: NextRequest) {
+	try {
+		const user = getUserFromRequest(request);
+		if (!user) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		const { jenis } = await request.json();
+
+		if (!jenis) {
+			return NextResponse.json({ error: 'Jenis parameter is required' }, { status: 400 });
+		}
+
+		const success = await deleteProfilByJenis(jenis);
+
+		if (!success) {
+			return NextResponse.json({ error: 'Failed to delete profil' }, { status: 400 });
+		}
+
+		return NextResponse.json({
+			success: true,
+			message: `Profil ${jenis} berhasil dihapus`
+		});
+	} catch (error: any) {
+		console.error('Error in DELETE /api/profil:', error);
+		return NextResponse.json({ success: false, error: 'Internal server error' }, {
+			status:
+				500
+		});
 	}
 }

@@ -1,5 +1,5 @@
+// src/app/api/berita/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/libs/firebase-admin";
 import {
   tambahBerita,
   ambilBeritaPaginate,
@@ -10,61 +10,40 @@ import {
   ambilBeritaBySlug,
   ambilBeritaBySlugAdmin,
 } from "@/libs/api/berita";
+import { IBeritaUpdate } from "@/types/berita";
 
-// Verify Firebase ID Token using Firebase Admin SDK
-async function verifyFirebaseToken(request: NextRequest) {
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+// Middleware akan menangani autentikasi dan menambahkan info user ke header
+// Kita bisa mengaksesnya dari request.headers
+function getUserFromRequest(request: NextRequest) {
+  const userId = request.headers.get('x-user-id');
+  const userEmail = request.headers.get('x-user-email');
+  const userName = request.headers.get('x-user-name');
+
+  if (!userId || !userEmail) {
     return null;
   }
-  
-  const idToken = authHeader.substring(7);
-  
-  try {
-    // Verify the Firebase ID token using Admin SDK
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    return decodedToken;
-  } catch (error) {
-    console.error("Token verification error:", error);
-    return null;
-  }
+
+  return { userId, userEmail, userName };
 }
 
 // POST /api/berita - Create new berita
 export async function POST(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { 
-          error: "Unauthorized - Invalid or expired token",
-          details: "Please login again to get a valid token"
-        },
-        { status: 401 }
-      );
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const data = await request.json();
 
-    // Add metadata with user information from verified token
     const beritaData = {
       ...data,
-      createdAt: new Date().toISOString(),
-      createdBy: decodedToken.uid,
-      authorEmail: decodedToken.email || 'unknown@email.com',
-      authorName: decodedToken.name || decodedToken.email || 'Unknown User',
+      createdBy: user.userId,
+      authorName: user.userName,
+      authorEmail: user.userEmail,
     };
 
-    console.log("Creating berita with verified user:", {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      title: beritaData.judul
-    });
-
     const result = await tambahBerita(beritaData);
-    
-    console.log("Berita created successfully with ID:", result.id);
     
     return NextResponse.json({
       success: true,
@@ -74,40 +53,14 @@ export async function POST(request: NextRequest) {
     
   } catch (error: any) {
     console.error("Error creating berita:", error);
-    
-    // Handle specific Firebase errors
-    if (error.code === 'auth/id-token-expired') {
-      return NextResponse.json(
-        { 
-          error: "Token expired - Please login again",
-          code: "TOKEN_EXPIRED"
-        },
-        { status: 401 }
-      );
-    }
-    
-    if (error.code === 'auth/argument-error') {
-      return NextResponse.json(
-        { 
-          error: "Invalid token format",
-          code: "INVALID_TOKEN"
-        },
-        { status: 401 }
-      );
-    }
-    
     return NextResponse.json(
-      { 
-        error: error.message || "Failed to create berita",
-        details: error.toString(),
-        code: error.code || "UNKNOWN_ERROR"
-      },
+      { error: error.message || "Failed to create berita" },
       { status: 500 }
     );
   }
 }
 
-// GET /api/berita - Get paginated berita list (Public access)
+// GET /api/berita - Get berita list or single berita
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -121,34 +74,33 @@ export async function GET(request: NextRequest) {
       const berita = isAdmin 
         ? await ambilBeritaBySlugAdmin(slug)
         : await ambilBeritaBySlug(slug);
+      if (!berita) {
+        return NextResponse.json({ error: "Berita not found" }, { status: 404 });
+      }
       return NextResponse.json({ success: true, data: berita });
     }
 
     // If id is provided, get single berita by id
     const id = searchParams.get("id");
     if (id) {
-      const berita = await ambilBeritaById(id);
+      const berita = await ambilBeritaById(parseInt(id));
+      if (!berita) {
+        return NextResponse.json({ error: "Berita not found" }, { status: 404 });
+      }
+      console.log('Fetched berita by ID:', berita);
       return NextResponse.json({ success: true, data: berita });
     }
 
     // Otherwise return paginated list
     const result = isAdmin
-      ? await ambilBeritaPaginateAdmin(
-          pageSize,
-          cursor ? JSON.parse(cursor) : null
-        )
-      : await ambilBeritaPaginate(
-          pageSize,
-          cursor ? JSON.parse(cursor) : null
-        );
+      ? await ambilBeritaPaginateAdmin(pageSize, cursor)
+      : await ambilBeritaPaginate(pageSize, cursor);
+      
     return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
     console.error("Error fetching berita:", error);
     return NextResponse.json(
-      { 
-        success: false,
-        error: error.message || "Failed to fetch berita" 
-      },
+      { error: error.message || "Failed to fetch berita" },
       { status: 500 }
     );
   }
@@ -157,30 +109,32 @@ export async function GET(request: NextRequest) {
 // PUT /api/berita - Update berita
 export async function PUT(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: "Unauthorized - Invalid or expired token" },
-        { status: 401 }
-      );
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const data = await request.json();
+    // console.log(id)
+    console.log(data)
     const { id, ...updateData } = data;
 
     if (!id) {
+      console.log(id)
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    // Add metadata
-    const dataWithTimestamp = {
+    const dataWithTimestamp: IBeritaUpdate = {
       ...updateData,
-      updatedAt: new Date().toISOString(),
-      updatedBy: decodedToken.uid,
+      updatedBy: user.userId,
     };
 
-    await updateBerita(id, dataWithTimestamp);
+    const success = await updateBerita(parseInt(id), dataWithTimestamp);
+    
+    if (!success) {
+      return NextResponse.json({ error: "Failed to update berita or no changes made" }, { status: 400 });
+    }
+
     return NextResponse.json({ 
       success: true,
       message: "Berita updated successfully" 
@@ -197,13 +151,9 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/berita - Delete berita
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: "Unauthorized - Invalid or expired token" },
-        { status: 401 }
-      );
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -213,7 +163,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    await hapusBerita(id);
+    const success = await hapusBerita(parseInt(id));
+    
+    if (!success) {
+      return NextResponse.json({ error: "Berita not found" }, { status: 404 });
+    }
+
     return NextResponse.json({ 
       success: true,
       message: "Berita deleted successfully" 

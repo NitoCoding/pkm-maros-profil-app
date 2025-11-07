@@ -18,9 +18,7 @@ interface UseUmumByJenisResult {
 interface UseUmumMutationResult {
   loading: boolean
   error: string | null
-  updateUmum: (data: IUmum[]) => Promise<boolean>
   updateUmumByJenis: (jenis: IUmum['jenis'], data: Partial<IUmum>) => Promise<boolean>
-  deleteUmum: (jenis: IUmum['jenis']) => Promise<boolean>
 }
 
 // Hook untuk mengambil semua data umum
@@ -36,6 +34,7 @@ export function useUmum(): UseUmumResult {
 
       const response = await fetch('/api/umum')
       const result = await response.json()
+      // console.log('Fetched umum data:', result)
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch umum')
@@ -120,35 +119,6 @@ export function useUmumMutation(): UseUmumMutationResult {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const updateUmum = async (data: IUmum[]): Promise<boolean> => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const response = await fetch('/api/umum', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update umum')
-      }
-
-      return result.success
-    } catch (err: any) {
-      setError(err.message)
-      console.error('Error updating umum:', err)
-      return false
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const updateUmumByJenis = async (jenis: IUmum['jenis'], data: Partial<IUmum>): Promise<boolean> => {
     try {
       setLoading(true)
@@ -178,39 +148,13 @@ export function useUmumMutation(): UseUmumMutationResult {
     }
   }
 
-  const deleteUmum = async (jenis: IUmum['jenis']): Promise<boolean> => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const response = await fetch(`/api/umum?jenis=${encodeURIComponent(jenis)}`, {
-        method: 'DELETE',
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete umum')
-      }
-
-      return result.success
-    } catch (err: any) {
-      setError(err.message)
-      console.error('Error deleting umum:', err)
-      return false
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return {
     loading,
     error,
-    updateUmum,
-    updateUmumByJenis,
-    deleteUmum
+    updateUmumByJenis
   }
 }
+
 
 // Hook untuk mengambil umum spesifik
 export function useInfografi() {
@@ -227,4 +171,8 @@ export function useSaranaPendidikan() {
 
 export function useSaranaKesehatan() {
   return useUmumByJenis('saranaKesehatan')
+}
+
+export function useGeografi() {
+  return useUmumByJenis('geografi')
 }

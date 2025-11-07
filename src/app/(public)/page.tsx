@@ -10,11 +10,11 @@ import HomePageClient from './HomePageClient';
 
 export const metadata: Metadata = {
 	title: 'Beranda',
-	description: 'Website resmi Kelurahan Bilokka',
-	keywords: 'kelurahan, bilokka, kelurahan bilokka, pemerintah, desa',
+	description: 'Website resmi Desa Benteng Gajah',
+	keywords: 'kelurahan, bilokka, Desa Benteng Gajah, pemerintah, desa',
 	openGraph: {
-		title: 'Kelurahan Bilokka',
-		description: 'Website resmi Kelurahan Bilokka',
+		title: 'Desa Benteng Gajah',
+		description: 'Website resmi Desa Benteng Gajah',
 		type: 'website',
 	},
 }

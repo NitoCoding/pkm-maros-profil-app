@@ -27,10 +27,10 @@ export default function StructuredData({ type, data }: StructuredDataProps) {
 
 // Predefined structured data for common types
 export const organizationData = {
-  name: 'Kelurahan Bilokka',
+  name: 'Desa Benteng Gajah',
   url: 'https://www.kelurahanbilokka.my.id',
   logo: 'https://www.kelurahanbilokka.my.id/logo.png',
-  description: 'Website resmi Kelurahan Bilokka, menyediakan informasi dan layanan untuk masyarakat.',
+  description: 'Website resmi Desa Benteng Gajah, menyediakan informasi dan layanan untuk masyarakat.',
   address: {
     '@type': 'PostalAddress',
     addressLocality: 'Bilokka',
@@ -49,13 +49,13 @@ export const organizationData = {
 }
 
 export const websiteData = {
-  name: 'Kelurahan Bilokka',
+  name: 'Desa Benteng Gajah',
   url: 'https://www.kelurahanbilokka.my.id',
-  description: 'Website resmi Kelurahan Bilokka',
+  description: 'Website resmi Desa Benteng Gajah',
   inLanguage: 'id-ID',
   isAccessibleForFree: true,
   publisher: {
     '@type': 'Organization',
-    name: 'Kelurahan Bilokka',
+    name: 'Desa Benteng Gajah',
   },
 } 

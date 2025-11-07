@@ -1,50 +1,32 @@
+// src/types/dashboard.ts
+
 export interface IDashboard {
-  id: string;
+  id: number;
+  label: string;
   hero: {
-    image: string;
+    image: string | null;
     title: string;
-    subtitle: string;
+    subtitle: string | null;
   };
   lurah: {
-    name: string;
-    photo: string;
-    position: string;
+    name: string | null;
+    photo: string | null;
+    position: string | null;
   };
   workingHours: {
-    days: string;
-    hours: string;
-    note: string;
+    days: string | null;
+    hours: string | null;
+    note: string | null;
   };
   contact: {
-    phone: string;
-    email: string;
-    address: string;
-    whatsapp: string;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+    whatsapp: string | null;
   };
   createdAt: string;
   updatedAt: string;
 }
 
-export interface IDashboardUpdate {
-  hero?: {
-    image?: string;
-    title?: string;
-    subtitle?: string;
-  };
-  lurah?: {
-    name?: string;
-    photo?: string;
-    position?: string;
-  };
-  workingHours?: {
-    days?: string;
-    hours?: string;
-    note?: string;
-  };
-  contact?: {
-    phone?: string;
-    email?: string;
-    address?: string;
-    whatsapp?: string;
-  };
-} 
+// Tipe untuk data yang bisa di-update (semua field opsional)
+export type IDashboardUpdate = Partial<Pick<IDashboard, 'hero' | 'lurah' | 'workingHours' | 'contact'>>;

@@ -12,8 +12,8 @@ interface PageHeadProps {
 }
 
 export default function PageHead({
-	title = 'Kelurahan Bilokka',
-	description = 'Website resmi Kelurahan Bilokka',
+	title = 'Desa Benteng Gajah',
+	description = 'Website resmi Desa Benteng Gajah',
 	keywords = 'kelurahan, bilokka, pemerintah, desa',
 	ogTitle,
 	ogDescription,

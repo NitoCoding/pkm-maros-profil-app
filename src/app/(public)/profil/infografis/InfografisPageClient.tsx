@@ -6,12 +6,39 @@ import PageHead from "@/components/PageHead";
 import CardPenduduk from "@/components/CardPenduduk";
 import { Users, School, Heart, MapPin, BarChart3 } from "lucide-react";
 import { useInfografi, usePenduduk, useSaranaPendidikan, useSaranaKesehatan } from "@/hooks/useUmum";
+import { IUmum } from "@/types/umum";
 
 export default function InfografiPage() {
   const { umum: infografi, loading: loadingInfografi } = useInfografi();
   const { umum: penduduk, loading: loadingPenduduk } = usePenduduk();
   const { umum: saranaPendidikan, loading: loadingSaranaPendidikan } = useSaranaPendidikan();
   const { umum: saranaKesehatan, loading: loadingSaranaKesehatan } = useSaranaKesehatan();
+
+  // Helper function untuk mengurai data JSON
+  const parseUmumData = (umumData: IUmum | null) => {
+    if (!umumData) return null;
+    
+    // Buat salinan objek untuk tidak mengubah state asli
+    const parsedData = { ...umumData };
+    
+    // Jika data adalah string, urai menjadi objek
+    if (typeof parsedData.data === 'string') {
+      try {
+        parsedData.data = JSON.parse(parsedData.data);
+      } catch (e) {
+        console.error("Failed to parse data JSON:", e);
+        // parsedData.data = null; // Atur ke null jika gagal mengurai
+      }
+    }
+    
+    return parsedData;
+  };
+
+  // Gunakan fungsi pembantu untuk mengurai data
+  const parsedInfografi = parseUmumData(infografi);
+  const parsedPenduduk = parseUmumData(penduduk);
+  const parsedSaranaPendidikan = parseUmumData(saranaPendidikan);
+  const parsedSaranaKesehatan = parseUmumData(saranaKesehatan);
 
   const isLoading = loadingInfografi || loadingPenduduk || loadingSaranaPendidikan || loadingSaranaKesehatan;
 
@@ -25,14 +52,18 @@ export default function InfografiPage() {
 
   return (
     <>
+      <PageHead 
+        title="Infografi Desa Benteng Gajah" 
+        description="Data Demografi Desa Benteng Gajah" 
+      />
       <div className="pt-12 min-h-screen pb-3">
         <Main>
-          <div className='px-4 sm:px-6 lg:px-8'>
+          <div className='mt-5 px-4 sm:px-6 lg:px-8'>
             <div className='container mx-auto max-w-7xl'>
               <div className='decoration-2 text-green-700'>
                 <HeaderPage
                   title="Infografi"
-                  description="Data Demografi Kelurahan Bilokka"
+                  description="Data Demografi Desa Benteng Gajah"
                   customClass="mx-auto text-center"
                 />
               </div>
@@ -46,8 +77,17 @@ export default function InfografiPage() {
                       <h1 className="text-xl sm:text-2xl font-bold">Infografi</h1>
                     </div>
                     <p className="text-gray-600 mb-4">
-                      {infografi?.data.infografi?.deskripsi || 'Infografi yang menampilkan data demografi dan statistik Kelurahan Bilokka'}
+                      {parsedInfografi?.data?.infografi?.deskripsi || 'Infografi yang menampilkan data demografi dan statistik Desa Benteng Gajah'}
                     </p>
+                    {parsedInfografi?.data?.infografi?.gambar && (
+                      <div className="mt-4">
+                        <img 
+                          src={parsedInfografi.data.infografi.gambar} 
+                          alt="Infografi" 
+                          className="w-full max-w-md rounded-lg border border-gray-200"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -59,13 +99,13 @@ export default function InfografiPage() {
                       <h1 className="text-xl sm:text-2xl font-bold">Administrasi Penduduk</h1>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                      {penduduk?.data.penduduk && (
+                      {parsedPenduduk?.data?.penduduk && (
                         <>
-                          <CardPenduduk kategori="Total Penduduk" jumlah={penduduk.data.penduduk.total} color="blue" />
-                          <CardPenduduk kategori="Laki-laki" jumlah={penduduk.data.penduduk.lakiLaki} color="green" />
-                          <CardPenduduk kategori="Perempuan" jumlah={penduduk.data.penduduk.perempuan} color="pink" />
-                          <CardPenduduk kategori="Kartu Keluarga" jumlah={penduduk.data.penduduk.kk} color="purple" />
-                          <CardPenduduk kategori="Wajib Pilih" jumlah={penduduk.data.penduduk.wajibPilih} color="orange" />
+                          <CardPenduduk kategori="Total Penduduk" jumlah={parsedPenduduk.data.penduduk.total} color="blue" />
+                          <CardPenduduk kategori="Laki-laki" jumlah={parsedPenduduk.data.penduduk.lakiLaki} color="green" />
+                          <CardPenduduk kategori="Perempuan" jumlah={parsedPenduduk.data.penduduk.perempuan} color="pink" />
+                          <CardPenduduk kategori="Kartu Keluarga" jumlah={parsedPenduduk.data.penduduk.kk} color="purple" />
+                          <CardPenduduk kategori="Wajib Pilih" jumlah={parsedPenduduk.data.penduduk.wajibPilih} color="orange" />
                         </>
                       )}
                     </div>
@@ -80,12 +120,12 @@ export default function InfografiPage() {
                       <h1 className="text-xl sm:text-2xl font-bold">Sarana Pendidikan</h1>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {saranaPendidikan?.data.saranaPendidikan && (
+                      {parsedSaranaPendidikan?.data?.saranaPendidikan && (
                         <>
-                          <CardPenduduk kategori="TK/PAUD" jumlah={saranaPendidikan.data.saranaPendidikan.tk} color="orange" />
-                          <CardPenduduk kategori="SD/MI" jumlah={saranaPendidikan.data.saranaPendidikan.sd} color="yellow" />
-                          <CardPenduduk kategori="SMP/MTs" jumlah={saranaPendidikan.data.saranaPendidikan.smp} color="blue" />
-                          <CardPenduduk kategori="SMA/MA" jumlah={saranaPendidikan.data.saranaPendidikan.sma} color="green" />
+                          <CardPenduduk kategori="TK/PAUD" jumlah={parsedSaranaPendidikan.data.saranaPendidikan.tk} color="orange" />
+                          <CardPenduduk kategori="SD/MI" jumlah={parsedSaranaPendidikan.data.saranaPendidikan.sd} color="yellow" />
+                          <CardPenduduk kategori="SMP/MTs" jumlah={parsedSaranaPendidikan.data.saranaPendidikan.smp} color="blue" />
+                          <CardPenduduk kategori="SMA/MA" jumlah={parsedSaranaPendidikan.data.saranaPendidikan.sma} color="green" />
                         </>
                       )}
                     </div>
@@ -100,12 +140,12 @@ export default function InfografiPage() {
                       <h1 className="text-xl sm:text-2xl font-bold">Sarana Kesehatan</h1>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {saranaKesehatan?.data.saranaKesehatan && (
+                      {parsedSaranaKesehatan?.data?.saranaKesehatan && (
                         <>
-                          <CardPenduduk kategori="Puskesmas" jumlah={saranaKesehatan.data.saranaKesehatan.puskesmas} color="red" />
-                          <CardPenduduk kategori="Pustu" jumlah={saranaKesehatan.data.saranaKesehatan.pustu} color="pink" />
-                          <CardPenduduk kategori="Posyandu" jumlah={saranaKesehatan.data.saranaKesehatan.posyandu} color="purple" />
-                          <CardPenduduk kategori="Puskesdes" jumlah={saranaKesehatan.data.saranaKesehatan.puskesdes} color="indigo" />
+                          <CardPenduduk kategori="Puskesmas" jumlah={parsedSaranaKesehatan.data.saranaKesehatan.puskesmas} color="red" />
+                          <CardPenduduk kategori="Pustu" jumlah={parsedSaranaKesehatan.data.saranaKesehatan.pustu} color="pink" />
+                          <CardPenduduk kategori="Posyandu" jumlah={parsedSaranaKesehatan.data.saranaKesehatan.posyandu} color="purple" />
+                          <CardPenduduk kategori="Puskesdes" jumlah={parsedSaranaKesehatan.data.saranaKesehatan.puskesdes} color="indigo" />
                         </>
                       )}
                     </div>

@@ -1,5 +1,5 @@
+// src/app/api/galeri/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/libs/firebase-admin";
 import {
   tambahGaleri,
   ambilGaleriPaginate,
@@ -7,60 +7,45 @@ import {
   updateGaleri,
   hapusGaleri,
 } from "@/libs/api/galeri";
+import { IGaleriUpdate } from "@/types/galeri";
+import { ta } from "zod/v4/locales";
 
-// Verify Firebase ID Token using Firebase Admin SDK
-async function verifyFirebaseToken(request: NextRequest) {
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+// Middleware akan menangani autentikasi dan menambahkan info user ke header
+function getUserFromRequest(request: NextRequest) {
+  const userId = request.headers.get('x-user-id');
+  const userEmail = request.headers.get('x-user-email');
+  const userName = request.headers.get('x-user-name');
+
+  if (!userId || !userEmail) {
     return null;
   }
-  
-  const idToken = authHeader.substring(7);
-  
-  try {
-    // Verify the Firebase ID token using Admin SDK
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    return decodedToken;
-  } catch (error) {
-    console.error("Token verification error:", error);
-    return null;
-  }
+
+  return { userId, userEmail, userName };
 }
 
 // POST /api/galeri - Create new galeri
 export async function POST(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { 
-          error: "Unauthorized - Invalid or expired token",
-          details: "Please login again to get a valid token"
-        },
-        { status: 401 }
-      );
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const data = await request.json();
 
-    // Add metadata with user information from verified token
     const galeriData = {
-      ...data,
-      createdAt: new Date().toISOString(),
-      createdBy: decodedToken.uid,
-      authorEmail: decodedToken.email || 'unknown@email.com',
+      caption: data.caption,
+      alt: data.alt,
+      src: data.src,
+      tanggal: data.tanggal,
+      tags: data.tags,
+      createdBy: user.userId,
+      authorName: user.userName,
+      authorEmail: user.userEmail,
+      updatedBy: user.userId,
     };
 
-    console.log("Creating galeri with verified user:", {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      caption: galeriData.caption
-    });
-
     const result = await tambahGaleri(galeriData);
-    
-    console.log("Galeri created successfully with ID:", result.id);
     
     return NextResponse.json({
       success: true,
@@ -70,40 +55,14 @@ export async function POST(request: NextRequest) {
     
   } catch (error: any) {
     console.error("Error creating galeri:", error);
-    
-    // Handle specific Firebase errors
-    if (error.code === 'auth/id-token-expired') {
-      return NextResponse.json(
-        { 
-          error: "Token expired - Please login again",
-          code: "TOKEN_EXPIRED"
-        },
-        { status: 401 }
-      );
-    }
-    
-    if (error.code === 'auth/argument-error') {
-      return NextResponse.json(
-        { 
-          error: "Invalid token format",
-          code: "INVALID_TOKEN"
-        },
-        { status: 401 }
-      );
-    }
-    
     return NextResponse.json(
-      { 
-        error: error.message || "Failed to create galeri",
-        details: error.toString(),
-        code: error.code || "UNKNOWN_ERROR"
-      },
+      { error: error.message || "Failed to create galeri" },
       { status: 500 }
     );
   }
 }
 
-// GET /api/galeri - Get paginated galeri list (Public access)
+// GET /api/galeri - Get galeri list or single galeri
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -114,22 +73,20 @@ export async function GET(request: NextRequest) {
     const id = searchParams.get("id");
     if (id) {
       const galeri = await ambilGaleriById(id);
+      if (!galeri) {
+        return NextResponse.json({ error: "Galeri not found" }, { status: 404 });
+      }
       return NextResponse.json({ success: true, data: galeri });
     }
 
     // Otherwise return paginated list
-    const result = await ambilGaleriPaginate(
-      pageSize,
-      cursor ? JSON.parse(cursor) : null
-    );
+    const result = await ambilGaleriPaginate(pageSize, cursor);
+      
     return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
     console.error("Error fetching galeri:", error);
     return NextResponse.json(
-      { 
-        success: false,
-        error: error.message || "Failed to fetch galeri" 
-      },
+      { error: error.message || "Failed to fetch galeri" },
       { status: 500 }
     );
   }
@@ -138,13 +95,9 @@ export async function GET(request: NextRequest) {
 // PUT /api/galeri - Update galeri
 export async function PUT(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: "Unauthorized - Invalid or expired token" },
-        { status: 401 }
-      );
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const data = await request.json();
@@ -154,14 +107,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    // Add metadata
-    const dataWithTimestamp = {
+    const dataWithTimestamp: IGaleriUpdate = {
       ...updateData,
-      updatedAt: new Date().toISOString(),
-      updatedBy: decodedToken.uid,
+      updatedBy: user.userId,
     };
 
-    await updateGaleri(id, dataWithTimestamp);
+    const success = await updateGaleri(id, dataWithTimestamp);
+    
+    if (!success) {
+      return NextResponse.json({ error: "Failed to update galeri or no changes made" }, { status: 400 });
+    }
+
     return NextResponse.json({ 
       success: true,
       message: "Galeri updated successfully" 
@@ -178,13 +134,9 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/galeri - Delete galeri
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: "Unauthorized - Invalid or expired token" },
-        { status: 401 }
-      );
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -194,7 +146,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    await hapusGaleri(id);
+    const success = await hapusGaleri(id);
+    
+    if (!success) {
+      return NextResponse.json({ error: "Galeri not found" }, { status: 404 });
+    }
+
     return NextResponse.json({ 
       success: true,
       message: "Galeri deleted successfully" 
@@ -206,4 +163,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

@@ -4,21 +4,40 @@ import { useEffect } from 'react'
 import Sidebar from '@/components/admin/Sidebar'
 import Topbar from '@/components/admin/Topbar'
 import { Toaster } from 'react-hot-toast'
-import { setupAuthListener, isAuthenticated } from '@/libs/auth/token'
-import { useRouter } from 'next/navigation'
+import { setupAuthListener, isAuthenticated, logout } from '@/libs/auth/token'
+import { usePathname, useRouter } from 'next/navigation'
 
-export default function AdminLayoutClient({children}: {children: React.ReactNode}) {
+export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
 	const router = useRouter()
+	const pathname = usePathname()
 
 	useEffect(() => {
 		// Setup auth listener for automatic token refresh
-		setupAuthListener()
+		const cleanup = setupAuthListener()
 
 		// Check if user is authenticated on mount
-		if (!isAuthenticated()) {
-			router.push('/login')
+		const checkAuth = async () => {
+			// Tambahkan log untuk debugging
+			console.log('AdminLayout: Checking authentication...');
+
+			const authenticated = await isAuthenticated()
+
+			console.log('AdminLayout: Is authenticated?', authenticated);
+
+			if (!authenticated) {
+				console.log(`AdminLayout: Not authenticated, redirecting to login with redirect=${pathname}`);
+				const loginUrl = `/login?redirect=${encodeURIComponent(pathname)}`
+				router.push(loginUrl)
+			}
 		}
+
+		checkAuth();
+
+		// Cleanup interval on unmount
+		return cleanup
 	}, [router])
+
+
 
 	return (
 		<div className='flex h-screen bg-gray-100'>
@@ -32,4 +51,4 @@ export default function AdminLayoutClient({children}: {children: React.ReactNode
 			</div>
 		</div>
 	)
-} 
+}

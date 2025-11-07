@@ -9,13 +9,12 @@ import Link from 'next/link'
 import {useState, useCallback, useEffect, use} from 'react'
 import {useDropzone} from 'react-dropzone'
 import { toast } from 'react-hot-toast'
-import { makeAuthenticatedRequest } from '@/libs/auth/token'
 import { IPegawai } from '@/types/pegawai'
 
 const pegawaiSchema = z.object({
 	nama: z.string().min(3, 'Nama wajib diisi'),
 	jabatan: z.string().min(3, 'Jabatan wajib diisi'),
-	foto: z.string().url('URL foto tidak valid'),
+	fotoUrl: z.string().url('URL foto tidak valid'),
 	urutanTampil: z.string().min(1, 'Urutan tampil wajib diisi'),
 })
 
@@ -66,7 +65,7 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 		defaultValues: {
 			nama: '',
 			jabatan: '',
-			foto: '',
+			fotoUrl: '',
 			urutanTampil: '',
 		},
 	})
@@ -77,7 +76,7 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 			try {
 				setFetchingData(true)
 				
-				const response = await makeAuthenticatedRequest(`/api/pegawai?id=${resolvedParams.id}`)
+				const response = await fetch(`/api/pegawai?id=${resolvedParams.id}`)
 				const result = await response.json()
 
 				if (!response.ok) {
@@ -89,11 +88,11 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 				// Set form values
 				setValue('nama', pegawaiData.nama)
 				setValue('jabatan', pegawaiData.jabatan)
-				setValue('foto', pegawaiData.foto)
+				setValue('fotoUrl', pegawaiData.fotoUrl)
 				setValue('urutanTampil', pegawaiData.urutanTampil?.toString() || '1')
 				
 				// Set preview URL
-				setPreviewUrl(pegawaiData.foto)
+				setPreviewUrl(pegawaiData.fotoUrl)
 				
 			} catch (error: any) {
 				console.error('Error fetching pegawai data:', error)
@@ -129,12 +128,12 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 			
 			try {
 				const url = await uploadImage(acceptedFiles[0])
-				setValue('foto', url, {shouldValidate: true})
+				setValue('fotoUrl', url, {shouldValidate: true})
 				toast.success('Gambar berhasil diupload')
 			} catch (error) {
 				// Error already handled in uploadImage function
 				// Restore previous preview if upload fails
-				const currentFoto = watch('foto')
+				const currentFoto = watch('fotoUrl')
 				setPreviewUrl(currentFoto || null)
 			} finally {
 				setUploading(false)
@@ -150,7 +149,8 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 		maxSize: 5 * 1024 * 1024, // 5MB
 	})
 
-	const gambarUrl = watch('foto')
+	const gambarUrl = watch('fotoUrl')
+	// const fotoUrl = gambarUrl || previewUrl
 
 	const onSubmit = async (data: PegawaiFormValues) => {
 		try {
@@ -164,7 +164,7 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 			console.log('📤 Sending update payload:', payload)
 
 			// Use makeAuthenticatedRequest for automatic token refresh
-			const response = await makeAuthenticatedRequest('/api/pegawai', {
+			const response = await fetch('/api/pegawai', {
 				method: 'PUT',
 				body: JSON.stringify(payload),
 			})
@@ -220,14 +220,14 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 				onSubmit={handleSubmit(onSubmit)}
 				className='bg-white rounded-xl border border-gray-200 shadow px-6 py-8 space-y-5'
 			>
-				<div className='flex items-center gap-2 mb-6'>
+				<div className='flex items-center mb-8'>
 					<Link
-						href='/admin/pegawai'
-						className='flex items-center gap-1 text-sm text-blue-600 hover:underline'
-					>
-						<ArrowLeft size={18} />
-						Kembali
-					</Link>
+            href='/admin/pegawai'
+            className='flex items-center text-gray-600 hover:text-gray-900 mb-4'
+          >
+            <ArrowLeft size={18} />
+            Kembali
+          </Link>
 				</div>
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
 					<div className='space-y-4'>
@@ -319,9 +319,9 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 								</div>
 							)}
 						</div>
-						<input {...register('foto')} type='hidden' />
-						{errors.foto && (
-							<div className='text-red-600 text-sm'>{errors.foto.message}</div>
+						<input {...register('fotoUrl')} type='hidden' />
+						{errors.fotoUrl && (
+							<div className='text-red-600 text-sm'>{errors.fotoUrl.message}</div>
 						)}
 					</div>
 				</div>

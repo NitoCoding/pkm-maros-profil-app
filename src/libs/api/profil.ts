@@ -1,116 +1,96 @@
-import { db } from "@/libs/firebase";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { IProfil } from "@/types/profil";
+// src/libs/profil.ts
+import { executeQuery, executeSingleQuery } from '@/libs/database';
+import { IProfil } from '@/types/profil';
 
-const docRef = doc(db, "profil_kelurahan", "default");
+// Mengambil semua profil
+export async function getProfilKelurahan(): Promise<IProfil[]> {
+  const results = await executeQuery<any>(`
+    SELECT id, jenis, judul, isi, gambar_url as gambarUrl, video_url as videoUrl, created_at as createdAt, updated_at as updatedAt
+    FROM profil_kelurahan
+    ORDER BY jenis, urutan_tampil ASC, created_at DESC
+  `);
 
-export async function getProfilKelurahan(): Promise<IProfil[] | null> {
-	const docSnap = await getDoc(docRef);
-	if (!docSnap.exists()) return null;
-	
-	const data = docSnap.data();
-	// Jika data adalah array, return langsung
-	if (Array.isArray(data)) {
-		return data as IProfil[];
-	}
-	// Jika data adalah object dengan field 'data', return data.data
-	if (data && typeof data === 'object' && 'data' in data) {
-		return data.data as IProfil[];
-	}
-	// Fallback: return null
-	return null;
+  return results.map(row => ({
+    ...row,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  }));
 }
 
-export async function updateProfilKelurahan(data: IProfil[]): Promise<void> {
-	await setDoc(docRef, { data }, { merge: true });
-}
-
-// Fungsi untuk mendapatkan profil berdasarkan jenis
+// Mengambil profil berdasarkan jenis
 export async function getProfilByJenis(jenis: IProfil['jenis']): Promise<IProfil | null> {
-	const data = await getProfilKelurahan();
-	if (!data) return null;
-	
-	return data.find(item => item.jenis === jenis) || null;
+  const result = await executeSingleQuery<any>(`
+    SELECT id, jenis, judul, isi, gambar_url as gambarUrl, video_url as videoUrl, created_at as createdAt, updated_at as updatedAt
+    FROM profil_kelurahan
+    WHERE jenis = ?
+  `, [jenis]);
+
+  if (!result) return null;
+
+  return {
+    ...result,
+    createdAt: result.createdAt.toISOString(),
+    updatedAt: result.updatedAt.toISOString(),
+  };
 }
 
-// Fungsi untuk update profil berdasarkan jenis
-export async function updateProfilByJenis(jenis: IProfil['jenis'], updateData: Partial<IProfil>): Promise<void> {
-	const currentData = await getProfilKelurahan() || [];
-	
-	// Cari item yang sudah ada
-	const existingIndex = currentData.findIndex(item => item.jenis === jenis);
-	
-	if (existingIndex >= 0) {
-		// Update item yang sudah ada
-		currentData[existingIndex] = {
-			...currentData[existingIndex],
-			...updateData,
-			updatedAt: new Date().toISOString()
-		};
-	} else {
-		// Tambah item baru jika belum ada
-		const newItem: IProfil = {
-			id: jenis, // Gunakan jenis sebagai ID
-			jenis,
-			...updateData,
-			updatedAt: new Date().toISOString()
-		} as IProfil;
-		currentData.push(newItem);
-	}
-	
-	// Simpan kembali ke Firestore
-	await setDoc(docRef, { data: currentData }, { merge: true });
+// Menambah atau memperbarui profil
+export async function upsertProfil(data: Omit<IProfil, 'id' | 'createdAt' | 'updatedAt'>): Promise<boolean> {
+  try {
+    // Cek apakah data dengan jenis ini sudah ada
+    const existing = await getProfilByJenis(data.jenis);
+    
+    if (existing) {
+      // Update data yang sudah ada
+      const fields: string[] = [];
+      const values: any[] = [];
+
+      if (data.judul !== undefined) { fields.push('judul = ?'); values.push(data.judul); }
+      if (data.isi !== undefined) { fields.push('isi = ?'); values.push(data.isi); }
+      if (data.gambarUrl !== undefined) { fields.push('gambar_url = ?'); values.push(data.gambarUrl); }
+      if (data.videoUrl !== undefined) { fields.push('video_url = ?'); values.push(data.videoUrl); }
+      
+      if (fields.length > 0) {
+        fields.push('updated_at = CURRENT_TIMESTAMP');
+        values.push(data.jenis);
+        
+        await executeQuery(`
+          UPDATE profil_kelurahan 
+          SET ${fields.join(', ')}
+          WHERE jenis = ?
+        `, values);
+      }
+    } else {
+      // Insert data baru
+      const fields: string[] = ['jenis'];
+      const placeholders: string[] = ['?'];
+      const values: any[] = [data.jenis];
+
+      if (data.judul !== undefined) { fields.push('judul'); placeholders.push('?'); values.push(data.judul); }
+      if (data.isi !== undefined) { fields.push('isi'); placeholders.push('?'); values.push(data.isi); }
+      if (data.gambarUrl !== undefined) { fields.push('gambar_url'); placeholders.push('?'); values.push(data.gambarUrl); }
+      if (data.videoUrl !== undefined) { fields.push('video_url'); placeholders.push('?'); values.push(data.videoUrl); }
+      
+      await executeQuery(`
+        INSERT INTO profil_kelurahan (${fields.join(', ')})
+        VALUES (${placeholders.join(', ')})
+      `, values);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in upsertProfil:', error);
+    return false;
+  }
 }
 
-// Fungsi untuk inisialisasi data profil default
-export async function initializeProfilData(): Promise<void> {
-	const currentData = await getProfilKelurahan();
-	if (currentData && currentData.length > 0) return; // Sudah ada data
-	
-	const defaultData: IProfil[] = [
-		{
-			id: 'sambutan',
-			jenis: 'sambutan',
-			judul: 'Sambutan Lurah',
-			isi: 'Sambutan dari Lurah Kelurahan Bilokka...',
-			updatedAt: new Date().toISOString()
-		},
-		{
-			id: 'sejarah',
-			jenis: 'sejarah',
-			judul: 'Sejarah Singkat',
-			isi: 'Kelurahan Bilokka berdiri pada tahun 1980...',
-			updatedAt: new Date().toISOString()
-		},
-		{
-			id: 'visi',
-			jenis: 'visi',
-			judul: 'Visi',
-			isi: 'Menjadi kelurahan terdepan dalam inovasi dan keberlanjutan...',
-			updatedAt: new Date().toISOString()
-		},
-		{
-			id: 'misi',
-			jenis: 'misi',
-			judul: 'Misi',
-			isi: '1. Meningkatkan kualitas hidup melalui teknologi ramah lingkungan.\n2. Memberdayakan komunitas lokal dengan pendidikan dan pelatihan.\n3. Membangun kemitraan strategis untuk dampak global.',
-			updatedAt: new Date().toISOString()
-		},
-		{
-			id: 'struktur',
-			jenis: 'struktur',
-			judul: 'Struktur Organisasi',
-			gambar: '',
-			updatedAt: new Date().toISOString()
-		},
-		{
-			id: 'video',
-			jenis: 'video',
-			judul: 'Video',
-			videoUrl: '',
-			updatedAt: new Date().toISOString()
-		}
-	];
-	
-	await setDoc(docRef, { data: defaultData }, { merge: true });
+// Menghapus profil berdasarkan jenis
+export async function deleteProfilByJenis(jenis: IProfil['jenis']): Promise<boolean> {
+  try {
+    const [result] = await executeQuery('DELETE FROM profil_kelurahan WHERE jenis = ?', [jenis]);
+    return (result as any).affectedRows > 0;
+  } catch (error) {
+    console.error('Error in deleteProfilByJenis:', error);
+    return false;
+  }
 }

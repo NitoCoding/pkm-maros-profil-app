@@ -13,7 +13,7 @@ export default function Galeri() {
 		return (
 			<section className='py-16 bg-gray-50'>
 				<div className='container mx-auto px-4'>
-					<HeaderPage title='Galeri Terbaru' description='Dokumentasi kegiatan terkini di Kelurahan Bilokka' />
+					<HeaderPage title='Galeri Terbaru' description='Dokumentasi kegiatan terkini di Desa Benteng Gajah' />
 					<div className='flex justify-center items-center py-12'>
 						<Loader2 className='animate-spin h-8 w-8 text-blue-600' />
 						<span className='ml-2 text-gray-600'>Memuat galeri...</span>
@@ -27,7 +27,7 @@ export default function Galeri() {
 		return (
 			<section className='px-4 sm:px-6 lg:px-8 mb-4'>
 				<div className='container mx-auto px-4'>
-					<HeaderPage title='Galeri Terbaru' description='Dokumentasi kegiatan terkini di Kelurahan Bilokka' />
+					<HeaderPage title='Galeri Terbaru' description='Dokumentasi kegiatan terkini di Desa Benteng Gajah' />
 					<div className='text-center py-12'>
 						<p className='text-red-600 mb-4'>Gagal memuat galeri: {error}</p>
 						<button 
@@ -45,7 +45,7 @@ export default function Galeri() {
 	return (
 		<section className='px-4 sm:px-6 lg:px-8 mb-4'>
 			<div className='container mx-auto px-4'>
-				<HeaderPage title='Galeri Terbaru' description='Dokumentasi kegiatan terkini di Kelurahan Bilokka' />
+				<HeaderPage title='Galeri Terbaru' description='Dokumentasi kegiatan terkini di Desa Benteng Gajah' />
 				
 				{galeri.length === 0 ? (
 					<div className='text-center py-12'>

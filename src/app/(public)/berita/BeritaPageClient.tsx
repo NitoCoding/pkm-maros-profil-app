@@ -12,11 +12,11 @@ export default function BeritaPageClient() {
 	return (
 		<div className='pt-12 min-h-screen pb-3'>
 			<Main>
-				<div className='px-4 sm:px-6 lg:px-8'>
+				<div className='mt-5 px-4 sm:px-6 lg:px-8'>
 					<div className='container mx-auto max-w-7xl'>
 						<HeaderPage
 							title='Berita'
-							description='Informasi terkini seputar Kelurahan Bilokka'
+							description='Informasi terkini seputar Desa Benteng Gajah'
 							customClass='mx-auto text-center'
 						/>
 

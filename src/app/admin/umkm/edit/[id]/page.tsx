@@ -1,33 +1,48 @@
+// src/app/admin/umkm/edit/[id]/page.tsx
 'use client'
 
-import {useForm} from 'react-hook-form'
-import {zodResolver} from '@hookform/resolvers/zod'
-import {z} from 'zod'
-import {useRouter} from 'next/navigation'
-import {ArrowLeft, Loader2, MapPin, ExternalLink} from 'lucide-react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useRouter, useParams } from 'next/navigation'
+import { ArrowLeft, Loader2, MapPin, ExternalLink, Plus, X } from 'lucide-react'
 import Link from 'next/link'
-import {useState, useCallback, useEffect, use} from 'react'
-import {useDropzone} from 'react-dropzone'
+import { useState, useCallback, useEffect } from 'react'
+import { useDropzone } from 'react-dropzone'
 import { toast } from 'react-hot-toast'
-import { makeAuthenticatedRequest } from '@/libs/auth/token'
-import { IUMKM } from '@/types/umkm'
+import Image from 'next/image'
+import { IProdukUMKM } from '@/types/umkm'
+import { useProdukUMKMById } from '@/hooks/useProdukUMKM'
 
-const umkmSchema = z.object({
-	nama: z.string().min(3, 'Nama UMKM wajib diisi'),
-	kategori: z.string().min(2, 'Kategori wajib diisi'),
+// Schema sama dengan halaman tambah
+const produkSchema = z.object({
+	namaProduk: z.string().min(3, 'Nama produk wajib diisi'),
+	namaUMKM: z.string().min(3, 'Nama UMKM wajib diisi'),
+	kategori: z.string().min(1, 'Kategori wajib diisi'),
 	deskripsi: z.string().min(10, 'Deskripsi minimal 10 karakter'),
-	gambar: z.string().url('URL gambar tidak valid'),
-	startPrice: z.string().min(1, 'Harga awal wajib diisi'),
-	endPrice: z.string().min(1, 'Harga akhir wajib diisi'),
-	telepon: z.string().min(10, 'Nomor telepon minimal 10 digit'),
-	alamat: z.string().min(10, 'Alamat minimal 10 karakter'),
-	googleMapsLink: z.string().url('Link Google Maps tidak valid').optional().or(z.literal('')),
-})
+	gambar: z.string().url('URL gambar tidak valid').optional().or(z.literal('')),
+	harga: z.object({
+		awal: z.preprocess((val) => val === '' ? undefined : val, z.coerce.number().min(0, 'Harga awal harus berupa angka positif')),
+		akhir: z.preprocess((val) => val === '' ? undefined : val, z.coerce.number().min(0, 'Harga akhir harus berupa angka positif')).optional(),
+	}),
+	kontak: z.object({
+		telepon: z.string().min(10, 'Nomor telepon minimal 10 digit'),
+		whatsapp: z.string().min(10, 'Nomor WhatsApp minimal 10 digit'),
+	}),
+	lokasi: z.object({
+		alamat: z.string().min(10, 'Alamat minimal 10 karakter'),
+		latitude: z.preprocess((val) => val === '' ? undefined : val, z.coerce.number()),
+		longitude: z.preprocess((val) => val === '' ? undefined : val, z.coerce.number()),
+		googleMapsLink: z.string().url().optional().or(z.literal('')),
+	}),
+	linkPenjualan: z.record(z.string(), z.string().url()).optional(),
+});
 
-type UmkmFormValues = z.infer<typeof umkmSchema>
+type ProdukFormValues = z.infer<typeof produkSchema>;
 
-// Upload image to Cloudinary
+// Fungsi upload gambar sama dengan halaman tambah
 const uploadImage = async (file: File): Promise<string> => {
+	// ... (salin fungsi uploadImage dari halaman tambah)
 	try {
 		const formData = new FormData()
 		formData.append('file', file)
@@ -50,482 +65,316 @@ const uploadImage = async (file: File): Promise<string> => {
 		console.error('Error uploading image:', error)
 		throw error
 	}
-}
+};
 
-// Extract coordinates from Google Maps link
-const extractCoordinatesFromLink = (link: string): { latitude: string; longitude: string } => {
-	try {
-		// Handle different Google Maps link formats
-		const url = new URL(link);
-		
-		// Format: https://maps.google.com/?q=lat,lng
-		if (url.searchParams.has('q')) {
-			const coords = url.searchParams.get('q')?.split(',');
-			if (coords && coords.length === 2) {
-				return {
-					latitude: coords[0].trim(),
-					longitude: coords[1].trim()
-				};
-			}
-		}
-		
-		// Format: https://www.google.com/maps/place/.../@lat,lng,zoom
-		const pathParts = url.pathname.split('/');
-		const placeIndex = pathParts.findIndex(part => part === 'place');
-		if (placeIndex !== -1 && placeIndex + 1 < pathParts.length) {
-			const coordsPart = pathParts[placeIndex + 1];
-			const coordsMatch = coordsPart.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-			if (coordsMatch) {
-				return {
-					latitude: coordsMatch[1],
-					longitude: coordsMatch[2]
-				};
-			}
-		}
-		
-		// Format: https://www.google.com/maps/@lat,lng,zoom
-		const coordsMatch = url.pathname.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-		if (coordsMatch) {
-			return {
-				latitude: coordsMatch[1],
-				longitude: coordsMatch[2]
-			};
-		}
-		
-		return { latitude: '0', longitude: '0' };
-	} catch (error) {
-		console.error('Error extracting coordinates:', error);
-		return { latitude: '0', longitude: '0' };
-	}
-}
 
-export default function EditUmkmPage({ params }: { params: Promise<{ id: string }> }) {
-	const resolvedParams = use(params)
-	const router = useRouter()
-	const [loading, setLoading] = useState(false)
-	const [uploading, setUploading] = useState(false)
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-	const [fetchingData, setFetchingData] = useState(true)
+export default function EditProdukUmkmPage() {
+	const router = useRouter();
+	const params = useParams();
+	const id = params.id as string;
+
+	const { umkm, loading, error } = useProdukUMKMById(id);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [uploading, setUploading] = useState(false);
 
 	const {
 		register,
 		handleSubmit,
+		control,
 		setValue,
 		watch,
-		formState: {errors},
-	} = useForm<UmkmFormValues>({
-		resolver: zodResolver(umkmSchema),
+		reset,
+		formState: { errors },
+	} = useForm({
+		resolver: zodResolver(produkSchema),
 		defaultValues: {
-			nama: '',
+			namaProduk: '',
+			namaUMKM: '',
 			kategori: '',
 			deskripsi: '',
 			gambar: '',
-			startPrice: '',
-			endPrice: '',
-			telepon: '',
-			alamat: '',
-			googleMapsLink: '',
+			harga: { awal: 0, akhir: 0 },
+			kontak: { telepon: '', whatsapp: '' },
+			lokasi: { alamat: '', latitude: 0, longitude: 0, googleMapsLink: '' },
+			linkPenjualan: {},
 		},
-	})
 
-	// Fetch UMKM data by ID
+	});
+
+	// Efek untuk mengisi form saat data produk berhasil diambil
 	useEffect(() => {
-		const fetchUmkmData = async () => {
-			try {
-				setFetchingData(true)
-				
-				const response = await makeAuthenticatedRequest(`/api/umkm?id=${resolvedParams.id}`)
-				const result = await response.json()
-
-				if (!response.ok) {
-					throw new Error(result.error || 'Gagal memuat data UMKM')
-				}
-
-				const umkmData: IUMKM = result.data
-				
-				// Set form values
-				setValue('nama', umkmData.nama)
-				setValue('kategori', umkmData.kategori)
-				setValue('deskripsi', umkmData.deskripsi)
-				setValue('gambar', umkmData.gambar)
-				setValue('startPrice', umkmData.startPrice.toString())
-				setValue('endPrice', umkmData.endPrice.toString())
-				setValue('telepon', umkmData.telepon)
-				setValue('alamat', umkmData.lokasi.alamat)
-				setValue('googleMapsLink', umkmData.lokasi.googleMapsLink || '')
-				
-				// Set preview URL
-				setPreviewUrl(umkmData.gambar)
-				
-			} catch (error: any) {
-				console.error('Error fetching UMKM data:', error)
-				
-				// Don't show error toast if user was redirected to login
-				if (error.message !== 'NO_TOKEN' && 
-					error.message !== 'TOKEN_REFRESH_FAILED' && 
-					error.message !== 'TOKEN_STILL_INVALID') {
-					toast.error(error.message || 'Gagal memuat data UMKM')
-				}
-				
-				// Redirect back to UMKM list on error
-				router.push('/admin/umkm')
-				
-			} finally {
-				setFetchingData(false)
-			}
+		if (umkm) {
+			reset({
+				namaProduk: umkm.namaProduk,
+				namaUMKM: umkm.namaUMKM,
+				kategori: umkm.kategori,
+				deskripsi: umkm.deskripsi,
+				gambar: umkm.gambar,
+				harga: {
+					awal: umkm.harga.awal.toString() || 0,
+					akhir: umkm.harga.akhir?.toString() || 0,
+				},
+				kontak: {
+					telepon: umkm.kontak.telepon,
+					whatsapp: umkm.kontak.whatsapp,
+				},
+				lokasi: {
+					alamat: umkm.lokasi.alamat,
+					latitude: umkm.lokasi.latitude,
+					longitude: umkm.lokasi.longitude,
+					googleMapsLink: umkm.lokasi.googleMapsLink || '',
+				},
+				linkPenjualan: umkm.linkPenjualan || {},
+			});
 		}
+	}, [umkm, reset]);
 
-		if (resolvedParams.id) {
-			fetchUmkmData()
-		}
-	}, [resolvedParams.id, setValue, router])
-
-	// Dropzone config
-	const onDrop = useCallback(
-		async (acceptedFiles: File[]) => {
-			if (!acceptedFiles[0]) return
-			
-			console.log('Uploading file:', acceptedFiles[0])
-			setUploading(true)
-			setPreviewUrl(URL.createObjectURL(acceptedFiles[0]))
-			
-			try {
-				const url = await uploadImage(acceptedFiles[0])
-				setValue('gambar', url, {shouldValidate: true})
-				toast.success('Gambar berhasil diupload')
-			} catch (error) {
-				// Error already handled in uploadImage function
-				// Restore previous preview if upload fails
-				const currentGambar = watch('gambar')
-				setPreviewUrl(currentGambar || null)
-			} finally {
-				setUploading(false)
-			}
-		},
-		[setValue, watch],
-	)
-
-	const {getRootProps, getInputProps, isDragActive} = useDropzone({
-		onDrop,
-		accept: {'image/*': []},
-		multiple: false,
-		maxSize: 5 * 1024 * 1024, // 5MB
-	})
-
-	const gambarUrl = watch('gambar')
-	const googleMapsLink = watch('googleMapsLink')
-
-	const onSubmit = async (data: UmkmFormValues) => {
+	const onDrop = useCallback(async (acceptedFiles: File[]) => {
+		if (!acceptedFiles[0]) return;
+		setUploading(true);
 		try {
-			setLoading(true)
+			const url = await uploadImage(acceptedFiles[0]);
+			setValue('gambar', url, { shouldValidate: true });
+			toast.success('Gambar berhasil diupload');
+		} catch (error) {
+			// Error already handled
+		} finally {
+			setUploading(false);
+		}
+	}, [setValue]);
 
-			// Extract coordinates from Google Maps link
-			const coordinates = data.googleMapsLink ? extractCoordinatesFromLink(data.googleMapsLink) : { latitude: '0', longitude: '0' };
+	const { getRootProps, getInputProps, isDragActive } = useDropzone({
+		onDrop,
+		accept: { 'image/*': [] },
+		multiple: false,
+		maxSize: 5 * 1024 * 1024,
+	});
+
+	const gambarUrl = watch('gambar');
+	const linkPenjualanValues = watch('linkPenjualan');
+
+	const onSubmit = async (data: ProdukFormValues) => {
+		try {
+			console.log(data);
+			setIsSubmitting(true);
 
 			const payload = {
-				id: resolvedParams.id,
-				nama: data.nama,
-				kategori: data.kategori,
-				deskripsi: data.deskripsi,
-				gambar: data.gambar,
-				startPrice: data.startPrice,
-				endPrice: data.endPrice,
-				telepon: data.telepon,
-				lokasi: {
-					alamat: data.alamat,
-					latitude: coordinates.latitude,
-					longitude: coordinates.longitude,
-					googleMapsLink: data.googleMapsLink || '',
+				id,
+				...data,
+				harga: {
+					awal: Number(data.harga.awal),
+					akhir: data.harga.akhir ? Number(data.harga.akhir) : undefined,
 				},
-			}
+				lokasi: {
+					...data.lokasi,
+					googleMapsLink: data.lokasi.googleMapsLink || undefined,
+				},
+			};
 
-			console.log('📤 Sending update payload:', payload)
-
-			// Use makeAuthenticatedRequest for automatic token refresh
-			const response = await makeAuthenticatedRequest('/api/umkm', {
+			const response = await fetch(`/api/produk-umkm?id=${id}`, {
 				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload),
-			})
-
-			console.log('📥 Response status:', response.status)
-			console.log('📥 Response ok:', response.ok)
-
-			const result = await response.json()
-			console.log('📥 API Response:', result)
+			});
 
 			if (!response.ok) {
-				console.error('❌ API Error:', result)
-				throw new Error(result.error || 'Gagal mengupdate UMKM')
+				const errorData = await response.json();
+				if (response.status === 401) {
+					toast.error('Sesi Anda telah berakhir. Silakan login kembali.');
+					router.push('/login');
+					return;
+				}
+				throw new Error(errorData.error || 'Gagal memperbarui produk');
 			}
 
-			if (result.success) {
-				console.log('✅ Success result:', result)
-				toast.success('UMKM berhasil diupdate!')
-				router.push('/admin/umkm')
-			} else {
-				throw new Error(result.error || 'Gagal mengupdate UMKM')
-			}
+			toast.success('Produk berhasil diperbarui!');
+			router.push('/admin/umkm');
 		} catch (error: any) {
-			console.error('❌ Submit error:', error)
-			
-			// Don't show error toast if user was redirected to login
-			if (error.message !== 'NO_TOKEN' && 
-				error.message !== 'TOKEN_REFRESH_FAILED' && 
-				error.message !== 'TOKEN_STILL_INVALID') {
-				toast.error(error.message || 'Terjadi kesalahan saat mengupdate UMKM')
-			}
+			const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat memperbarui produk';
+			toast.error(errorMessage);
 		} finally {
-			setLoading(false)
+			setIsSubmitting(false);
 		}
-	}
+	};
 
-	// Show loading while fetching data
-	if (fetchingData) {
+	const addLinkField = (key: string) => {
+		setValue(`linkPenjualan.${key}`, '');
+	};
+
+	const removeLinkField = (key: string) => {
+		setValue(`linkPenjualan.${key}` as any, '' as any);
+	};
+
+	if (loading) {
 		return (
-			<div className='mx-auto py-8 px-6'>
-				<div className="flex justify-center items-center py-12">
-					<Loader2 className="animate-spin h-8 w-8 text-blue-600" />
-					<span className="ml-2 text-gray-600">Memuat data UMKM...</span>
-				</div>
+			<div className="flex justify-center items-center py-12">
+				<Loader2 className="animate-spin h-8 w-8 text-blue-600" />
+				<span className="ml-2 text-gray-600">Memuat data produk...</span>
 			</div>
-		)
+		);
 	}
 
+	if (error) {
+		return (
+			<div className="text-center py-12">
+				<p className="text-red-600 text-lg mb-4">{error}</p>
+				<Link href="/admin/umkm" className="text-blue-600 hover:underline">
+					Kembali ke daftar produk
+				</Link>
+			</div>
+		);
+	}
+
+	if (!umkm) {
+		return null; // Atau tampilkan pesan "Produk tidak ditemukan"
+	}
+	// --- JSX Form sama dengan halaman tambah ---
 	return (
-		<div className='mx-auto py-8 px-6'>
-			<h1 className='text-2xl font-bold mb-6'>Edit UMKM</h1>
-			<form
-				onSubmit={handleSubmit(onSubmit)}
-				className='bg-white rounded-xl border border-gray-200 shadow px-6 py-8 space-y-5'
-			>
-				<div className='flex items-center gap-2 mb-6'>
+		<div className='mx-auto py-8 px-6 max-w-4xl'>
+			<h1 className='text-2xl font-bold mb-6'>Edit Produk UMKM</h1>
+			<form onSubmit={handleSubmit(onSubmit)} className='bg-white rounded-xl border border-gray-200 shadow px-6 py-8 space-y-5'>
+				<div className='flex items-center mb-8'>
 					<Link
-						href='/admin/umkm'
-						className='flex items-center gap-1 text-sm text-blue-600 hover:underline'
-					>
-						<ArrowLeft size={18} />
-						Kembali
-					</Link>
+            href='/admin/umkm'
+            className='flex items-center text-gray-600 hover:text-gray-900 mb-4'
+          >
+            <ArrowLeft size={18} />
+            Kembali
+          </Link>
 				</div>
 
-				{/* Nama dan Kategori */}
+				{/* ... Salin semua field form dari halaman tambah di sini ... */}
+				{/* Field Nama Produk dan Nama UMKM */}
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
 					<div>
-						<label className='font-medium'>Nama UMKM</label>
-						<input
-							{...register('nama')}
-							className={`border w-full px-3 py-2 rounded mt-1 ${
-								errors.nama && 'border-red-500'
-							}`}
-							placeholder='Nama usaha'
-						/>
-						{errors.nama && (
-							<div className='text-red-600 text-sm'>{errors.nama.message}</div>
-						)}
+						<label className='font-medium'>Nama Produk</label>
+						<input {...register('namaProduk')} className={`border w-full px-3 py-2 rounded mt-1 ${errors.namaProduk && 'border-red-500'}`} placeholder='Nama produk' />
+						{errors.namaProduk && <div className='text-red-600 text-sm'>{errors.namaProduk.message}</div>}
 					</div>
-
 					<div>
-						<label className='font-medium'>Kategori</label>
-						<select
-							{...register('kategori')}
-							className={`border w-full px-3 py-2 rounded mt-1 ${
-								errors.kategori && 'border-red-500'
-							}`}
-						>
-							<option value="">Pilih kategori</option>
-							<option value="Makanan">Makanan</option>
-							<option value="Minuman">Minuman</option>
-							<option value="Fashion">Fashion</option>
-							<option value="Kerajinan">Kerajinan</option>
-							<option value="Jasa">Jasa</option>
-							<option value="Pertanian">Pertanian</option>
-							<option value="Teknologi">Teknologi</option>
-							<option value="Lainnya">Lainnya</option>
-						</select>
-						{errors.kategori && (
-							<div className='text-red-600 text-sm'>{errors.kategori.message}</div>
-						)}
+						<label className='font-medium'>Nama UMKM</label>
+						<input {...register('namaUMKM')} className={`border w-full px-3 py-2 rounded mt-1 ${errors.namaUMKM && 'border-red-500'}`} placeholder='Nama usaha' />
+						{errors.namaUMKM && <div className='text-red-600 text-sm'>{errors.namaUMKM.message}</div>}
 					</div>
 				</div>
 
-				{/* Deskripsi */}
+				{/* ... lanjutkan dengan field-field lainnya ... */}
+				{/* Kategori, Deskripsi, Gambar, Harga, Kontak, Lokasi, Link Penjualan */}
+
+				{/* --- Field Kategori dan Deskripsi tetap --- */}
+				<div>
+					<label className='font-medium'>Kategori</label>
+					<select {...register('kategori')} className={`border w-full px-3 py-2 rounded mt-1 ${errors.kategori && 'border-red-500'}`}>
+						<option value="">Pilih kategori</option>
+						<option value="Makanan">Makanan</option>
+						<option value="Minuman">Minuman</option>
+						<option value="Fashion">Fashion</option>
+						<option value="Kerajinan">Kerajinan</option>
+						<option value="Jasa">Jasa</option>
+						<option value="Pertanian">Pertanian</option>
+						<option value="Teknologi">Teknologi</option>
+						<option value="Lainnya">Lainnya</option>
+					</select>
+					{errors.kategori && <div className='text-red-600 text-sm'>{errors.kategori.message}</div>}
+				</div>
+
 				<div>
 					<label className='font-medium'>Deskripsi</label>
-					<textarea
-						{...register('deskripsi')}
-						rows={4}
-						className={`border w-full px-3 py-2 rounded mt-1 ${
-							errors.deskripsi && 'border-red-500'
-						}`}
-						placeholder='Deskripsi lengkap tentang UMKM'
-					/>
-					{errors.deskripsi && (
-						<div className='text-red-600 text-sm'>{errors.deskripsi.message}</div>
-					)}
+					<textarea {...register('deskripsi')} rows={4} className={`border w-full px-3 py-2 rounded mt-1 ${errors.deskripsi && 'border-red-500'}`} placeholder='Deskripsi lengkap tentang produk' />
+					{errors.deskripsi && <div className='text-red-600 text-sm'>{errors.deskripsi.message}</div>}
 				</div>
 
-				{/* Upload Gambar */}
+				{/* --- Field Gambar tetap --- */}
 				<div>
-					<label className='font-medium'>Gambar UMKM</label>
-					<div
-						{...getRootProps()}
-						className={`mt-1 border-2 border-dashed rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer transition 
-						${
-							isDragActive
-								? 'border-blue-400 bg-blue-50'
-								: 'border-gray-300 bg-gray-50'
-						}
-						${uploading ? 'opacity-60 pointer-events-none' : ''}
-						`}
-					>
+					<label className='font-medium'>Gambar Produk</label>
+					<div {...getRootProps()} className={`mt-1 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'} ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
 						<input {...getInputProps()} />
 						{uploading ? (
-							<span className='flex items-center gap-2 text-blue-600'>
-								<Loader2 className='animate-spin' size={18} /> Mengupload...
-							</span>
-						) : (gambarUrl || previewUrl) ? (
-							<div className='text-center'>
-								<img
-									src={previewUrl || gambarUrl}
-									alt='Preview'
-									className='w-48 h-32 object-cover rounded mb-2 border mx-auto'
-								/>
-								<p className='text-sm text-green-600'>✓ Gambar siap</p>
-								<p className='text-xs text-gray-500 mt-1'>
-									Klik atau drag file baru untuk mengganti gambar
-								</p>
-							</div>
+							<span className='flex items-center gap-2 text-blue-600'><Loader2 className='animate-spin' size={18} /> Mengupload...</span>
+						) : gambarUrl ? (
+							<Image src={gambarUrl} alt='Preview' width={160} height={128} className='w-40 h-32 object-cover rounded mb-2 border mx-auto' />
 						) : (
 							<div className='text-center'>
-								<span className='text-gray-400 block mb-2'>
-									Klik atau drag file gambar di sini
-								</span>
-								<span className='text-xs text-gray-500'>
-									Format: JPG, PNG, WebP (Maksimal 5MB)
-								</span>
+								<span className='text-gray-400 block mb-2'>Klik atau drag file gambar di sini</span>
+								<span className='text-xs text-gray-500'>Format: JPG, PNG, WebP (Maksimal 5MB)</span>
 							</div>
 						)}
 					</div>
 					<input {...register('gambar')} type='hidden' />
-					{errors.gambar && (
-						<div className='text-red-600 text-sm'>{errors.gambar.message}</div>
-					)}
+					{errors.gambar && <div className='text-red-600 text-sm'>{errors.gambar.message}</div>}
 				</div>
 
-				{/* Harga */}
+				{/* --- PERBAIKAN: Field Harga --- */}
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
 					<div>
-						<label className='font-medium'>Harga Mulai</label>
-						<input
-							{...register('startPrice')}
-							type='number'
-							min='0'
-							className={`border w-full px-3 py-2 rounded mt-1 ${
-								errors.startPrice && 'border-red-500'
-							}`}
-							placeholder='100000'
-						/>
-						{errors.startPrice && (
-							<div className='text-red-600 text-sm'>{errors.startPrice.message}</div>
-						)}
+						<label className='font-medium'>Harga Awal</label>
+						<input {...register('harga.awal')} type='number' min='0' className={`border w-full px-3 py-2 rounded mt-1 ${errors.harga?.awal && 'border-red-500'}`} placeholder='100000' />
+						{errors.harga?.awal && <div className='text-red-600 text-sm'>{errors.harga.awal.message}</div>}
 					</div>
-
 					<div>
-						<label className='font-medium'>Harga Sampai</label>
-						<input
-							{...register('endPrice')}
-							type='number'
-							min='0'
-							className={`border w-full px-3 py-2 rounded mt-1 ${
-								errors.endPrice && 'border-red-500'
-							}`}
-							placeholder='500000'
-						/>
-						{errors.endPrice && (
-							<div className='text-red-600 text-sm'>{errors.endPrice.message}</div>
-						)}
+						<label className='font-medium'>Harga Akhir (Opsional)</label>
+						<input {...register('harga.akhir')} type='number' min='0' className={`border w-full px-3 py-2 rounded mt-1 ${errors.harga?.akhir && 'border-red-500'}`} placeholder='500000' />
+						{errors.harga?.akhir && <div className='text-red-600 text-sm'>{errors.harga.akhir.message}</div>}
 					</div>
 				</div>
 
-				{/* Kontak */}
-				<div>
-					<label className='font-medium'>Nomor Telepon</label>
-					<input
-						{...register('telepon')}
-						type='tel'
-						className={`border w-full px-3 py-2 rounded mt-1 ${
-							errors.telepon && 'border-red-500'
-						}`}
-						placeholder='08123456789'
-					/>
-					{errors.telepon && (
-						<div className='text-red-600 text-sm'>{errors.telepon.message}</div>
-					)}
+				{/* --- PERBAIKAN: Field Kontak --- */}
+				<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+					<div>
+						<label className='font-medium'>Nomor Telepon</label>
+						<input {...register('kontak.telepon')} type='tel' className={`border w-full px-3 py-2 rounded mt-1 ${errors.kontak?.telepon && 'border-red-500'}`} placeholder='08123456789' />
+						{errors.kontak?.telepon && <div className='text-red-600 text-sm'>{errors.kontak.telepon.message}</div>}
+					</div>
+					<div>
+						<label className='font-medium'>Nomor WhatsApp</label>
+						<input {...register('kontak.whatsapp')} type='tel' className={`border w-full px-3 py-2 rounded mt-1 ${errors.kontak?.whatsapp && 'border-red-500'}`} placeholder='628123456789' />
+						{errors.kontak?.whatsapp && <div className='text-red-600 text-sm'>{errors.kontak.whatsapp.message}</div>}
+					</div>
 				</div>
 
-				{/* Lokasi */}
+				{/* --- Field Lokasi tetap --- */}
 				<div>
 					<label className='font-medium'>Alamat</label>
-					<textarea
-						{...register('alamat')}
-						rows={3}
-						className={`border w-full px-3 py-2 rounded mt-1 ${
-							errors.alamat && 'border-red-500'
-						}`}
-						placeholder='Alamat lengkap UMKM'
-					/>
-					{errors.alamat && (
-						<div className='text-red-600 text-sm'>{errors.alamat.message}</div>
-					)}
+					<textarea {...register('lokasi.alamat')} rows={3} className={`border w-full px-3 py-2 rounded mt-1 ${errors.lokasi?.alamat && 'border-red-500'}`} placeholder='Alamat lengkap UMKM' />
+					{errors.lokasi?.alamat && <div className='text-red-600 text-sm'>{errors.lokasi?.alamat.message}</div>}
 				</div>
 
-				{/* Google Maps Link */}
+				{/* --- TAMBAHAN: Field Link Penjualan --- */}
 				<div>
-					<label className='font-medium flex items-center gap-2'>
-						<MapPin size={16} />
-						Link Google Maps
-						<span className='text-xs text-gray-400'>(opsional)</span>
-					</label>
-					<div className='relative'>
-						<input
-							{...register('googleMapsLink')}
-							type='url'
-							className={`border w-full px-3 py-2 rounded mt-1 pr-10 ${
-								errors.googleMapsLink && 'border-red-500'
-							}`}
-							placeholder='https://maps.google.com/?q=-6.200000,106.816666'
-						/>
-						{googleMapsLink && (
-							<a
-								href={googleMapsLink}
-								target='_blank'
-								rel='noopener noreferrer'
-								className='absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800'
-								title='Buka di Google Maps'
-							>
-								<ExternalLink size={16} />
-							</a>
-						)}
+					<label className='font-medium'>Link Penjualan</label>
+					<div className="space-y-2">
+						{Object.entries(linkPenjualanValues || {}).map(([key, value]) => (
+							<div key={key} className="flex items-center gap-2">
+								<input
+									{...register(`linkPenjualan.${key}`)}
+									type="url"
+									className="flex-1 border px-3 py-2 rounded"
+									placeholder={`Link ${key}`}
+								/>
+								<button type="button" onClick={() => removeLinkField(key)}>
+									<X size={18} className="text-red-500" />
+								</button>
+							</div>
+						))}
+						<div className="flex gap-2">
+							<button type="button" onClick={() => addLinkField('shopee')} className="text-sm bg-orange-100 text-orange-700 px-3 py-1 rounded hover:bg-orange-200">
+								+ Tambah Shopee
+							</button>
+							<button type="button" onClick={() => addLinkField('tokopedia')} className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded hover:bg-green-200">
+								+ Tambah Tokopedia
+							</button>
+							<button type="button" onClick={() => addLinkField('website')} className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200">
+								+ Tambah Website
+							</button>
+						</div>
 					</div>
-					{errors.googleMapsLink && (
-						<div className='text-red-600 text-sm'>{errors.googleMapsLink.message}</div>
-					)}
-					<p className='text-xs text-gray-500 mt-1'>
-						Paste link Google Maps untuk lokasi UMKM. Koordinat akan otomatis diekstrak.
-					</p>
 				</div>
 
 				{/* Submit Button */}
 				<div className='pt-3 flex justify-end'>
-					<button
-						type='submit'
-						disabled={loading || uploading}
-						className='bg-blue-600 text-white px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-blue-700 transition disabled:opacity-60'
-					>
-						{(loading || uploading) && (
-							<Loader2 size={18} className='animate-spin' />
-						)}
-						{loading ? 'Menyimpan...' : uploading ? 'Mengupload...' : 'Update'}
+					<button type='submit' disabled={isSubmitting || uploading} className='bg-blue-600 text-white px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-blue-700 transition disabled:opacity-60'>
+						{(isSubmitting || uploading) && <Loader2 size={18} className='animate-spin' />}
+						{isSubmitting ? 'Memperbarui...' : uploading ? 'Mengupload...' : 'Perbarui Produk'}
 					</button>
 				</div>
 			</form>

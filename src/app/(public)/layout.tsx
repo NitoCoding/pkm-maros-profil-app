@@ -8,7 +8,7 @@ import CacheDebugger from '@/components/CacheDebugger'
 // Metadata untuk layout publik
 // export const metadata: Metadata = {
 //     title: 'Halaman Publik',
-//     description: 'Website resmi Kelurahan Bilokka'
+//     description: 'Website resmi Desa Benteng Gajah'
 // }
 
 const geistSans = Geist({

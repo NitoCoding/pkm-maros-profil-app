@@ -28,7 +28,7 @@ export function useSambutan() {
 
 			let sambutanData: ISambutan = {
 				judul: 'Sambutan Lurah',
-				isi: 'Selamat datang di website resmi Kelurahan Bilokka. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
+				isi: 'Selamat datang di website resmi Desa Benteng Gajah. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
 				gambar: '',
 				namaLurah: 'H. ALIMUDDIN, S.Sos.',
 				jabatanLurah: 'Lurah'
@@ -64,7 +64,7 @@ export function useSambutan() {
 			// Set fallback data on error
 			setSambutan({
 				judul: 'Sambutan Lurah',
-				isi: 'Selamat datang di website resmi Kelurahan Bilokka. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
+				isi: 'Selamat datang di website resmi Desa Benteng Gajah. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
 				gambar: '',
 				namaLurah: 'H. ALIMUDDIN, S.Sos.',
 				jabatanLurah: 'Lurah'

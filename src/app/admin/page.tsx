@@ -185,7 +185,7 @@ export default function AdminDashboardPage() {
               )}
               
               <div className="text-sm text-gray-600">
-                <p><strong>Judul:</strong> {dashboard?.hero?.title || 'Selamat Datang di Kelurahan Bilokka'}</p>
+                <p><strong>Judul:</strong> {dashboard?.hero?.title || 'Selamat Datang di Desa Benteng Gajah'}</p>
                 <p><strong>Subtitle:</strong> {dashboard?.hero?.subtitle || 'Melayani Masyarakat dengan Sepenuh Hati'}</p>
               </div>
             </div>
@@ -226,7 +226,7 @@ export default function AdminDashboardPage() {
               
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-800">{dashboard?.lurah?.name || 'Nama Lurah'}</h4>
-                <p className="text-sm text-gray-600">{dashboard?.lurah?.position || 'Lurah Kelurahan Bilokka'}</p>
+                <p className="text-sm text-gray-600">{dashboard?.lurah?.position || 'Lurah Desa Benteng Gajah'}</p>
               </div>
             </div>
           </div>

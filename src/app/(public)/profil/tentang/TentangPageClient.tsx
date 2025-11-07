@@ -2,15 +2,10 @@
 import HeaderPage from "@/components/HeaderPage";
 import Main from "@/components/Main";
 import { IPegawai } from "@/types/pegawai";
+import { IProfil } from "@/types/profil";
 import Image from "next/image";
 import ReactPlayer from "react-player";
-import {
-  useVisi,
-  useMisi,
-  useSejarah,
-  useStruktur,
-  useVideo,
-} from "@/hooks/useProfil";
+import { useProfil } from "@/hooks/useProfil";
 import { usePegawai } from "@/hooks/usePegawai";
 import { prepareHTMLForRender } from "@/libs/utils/htmlUtils";
 import PageHead from "@/components/PageHead";
@@ -19,31 +14,36 @@ import { getCardStokImageUrl } from "@/libs/utils/cloudinary";
 import { MapPin } from "lucide-react";
 
 export default function TentangPageClient() {
-  const { profil: visi, loading: loadingVisi } = useVisi();
-  const { profil: misi, loading: loadingMisi } = useMisi();
-  const { profil: sejarah, loading: loadingSejarah } = useSejarah();
-  const { profil: struktur, loading: loadingStruktur } = useStruktur();
-  const { profil: video, loading: loadingVideo } = useVideo();
+  const { profil, loading: loadingProfil } = useProfil();
   const { pegawai, loading: loadingPegawai } = usePegawai({ pageSize: 50 });
 
-  const isLoading =
-    loadingVisi ||
-    loadingMisi ||
-    loadingSejarah ||
-    loadingStruktur ||
-    loadingVideo ||
-    loadingPegawai;
+  // Helper function untuk mendapatkan data berdasarkan jenis
+  const getProfilByJenis = (jenis: IProfil["jenis"]) => {
+    return profil.find((item) => item.jenis === jenis);
+  };
+
+  // Dapatkan data dari useProfil
+  const video = getProfilByJenis("video");
+  const sejarah = getProfilByJenis("sejarah");
+  const visi = getProfilByJenis("visi");
+  const misi = getProfilByJenis("misi");
+  const struktur = getProfilByJenis("struktur");
+
+  const isLoading = loadingProfil || loadingPegawai;
 
   return (
     <>
-
-      <div className="pt-12 min-h-screen pb-3">
+      <PageHead 
+        title="Tentang Desa Benteng Gajah" 
+        description="Informasi lengkap seputar Desa Benteng Gajah" 
+      />
+      <div className="pt-12 pt-12 min-h-screen pb-3">
         <Main>
-          <div className="px-4 sm:px-6 lg:px-8">
+          <div className="mt-5 px-4 sm:px-6 lg:px-8">
             <div className="container mx-auto max-w-7xl">
               <div className="decoration-2 text-green-700">
                 <HeaderPage
-                  title="Tentang Kelurahan Bilokka"
+                  title="Tentang Desa Benteng Gajah"
                   description=""
                   customClass="mx-auto text-center"
                 />
@@ -130,10 +130,10 @@ export default function TentangPageClient() {
                           {struktur.judul || "Struktur Organisasi"}
                         </h1>
                         <div className="text-gray-700">
-                          {struktur.gambar && (
+                          {struktur.gambarUrl && (
                             <Image
-                              src={struktur.gambar}
-                              alt="Struktur Organisasi Kelurahan Bilokka"
+                              src={struktur.gambarUrl}
+                              alt="Struktur Organisasi Desa Benteng Gajah"
                               width={800}
                               height={600}
                               className="w-full h-auto object-cover rounded-lg"
@@ -145,7 +145,7 @@ export default function TentangPageClient() {
                   )}
                   
                   {/* Staff Section */}
-                  {pegawai.length > 0 && (
+                  {pegawai && pegawai.length > 0 && (
                     <div className="flex flex-col justify-center w-full max-w-md sm:max-w-lg md:max-w-4xl mx-auto bg-white rounded-lg p-4 sm:p-6 shadow-lg">
                       <div className="w-full">
                         <h1 className="text-xl sm:text-2xl font-bold mb-6 text-green-700 text-center">
@@ -153,8 +153,8 @@ export default function TentangPageClient() {
                         </h1>
                         <div className="w-full">
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
-                            {pegawai.map((pegawai) => (
-                              <div key={pegawai.id}>{pegawaiCard(pegawai)}</div>
+                            {pegawai.map((pegawaiItem) => (
+                              <div key={pegawaiItem.id}>{pegawaiCard(pegawaiItem)}</div>
                             ))}
                           </div>
                         </div>
@@ -178,34 +178,34 @@ export default function TentangPageClient() {
   );
 
   function pegawaiCard(pegawai: IPegawai) {
-    const optimizedImageUrl = getCardStokImageUrl(pegawai.foto);
+    const optimizedImageUrl = getCardStokImageUrl(pegawai.fotoUrl);
     return (
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
         {/* Image Container - Square format */}
-			<div className='relative w-full aspect-square overflow-hidden bg-gray-50'>
-				<Image
-					src={optimizedImageUrl}
-					alt={pegawai.nama}
-					fill
-					className='object-cover group-hover:scale-105 transition-transform duration-200'
-					unoptimized
-					priority
-				/>
-			</div>
+        <div className='relative w-full aspect-square overflow-hidden bg-gray-50'>
+          <Image
+            src={optimizedImageUrl}
+            alt={pegawai.nama}
+            fill
+            className='object-cover group-hover:scale-105 transition-transform duration-200'
+            unoptimized
+            priority
+          />
+        </div>
 
-			{/* Content - Minimal */}
-			<div className='p-3'>
-				{/* Name */}
-				<h3 className='text-sm font-semibold text-gray-900 text-center mb-1 truncate'>
-					{pegawai.nama}
-				</h3>
-				
-				{/* Position */}
-				<div className='flex items-center justify-center gap-1 text-gray-600'>
-					<MapPin className='w-3 h-3' />
-					<p className='text-xs text-center truncate'>{pegawai.jabatan}</p>
-				</div>
-			</div>
+        {/* Content - Minimal */}
+        <div className='p-3'>
+          {/* Name */}
+          <h3 className='text-sm font-semibold text-gray-900 text-center mb-1 truncate'>
+            {pegawai.nama}
+          </h3>
+          
+          {/* Position */}
+          <div className='flex items-center justify-center gap-1 text-gray-600'>
+            <MapPin className='w-3 h-3' />
+            <p className='text-xs text-center truncate'>{pegawai.jabatan}</p>
+          </div>
+        </div>
       </div>
     );
   }

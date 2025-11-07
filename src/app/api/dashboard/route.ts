@@ -1,98 +1,58 @@
+// src/app/api/dashboard/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getDashboard, updateDashboard, initializeDashboard } from '@/libs/api/dashboard';
+import { getDashboard, updateDashboard } from '@/libs/api/dashboard';
+import { IDashboardUpdate } from '@/types/dashboard';
 
+// GET: Mengambil data dashboard
 export async function GET() {
   try {
     const dashboard = await getDashboard();
     
     if (!dashboard) {
-      // Initialize with default data if not exists
-      await initializeDashboard();
-      const newDashboard = await getDashboard();
-      
-      return NextResponse.json({
-        success: true,
-        data: newDashboard,
-        message: 'Dashboard initialized with default data'
-      });
+      return NextResponse.json(
+        { error: 'Dashboard data not found' },
+        { status: 404 }
+      );
     }
 
-    console.log(dashboard);
-
-    return NextResponse.json({
-      success: true,
-      data: dashboard,
-      message: 'Dashboard data retrieved successfully'
-    });
-  } catch (error: any) {
-    console.error('GET /api/dashboard error:', error);
+    return NextResponse.json(dashboard);
+  } catch (error) {
+    console.error('API Error fetching dashboard:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error.message || 'Failed to get dashboard data' 
-      },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { action, data } = body;
-
-    if (action === 'initialize') {
-      const success = await initializeDashboard();
-      return NextResponse.json({
-        success,
-        message: 'Dashboard initialized successfully'
-      });
-    }
-
-    if (action === 'update' && data) {
-      const success = await updateDashboard(data);
-      return NextResponse.json({
-        success,
-        message: 'Dashboard updated successfully'
-      });
-    }
-
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Invalid action or missing data' 
-      },
-      { status: 400 }
-    );
-  } catch (error: any) {
-    console.error('POST /api/dashboard error:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: error.message || 'Failed to process dashboard request' 
-      },
-      { status: 500 }
-    );
-  }
-}
-
+// PUT/PATCH: Memperbarui data dashboard
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json();
-    const success = await updateDashboard(body);
+    const body: IDashboardUpdate = await request.json();
     
-    return NextResponse.json({
-      success,
-      message: 'Dashboard updated successfully'
-    });
-  } catch (error: any) {
-    console.error('PUT /api/dashboard error:', error);
+    // Validasi sederhana
+    if (!body || Object.keys(body).length === 0) {
+      return NextResponse.json(
+        { error: 'No data provided for update' },
+        { status: 400 }
+      );
+    }
+
+    const success = await updateDashboard(body);
+
+    if (success) {
+      return NextResponse.json({ success: true, message: 'Dashboard updated successfully' });
+    } else {
+      return NextResponse.json(
+        { error: 'Failed to update dashboard or no changes made' },
+        { status: 400 }
+      );
+    }
+  } catch (error) {
+    console.error('API Error updating dashboard:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error.message || 'Failed to update dashboard' 
-      },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }
-} 
+}

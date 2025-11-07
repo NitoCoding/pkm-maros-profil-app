@@ -9,7 +9,6 @@ import Link from 'next/link'
 import {useState, useCallback, useEffect, use} from 'react'
 import {useDropzone} from 'react-dropzone'
 import { toast } from 'react-hot-toast'
-import { makeAuthenticatedRequest } from '@/libs/auth/token'
 import { IGaleri } from '@/types/galeri'
 
 const galeriSchema = z.object({
@@ -53,7 +52,7 @@ export default function EditGaleriPage({ params }: { params: Promise<{ id: strin
             try {
                 setFetchingData(true)
                 
-                const response = await makeAuthenticatedRequest(`/api/galeri?id=${resolvedParams.id}`)
+                const response = await fetch(`/api/galeri?id=${resolvedParams.id}`)
                 const result = await response.json()
 
                 if (!response.ok) {
@@ -64,7 +63,7 @@ export default function EditGaleriPage({ params }: { params: Promise<{ id: strin
                 
                 // Set form values
                 setValue('caption', galeriData.caption || '')
-                setValue('alt', galeriData.alt)
+                setValue('alt', galeriData.alt || '')
                 setValue('src', galeriData.src)
                 setValue('tanggal', galeriData.tanggal)
                 setValue('tags', galeriData.tags?.join(', ') || '')
@@ -174,7 +173,7 @@ export default function EditGaleriPage({ params }: { params: Promise<{ id: strin
             console.log('📤 Sending update payload:', payload)
 
             // Use makeAuthenticatedRequest for automatic token refresh
-            const response = await makeAuthenticatedRequest('/api/galeri', {
+            const response = await fetch('/api/galeri', {
                 method: 'PUT',
                 body: JSON.stringify(payload),
             })
@@ -230,10 +229,10 @@ export default function EditGaleriPage({ params }: { params: Promise<{ id: strin
                 onSubmit={handleSubmit(onSubmit)}
                 className='bg-white rounded-xl border border-gray-200 shadow px-6 py-8 space-y-5'
             >
-                <div className='flex items-center gap-2 mb-6'>
+                <div className='flex items-center mb-8'>
                     <Link
                         href='/admin/galeri'
-                        className='flex items-center gap-1 text-sm text-blue-600 hover:underline'
+                        className='flex items-center text-gray-600 hover:text-gray-900 mb-4'
                     >
                         <ArrowLeft size={18} />
                         Kembali
@@ -256,7 +255,7 @@ export default function EditGaleriPage({ params }: { params: Promise<{ id: strin
                         )}
                     </div>
 
-                    <div>
+                    {/* <div>
                         <label className='font-medium'>Alt Text</label>
                         <input
                             {...register('alt')}
@@ -268,6 +267,19 @@ export default function EditGaleriPage({ params }: { params: Promise<{ id: strin
                         {errors.alt && (
                             <div className='text-red-600 text-sm'>{errors.alt.message}</div>
                         )}
+                    </div> */}
+                    <div>
+                        <label className='font-medium'>
+                            Tags{' '}
+                            <span className='text-xs text-gray-400'>
+                                (pisahkan dengan koma)
+                            </span>
+                        </label>
+                        <input
+                            {...register('tags')}
+                            className='border w-full px-3 py-2 rounded mt-1'
+                            placeholder='kegiatan, dokumentasi, kelurahan'
+                        />
                     </div>
                 </div>
 
@@ -321,7 +333,7 @@ export default function EditGaleriPage({ params }: { params: Promise<{ id: strin
 
                 {/* Tanggal dan Tags */}
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <div>
+                    {/* <div>
                         <label className='font-medium'>Tanggal</label>
                         <input
                             {...register('tanggal')}
@@ -335,9 +347,9 @@ export default function EditGaleriPage({ params }: { params: Promise<{ id: strin
                                 {errors.tanggal.message}
                             </div>
                         )}
-                    </div>
+                    </div> */}
 
-                    <div>
+                    {/* <div>
                         <label className='font-medium'>
                             Tags{' '}
                             <span className='text-xs text-gray-400'>
@@ -349,7 +361,7 @@ export default function EditGaleriPage({ params }: { params: Promise<{ id: strin
                             className='border w-full px-3 py-2 rounded mt-1'
                             placeholder='kegiatan, dokumentasi, kelurahan'
                         />
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Submit Button */}

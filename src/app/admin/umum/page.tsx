@@ -4,23 +4,44 @@ import { useState } from 'react';
 import { useUmum, useUmumMutation } from '@/hooks/useUmum';
 import { IUmum } from '@/types/umum';
 import CardPenduduk from '@/components/CardPenduduk';
-import { BarChart3, Users, School, Heart, MapPin, Edit, Save, X } from 'lucide-react';
+import { BarChart3, Users, School, Heart, MapPin, Edit, Save, X, Upload, Image } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import CKEditorWrapper from '@/components/ckeditor/CKEditorWrapper';
 import { toast } from 'react-hot-toast';
+import { get } from 'http';
 
 export default function AdminUmumPage() {
   const { umum, loading, error, refresh } = useUmum();
   const { updateUmumByJenis, loading: mutationLoading } = useUmumMutation();
   
   const [editingSection, setEditingSection] = useState<string | null>(null);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<IUmum | Record<string, any>>({});
+  const [uploading, setUploading] = useState(false);
 
+  
   // Helper function untuk mendapatkan data berdasarkan jenis
-  const getDataByJenis = (jenis: IUmum['jenis']) => {
-    return umum.find(item => item.jenis === jenis);
+    const getDataByJenis = (jenis: IUmum['jenis']) => {
+    const item = umum.find(item => item.jenis === jenis);
+    if (!item) return null;
+    
+    // Buat salinan objek untuk tidak mengubah state asli
+    const parsedItem = { ...item };
+    
+    // Jika data adalah string, urai menjadi objek
+    if (typeof parsedItem.data === 'string') {
+      try {
+        parsedItem.data = JSON.parse(parsedItem.data);
+      } catch (e) {
+        console.error("Failed to parse data JSON:", e);
+        // parsedItem.data = null; // Atur ke null jika gagal mengurai
+      }
+    }
+    
+    return parsedItem;
   };
 
+
+  // console.log(getDataByJenis('infografi'));
   // Helper function untuk membuka modal edit
   const openEditModal = (jenis: IUmum['jenis']) => {
     const data = getDataByJenis(jenis);
@@ -41,9 +62,12 @@ export default function AdminUmumPage() {
         setEditingSection(null);
         setFormData({});
         refresh();
+      } else {
+        toast.error('Gagal menyimpan data');
       }
     } catch (error) {
       console.error('Error saving data:', error);
+      toast.error('Gagal menyimpan data');
     }
   };
 
@@ -51,6 +75,62 @@ export default function AdminUmumPage() {
   const closeModal = () => {
     setEditingSection(null);
     setFormData({});
+  };
+
+  // Dropzone configuration
+  const onDrop = (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/*": [".jpeg", ".jpg", ".png", ".gif"],
+    },
+    maxSize: 5 * 1024 * 1024, // 5MB
+    maxFiles: 1,
+  });
+
+  const handleFileUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      // Simulasi upload file ke server
+      // const formDataUpload = new FormData();
+      // formDataUpload.append('file', file);
+      // const response = await fetch('/api/upload', {
+      //   method: 'POST',
+      //   body: formDataUpload
+      // });
+      // const result = await response.json();
+      // setFormData(result.url);
+
+      // Simulasi delay upload
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setTimeout(() => {
+          const imageUrl = (e.target?.result as string) || "";
+          setFormData(prev => ({
+            ...prev,
+            data: {
+              ...prev.data,
+              infografi: {
+                ...prev.data?.infografi,
+                gambar: imageUrl
+              }
+            }
+          }));
+          setUploading(false);
+        }, 1000);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      setUploading(false);
+      toast.error('Gagal mengunggah gambar');
+    }
   };
 
   if (loading) {
@@ -94,6 +174,15 @@ export default function AdminUmumPage() {
           <div className="text-gray-600">
             {getDataByJenis('infografi')?.data.infografi?.deskripsi || 'Data infografi belum tersedia'}
           </div>
+          {getDataByJenis('infografi')?.data.infografi?.gambar && (
+            <div className="mt-4">
+              <img 
+                src={getDataByJenis('infografi')?.data.infografi?.gambar} 
+                alt="Infografi" 
+                className="w-full max-w-md rounded-lg border border-gray-200"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -332,6 +421,44 @@ export default function AdminUmumPage() {
                       rows={4}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Gambar Infografi
+                    </label>
+                    <div
+                      {...getRootProps()}
+                      className={`mt-1 border-2 border-dashed rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer transition
+                        ${
+                          isDragActive
+                            ? "border-blue-400 bg-blue-50"
+                            : "border-gray-300 bg-gray-50"
+                        }
+                        ${uploading ? "opacity-60 pointer-events-none" : ""}
+                      `}
+                    >
+                      <input {...getInputProps()} />
+                      {uploading ? (
+                        <span className="flex items-center gap-2 text-blue-600">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                          Uploading...
+                        </span>
+                      ) : formData.data?.infografi?.gambar ? (
+                        <div className="flex flex-col items-center">
+                          <img
+                            src={formData.data?.infografi?.gambar}
+                            alt="Preview"
+                            className="w-40 h-32 object-cover rounded mb-2 border"
+                          />
+                          <span className="text-sm text-gray-500">Klik atau drag untuk mengganti gambar</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <Image className="w-10 h-10 text-gray-400 mb-2" />
+                          <span className="text-gray-400">Klik/drag file gambar di sini (maks 5MB)</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -590,18 +717,18 @@ export default function AdminUmumPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Klinik
+                      Puskesdes
                     </label>
                     <input
                       type="number"
-                      value={formData.data?.saranaKesehatan?.klinik || 0}
+                      value={formData.data?.saranaKesehatan?.puskesdes || 0}
                       onChange={(e) => setFormData({
                         ...formData,
                         data: {
                           ...formData.data,
                           saranaKesehatan: {
                             ...formData.data?.saranaKesehatan,
-                            klinik: parseInt(e.target.value) || 0
+                            puskesdes: parseInt(e.target.value) || 0
                           }
                         }
                       })}

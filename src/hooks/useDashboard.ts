@@ -1,3 +1,4 @@
+// src/hooks/useDashboard.ts
 import { useState, useEffect } from 'react';
 import { IDashboard, IDashboardUpdate } from '@/types/dashboard';
 
@@ -13,17 +14,17 @@ export function useDashboard() {
       setError(null);
 
       const response = await fetch('/api/dashboard');
-      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch dashboard data');
+        // Jika respons tidak OK, coba ambil pesan error dari body
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to fetch dashboard data (status: ${response.status})`);
       }
 
-      if (result.success) {
-        setDashboard(result.data);
-      } else {
-        throw new Error(result.error || 'Failed to fetch dashboard data');
-      }
+      // Jika respons OK, langsung ambil datanya
+      const result = await response.json();
+      setDashboard(result); // Langsung set hasilnya
+
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching dashboard:', err);
@@ -62,17 +63,16 @@ export function useDashboardMutation() {
         body: JSON.stringify(updateData),
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to update dashboard');
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to update dashboard (status: ${response.status})`);
       }
 
-      if (result.success) {
-        return true;
-      } else {
-        throw new Error(result.error || 'Failed to update dashboard');
-      }
+      // API kita mengembalikan { success: true, message: '...' }
+      const result = await response.json();
+      console.log(result.message); // Bisa digunakan untuk notifikasi
+      
+      return true;
     } catch (err: any) {
       setError(err.message);
       console.error('Error updating dashboard:', err);
@@ -100,14 +100,16 @@ export function useDashboardMutation() {
   };
 }
 
-// Hook khusus untuk hero section
+// --- Hook khusus untuk setiap section (TIDAK PERLU DIUBAH) ---
+// Semua hook di bawah ini akan bekerja dengan benar setelah useDashboard diperbaiki
+
 export function useHero() {
   const { dashboard, loading, error, refresh } = useDashboard();
   
   return {
     hero: dashboard?.hero || {
       image: '',
-      title: 'Selamat Datang di Kelurahan Bilokka',
+      title: 'Selamat Datang di Desa Benteng Gajah',
       subtitle: 'Melayani Masyarakat dengan Sepenuh Hati'
     },
     loading,
@@ -116,7 +118,6 @@ export function useHero() {
   };
 }
 
-// Hook khusus untuk lurah section
 export function useLurah() {
   const { dashboard, loading, error, refresh } = useDashboard();
   
@@ -124,7 +125,7 @@ export function useLurah() {
     lurah: dashboard?.lurah || {
       name: 'Nama Lurah',
       photo: '',
-      position: 'Lurah Kelurahan Bilokka'
+      position: 'Lurah Desa Benteng Gajah'
     },
     loading,
     error,
@@ -132,7 +133,6 @@ export function useLurah() {
   };
 }
 
-// Hook khusus untuk working hours section
 export function useWorkingHours() {
   const { dashboard, loading, error, refresh } = useDashboard();
   
@@ -148,7 +148,6 @@ export function useWorkingHours() {
   };
 }
 
-// Hook khusus untuk contact section
 export function useContact() {
   const { dashboard, loading, error, refresh } = useDashboard();
   
@@ -163,4 +162,4 @@ export function useContact() {
     error,
     refresh,
   };
-} 
+}

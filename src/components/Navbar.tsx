@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {usePathname} from 'next/navigation'
 import {IMenu} from '@/types/menu'
+import { logout } from '@/libs/auth/token'
 
 const MENU_ITEMS: IMenu[] = [
 	{label: 'Beranda', href: '/', show: true},
@@ -29,6 +30,7 @@ const MENU_ITEMS: IMenu[] = [
 	{label: 'UMKM', href: '/umkm', show: true},
 	{label: 'Galeri', href: '/galeri', show: true},
 	{label: 'Berita', href: '/berita', show: true},
+	// {label: 'Logout', href: '/auth/logout', show: true},
 ]
 
 export default function Navbar() {
@@ -79,6 +81,10 @@ export default function Navbar() {
 		setOpenDropdown(null)
 	}, [pathname])
 
+	const handleLogout = async() => {
+		await logout()
+	}
+
 	return (
 		<div className='relative'>
 			<div
@@ -102,7 +108,7 @@ export default function Navbar() {
 							className='rounded-full object-cover'
 						/>
 						<div className='flex flex-col'>
-							<h1>Kelurahan Bilokka</h1>
+							<h1>Desa Benteng Gajah</h1>
 							<p className='text-sm'>Kecamatan Panca Lautang</p>
 						</div>
 					</a>
@@ -171,6 +177,9 @@ export default function Navbar() {
 									</Link>
 								),
 							)}
+							{/* <button onClick={() => handleLogout()}>
+								logout
+							</button> */}
 						</div>
 					</div>
 				</div>
@@ -196,7 +205,7 @@ export default function Navbar() {
 									className='rounded-full object-cover'
 								/>
 								<div className='flex flex-col'>
-									<h1>Kelurahan Bilokka</h1>
+									<h1>Desa Benteng Gajah</h1>
 									<p className='text-sm'>Kecamatan Panca Lautang</p>
 								</div>
 							</a>

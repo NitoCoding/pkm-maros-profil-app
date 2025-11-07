@@ -9,8 +9,10 @@ const navItems = [
 	{label: 'Galeri', href: '/admin/galeri', icon: Image},
 	{label: 'Pegawai', href: '/admin/pegawai', icon: Users},
 	{label: 'UMKM', href: '/admin/umkm', icon: Store},
-	{label: 'Profil', href: '/admin/profil', icon: UserCircle},
+	{label: 'Profil Desa', href: '/admin/profil', icon: UserCircle},
 	{label: 'Umum', href: '/admin/umum', icon: HardDrive},
+	{label: 'User', href: '/admin/user', icon: Users},
+	// {label: 'Profile Saya', href: '/admin/profile', icon: UserCircle},
 ]
 
 export default function Sidebar() {
@@ -21,7 +23,7 @@ export default function Sidebar() {
 			{/* Brand / Logo */}
 			<div className='flex items-center gap-3 px-6 py-6 bg-blue-600 text-white shadow'>
 				<span className='text-2xl font-extrabold tracking-tight'>K</span>
-				<span className='font-bold text-lg'>Kelurahan Bilokka</span>
+				<span className='font-bold text-lg'>Desa Benteng Gajah</span>
 			</div>
 			{/* Navigation */}
 			<nav className='flex-1 py-4'>
@@ -58,7 +60,7 @@ export default function Sidebar() {
 			</nav>
 			{/* Footer (optional) */}
 			<div className='px-6 py-4 border-t text-xs text-gray-400'>
-				© {new Date().getFullYear()} Kelurahan Bilokka
+				© {new Date().getFullYear()} Desa Benteng Gajah
 			</div>
 		</aside>
 	)

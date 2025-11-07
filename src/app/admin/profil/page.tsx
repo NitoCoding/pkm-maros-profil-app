@@ -3,60 +3,10 @@ import { useState, useEffect } from "react";
 import { Edit, X, Loader2 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import CKEditorWrapper from "@/components/ckeditor/CKEditorWrapper";
-import { useProfil, useProfilMutation } from "@/hooks/useProfil";
 import ReactPlayer from "react-player";
 import { IProfil } from "@/types/profil";
 import { prepareHTMLForRender } from "@/libs/utils/htmlUtils";
-
-// // Simulasi CKEditor Wrapper - hapus ini jika sudah ada CKEditorWrapper asli
-// const CKEditorWrapperSim = ({
-//   value,
-//   onChange,
-//   onBlur,
-// }: {
-//   value: string;
-//   onChange: (value: string) => void;
-//   onBlur?: () => void;
-// }) => {
-//   return (
-//     <div className="border border-gray-300 rounded-lg">
-//       <div className="bg-gray-50 border-b border-gray-300 p-2 flex gap-2">
-//         <button
-//           type="button"
-//           className="px-2 py-1 text-sm bg-white border rounded hover:bg-gray-100"
-//         >
-//           <strong>B</strong>
-//         </button>
-//         <button
-//           type="button"
-//           className="px-2 py-1 text-sm bg-white border rounded hover:bg-gray-100"
-//         >
-//           <em>I</em>
-//         </button>
-//         <button
-//           type="button"
-//           className="px-2 py-1 text-sm bg-white border rounded hover:bg-gray-100"
-//         >
-//           <u>U</u>
-//         </button>
-//         {/* button untuk list */}
-//         <button
-//           type="button"
-//           className="px-2 py-1 text-sm bg-white border rounded hover:bg-gray-100"
-//         >
-//           li
-//         </button>
-//       </div>
-//       <textarea
-//         value={value}
-//         onChange={(e) => onChange(e.target.value)}
-//         onBlur={onBlur}
-//         className="w-full h-64 p-4 border-0 resize-none focus:outline-none focus:ring-0"
-//         placeholder="Masukkan konten..."
-//       />
-//     </div>
-//   );
-// };
+import { useProfil } from "@/hooks/useProfil";
 
 export default function ProfilAdminPage() {
   // Hook untuk mengambil data profil
@@ -67,12 +17,9 @@ export default function ProfilAdminPage() {
     refresh: refreshProfil,
   } = useProfil();
 
-  // Hook untuk mutasi data profil
-  const {
-    updateProfilByJenis,
-    loading: saving,
-    error: saveError,
-  } = useProfilMutation();
+  // State untuk mutasi data profil
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -94,7 +41,7 @@ export default function ProfilAdminPage() {
   // Helper function untuk mendapatkan gambar
   const getImage = (jenis: IProfil["jenis"]) => {
     const item = getProfilByJenis(jenis);
-    return item?.gambar || "";
+    return item?.gambarUrl || "";
   };
 
   const getVideoProfil = (jenis: IProfil["jenis"]) => {
@@ -106,7 +53,9 @@ export default function ProfilAdminPage() {
     setModalType(type);
     const item = getProfilByJenis(type);
     if (type === "struktur") {
-      setFormData(item?.gambar || "");
+      setFormData(item?.gambarUrl || "");
+    } else if (type === "video") {
+      setFormData(item?.videoUrl || "");
     } else {
       setFormData(item?.isi || "");
     }
@@ -118,6 +67,7 @@ export default function ProfilAdminPage() {
     setModalType("visi");
     setFormData("");
     setUploading(false);
+    setSaveError(null);
   };
 
   // Dropzone configuration
@@ -167,39 +117,48 @@ export default function ProfilAdminPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
+    setSaveError(null);
 
     try {
-      let updateData: Partial<IProfil> = {};
+      let updateData: Partial<IProfil> = {
+        jenis: modalType,
+      };
 
       if (modalType === "struktur") {
-        updateData = {
-          gambar: formData,
-          updatedAt: new Date().toISOString(),
-        };
+        updateData.gambarUrl = formData;
       } else if (modalType === "video") {
-        updateData = {
-          videoUrl: formData,
-          updatedAt: new Date().toISOString(),
-        };
+        updateData.videoUrl = formData;
       } else {
-        updateData = {
-          isi: formData,
-          updatedAt: new Date().toISOString(),
-        };
+        updateData.isi = formData;
       }
 
-      const success = await updateProfilByJenis(modalType, updateData);
+      const response = await fetch('/api/profil', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
 
-      if (success) {
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Gagal menyimpan data');
+      }
+
+      if (result.success) {
         console.log("Data saved successfully");
         refreshProfil(); // Refresh data setelah berhasil disimpan
         closeModal();
       } else {
-        alert("Gagal menyimpan data. Silakan coba lagi.");
+        throw new Error(result.error || 'Gagal menyimpan data');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving data:", error);
-      alert("Gagal menyimpan data. Silakan coba lagi.");
+      setSaveError(error.message || "Gagal menyimpan data. Silakan coba lagi.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -268,12 +227,12 @@ export default function ProfilAdminPage() {
                 </button>
               </div>
               <div className="text-gray-700 text-base leading-relaxed">
-              <div
-                      className="prose prose-gray max-w-none leading-relaxed"
-                      dangerouslySetInnerHTML={{
-                        __html: prepareHTMLForRender(getContent("sambutan") || ""),
-                      }}
-                    />
+                <div
+                  className="prose prose-gray max-w-none leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: prepareHTMLForRender(getContent("sambutan") || ""),
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -292,12 +251,12 @@ export default function ProfilAdminPage() {
                 </button>
               </div>
               <div className="text-gray-700 text-base leading-relaxed">
-              <div
-                      className="prose prose-gray max-w-none leading-relaxed"
-                      dangerouslySetInnerHTML={{
-                        __html: prepareHTMLForRender(getContent("sejarah") || ""),
-                      }}
-                    />
+                <div
+                  className="prose prose-gray max-w-none leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: prepareHTMLForRender(getContent("sejarah") || ""),
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -316,12 +275,12 @@ export default function ProfilAdminPage() {
                 </button>
               </div>
               <div className="text-gray-700 text-base leading-relaxed">
-              <div
-                      className="prose prose-gray max-w-none leading-relaxed"
-                      dangerouslySetInnerHTML={{
-                        __html: prepareHTMLForRender(getContent("visi") || ""),
-                      }}
-                    />
+                <div
+                  className="prose prose-gray max-w-none leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: prepareHTMLForRender(getContent("visi") || ""),
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -340,13 +299,12 @@ export default function ProfilAdminPage() {
                 </button>
               </div>
               <div className="text-gray-700 text-base leading-relaxed whitespace-pre-line">
-                
                 <div
-                      className="prose prose-gray max-w-none leading-relaxed"
-                      dangerouslySetInnerHTML={{
-                        __html: prepareHTMLForRender(getContent("misi") || ""),
-                      }}
-                    />
+                  className="prose prose-gray max-w-none leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: prepareHTMLForRender(getContent("misi") || ""),
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -454,7 +412,13 @@ export default function ProfilAdminPage() {
                   <X size={24} />
                 </button>
               </div>
-              {/* // ... existing code ... */}
+
+              {saveError && (
+                <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {saveError}
+                </div>
+              )}
+
               <div className="p-6">
                 {modalType === "struktur" ? (
                   <div className="space-y-4">
@@ -466,13 +430,13 @@ export default function ProfilAdminPage() {
                       <div
                         {...getRootProps()}
                         className={`mt-1 border-2 border-dashed rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer transition
-            ${
-              isDragActive
-                ? "border-blue-400 bg-blue-50"
-                : "border-gray-300 bg-gray-50"
-            }
-            ${uploading ? "opacity-60 pointer-events-none" : ""}
-          `}
+                          ${
+                            isDragActive
+                              ? "border-blue-400 bg-blue-50"
+                              : "border-gray-300 bg-gray-50"
+                          }
+                          ${uploading ? "opacity-60 pointer-events-none" : ""}
+                        `}
                       >
                         <input {...getInputProps()} />
                         {uploading ? (
@@ -516,34 +480,6 @@ export default function ProfilAdminPage() {
                           Preview Video
                         </label>
                         <div className="w-full aspect-video bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
-                          {/* {formData.includes("youtube.com") ||
-                          formData.includes("youtu.be") ? (
-                            <iframe
-                              src={formData.replace("watch?v=", "embed/")}
-                              title="Video Preview"
-                              className="w-full h-full rounded-lg"
-                              frameBorder="0"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                            />
-                          ) : formData.includes("vimeo.com") ? (
-                            <iframe
-                              src={formData.replace(
-                                "vimeo.com/",
-                                "player.vimeo.com/video/"
-                              )}
-                              title="Video Preview"
-                              className="w-full h-full rounded-lg"
-                              frameBorder="0"
-                              allow="autoplay; fullscreen; picture-in-picture"
-                              allowFullScreen
-                            />
-                          ) : (
-                            <div className="text-center text-gray-500">
-                              <p>Preview tidak tersedia untuk URL ini</p>
-                              <p className="text-sm">URL: {formData}</p>
-                            </div>
-                          )} */}
                           <ReactPlayer
                             src={formData}
                             width="100%"
@@ -565,13 +501,12 @@ export default function ProfilAdminPage() {
                       <CKEditorWrapper
                         value={formData}
                         onChange={(value) => setFormData(value)}
-                        // onBlur={() => {}}
                       />
                     </div>
                   </div>
                 )}
               </div>
-              {/* // ... existing code ... */}
+
               <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
                 <button
                   type="button"

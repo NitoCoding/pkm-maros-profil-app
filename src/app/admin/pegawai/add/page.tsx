@@ -9,7 +9,6 @@ import Link from 'next/link'
 import {useState, useCallback} from 'react'
 import {useDropzone} from 'react-dropzone'
 import { toast } from 'react-hot-toast'
-import { makeAuthenticatedRequest } from '@/libs/auth/token'
 
 const pegawaiSchema = z.object({
 	nama: z.string().min(3, 'Nama wajib diisi'),
@@ -111,7 +110,7 @@ export default function TambahPegawaiPage() {
 			console.log('📤 Sending payload:', payload)
 
 			// Use makeAuthenticatedRequest for automatic token refresh
-			const response = await makeAuthenticatedRequest('/api/pegawai', {
+			const response = await fetch('/api/pegawai', {
 				method: 'POST',
 				body: JSON.stringify(payload),
 			})
@@ -155,14 +154,14 @@ export default function TambahPegawaiPage() {
 				onSubmit={handleSubmit(onSubmit)}
 				className='bg-white rounded-xl border border-gray-200 shadow px-6 py-8 space-y-5'
 			>
-				<div className='flex items-center gap-2 mb-6'>
+				<div className='flex items-center mb-8'>
 					<Link
-						href='/admin/pegawai'
-						className='flex items-center gap-1 text-sm text-blue-600 hover:underline'
-					>
-						<ArrowLeft size={18} />
-						Kembali
-					</Link>
+            href='/admin/pegawai'
+            className='flex items-center text-gray-600 hover:text-gray-900 mb-4'
+          >
+            <ArrowLeft size={18} />
+            Kembali
+          </Link>
 				</div>
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <div className='space-y-4'>

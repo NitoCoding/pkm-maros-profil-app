@@ -8,12 +8,13 @@ import { Loader2 } from 'lucide-react'
 
 export default function STOK() {
 	const { pegawai, loading, error } = usePegawai({ pageSize: 4 }); // Get more pegawai for display
+	console.log('STOK pegawai data:', pegawai);
 	return (
 		<div className='px-4 sm:px-6 lg:px-8'>
 			<div className='container mx-auto max-w-7xl'>
 				<HeaderPage
 					title='STOK'
-					description='Struktur Organisasi dan Tata Kerja Kelurahan Bilokka'
+					description='Struktur Organisasi dan Tata Kerja Desa Benteng Gajah'
 				/>
 				
 				{/* Loading State */}
@@ -49,7 +50,7 @@ export default function STOK() {
 						{pegawai.map((item: IPegawai) => (
 							<CardStok
 								key={item.id}
-								foto={item.foto}
+								foto={item.fotoUrl}
 								nama={item.nama}
 								jabatan={item.jabatan}
 							/>

@@ -13,18 +13,18 @@ export default function GaleriPageClient() {
     return (
         <>
             <PageHead 
-                title="Galeri Kelurahan Bilokka"
-                description="Dokumentasi dan galeri foto kegiatan Kelurahan Bilokka"
+                title="Galeri Desa Benteng Gajah"
+                description="Dokumentasi dan galeri foto kegiatan Desa Benteng Gajah"
                 keywords="galeri, foto, dokumentasi, kelurahan, bilokka"
             />
             <div className='pt-12 min-h-screen pb-3'>
                 <Main>
-                    <div className='px-4 sm:px-6 lg:px-8'>
+                    <div className='mt-5 px-4 sm:px-6 lg:px-8'>
                         <div className='container mx-auto max-w-7xl'>
                             <div className=' decoration-2 text-green-700'>
                                 <HeaderPage
                                     title='Galeri'
-                                    description='Dokumentasi dan galeri foto kegiatan Kelurahan Bilokka'
+                                    description='Dokumentasi dan galeri foto kegiatan Desa Benteng Gajah'
                                     customClass='mx-auto text-center'
                                 />
                             </div>

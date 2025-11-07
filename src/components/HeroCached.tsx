@@ -6,6 +6,7 @@ import { useState } from 'react';
 export default function HeroCached() {
 	const { data: hero, loading, error, isFromCache, refresh } = useHeroCached();
 	const [imageLoaded, setImageLoaded] = useState(false);
+	// console.log('[HERO] Data:', hero);
 
 	if (loading) {
 		return (
@@ -78,10 +79,10 @@ export default function HeroCached() {
 				<div className='w-full'>
 					<h1 className='font-bold mb-4 drop-shadow-xl tracking-wide'>
 						<p className='text-3xl md:text-4xl'>
-							{hero?.title || 'Selamat Datang Di Website Kelurahan Bilokka'}
+							{hero?.title || 'Selamat Datang Di Website Desa Benteng Gajah'}
 						</p>
 						<p className='mt-2'>
-							{hero?.subtitle || 'Kelurahan Bilokka, Kecamatan Panca Lautang, Kabupaten Sidrap'}
+							{hero?.subtitle || 'Desa Benteng Gajah, Kecamatan Panca Lautang, Kabupaten Sidrap'}
 						</p>
 					</h1>
 					

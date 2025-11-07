@@ -59,10 +59,10 @@ export default function HeroSimple() {
 				<div className='w-full max-w-4xl px-4'>
 					<h1 className='font-bold mb-4 drop-shadow-xl tracking-wide'>
 						<div className='text-3xl md:text-4xl lg:text-5xl mb-2'>
-							{hero.title || 'Selamat Datang Di Website Kelurahan Bilokka'}
+							{hero.title || 'Selamat Datang Di Website Desa Benteng Gajah'}
 						</div>
 						<div className='text-lg md:text-xl lg:text-2xl opacity-90'>
-							{hero.subtitle || 'Kelurahan Bilokka, Kecamatan Panca Lautang, Kabupaten Sidrap'}
+							{hero.subtitle || 'Desa Benteng Gajah, Kecamatan Panca Lautang, Kabupaten Sidrap'}
 						</div>
 					</h1>
 				</div>

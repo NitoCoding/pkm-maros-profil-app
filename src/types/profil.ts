@@ -1,10 +1,12 @@
-export interface IProfil {
-    id: string; // "visi", "misi", "sejarah", "struktur", "video"
-    jenis: 'visi' | 'misi' | 'sejarah' | 'struktur' | 'sambutan' | 'video' | 'lainnya';
-    judul?: string;
-    isi?: string;
-    gambar?: string; // opsional untuk struktur
-    videoUrl?: string; // khusus untuk video
-    updatedAt: string;
-}
+// src/types/profil.ts
 
+export interface IProfil {
+  id: number;
+  jenis: 'visi' | 'misi' | 'sejarah' | 'struktur' | 'sambutan' | 'video' | 'lainnya';
+  judul?: string;
+  isi: string;
+  gambarUrl?: string;
+  videoUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}

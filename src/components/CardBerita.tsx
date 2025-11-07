@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { IBerita } from '@/types/berita';
 import { Calendar } from 'lucide-react';
 import { getHTMLPreview, estimateReadingTime } from '@/libs/utils/htmlUtils';
+import { formatDateLong } from '@/libs/utils/date';
 
 export default function BeritaCard({ berita }: { berita: IBerita }) {
 	return (
@@ -9,7 +10,7 @@ export default function BeritaCard({ berita }: { berita: IBerita }) {
 			<div className="flex flex-col w-full bg-white rounded-lg shadow-md transition-shadow duration-300 hover:shadow-xl overflow-hidden">
 				<div className="overflow-hidden h-48 sm:h-52">
 					<Image
-						src={berita.gambar || '/default-berita.jpg'}
+						src={berita.gambar || '/default-image.jpg'}
 						alt={berita.judul}
 						width={400}
 						height={240}
@@ -30,11 +31,7 @@ export default function BeritaCard({ berita }: { berita: IBerita }) {
 					<div className="flex items-center justify-between pt-3 border-t border-gray-100">
 						<span className="text-gray-500 flex items-center text-xs sm:text-sm">
 							<Calendar className="mr-1" size={16}/> 
-							{new Date(berita.tanggal).toLocaleDateString('id-ID', {
-								year: 'numeric',
-								month: 'long',
-								day: 'numeric'
-							})}
+							{formatDateLong(berita.createdAt)}
 						</span>
 						<a
 							href={`/berita/${berita.slug}`}

@@ -6,12 +6,12 @@ import StructuredData, { organizationData, websiteData } from '@/components/Stru
 
 export const metadata: Metadata = {
     title: {
-        default: 'Kelurahan Bilokka - Website Resmi',
-        template: '%s | Kelurahan Bilokka',
+        default: 'Desa Benteng Gajah - Website Resmi',
+        template: '%s | Desa Benteng Gajah',
     },
-    description: 'Website resmi Kelurahan Bilokka. Informasi layanan publik, berita, pengumuman, dan data kelurahan untuk masyarakat.',
+    description: 'Website resmi Desa Benteng Gajah. Informasi layanan publik, berita, pengumuman, dan data kelurahan untuk masyarakat.',
     keywords: [
-        'kelurahan bilokka',
+        'Desa Benteng Gajah',
         'website resmi kelurahan',
         'layanan publik',
         'informasi kelurahan',
@@ -20,9 +20,9 @@ export const metadata: Metadata = {
         'data kelurahan',
         'administrasi kelurahan'
     ],
-    authors: [{ name: 'Kelurahan Bilokka' }],
-    creator: 'Kelurahan Bilokka',
-    publisher: 'Kelurahan Bilokka',
+    authors: [{ name: 'Desa Benteng Gajah' }],
+    creator: 'Desa Benteng Gajah',
+    publisher: 'Desa Benteng Gajah',
     formatDetection: {
         email: false,
         address: false,
@@ -44,25 +44,25 @@ export const metadata: Metadata = {
         },
     },
     openGraph: {
-        title: 'Kelurahan Bilokka - Website Resmi',
-        description: 'Website resmi Kelurahan Bilokka, menyediakan informasi dan layanan untuk masyarakat.',
+        title: 'Desa Benteng Gajah - Website Resmi',
+        description: 'Website resmi Desa Benteng Gajah, menyediakan informasi dan layanan untuk masyarakat.',
         type: 'website',
         locale: 'id_ID',
         url: 'https://www.kelurahanbilokka.my.id',
-        siteName: 'Kelurahan Bilokka',
+        siteName: 'Desa Benteng Gajah',
         images: [
             {
                 url: '/logo.png',
                 width: 1200,
                 height: 630,
-                alt: 'Logo Kelurahan Bilokka',
+                alt: 'Logo Desa Benteng Gajah',
             },
         ],
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Kelurahan Bilokka - Website Resmi',
-        description: 'Website resmi Kelurahan Bilokka, menyediakan informasi dan layanan untuk masyarakat.',
+        title: 'Desa Benteng Gajah - Website Resmi',
+        description: 'Website resmi Desa Benteng Gajah, menyediakan informasi dan layanan untuk masyarakat.',
         images: ['/logo.png'],
     },
     manifest: '/site.webmanifest',

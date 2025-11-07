@@ -80,7 +80,7 @@ export default function SambutanCached() {
 								className='text-gray-600 leading-relaxed'
 								dangerouslySetInnerHTML={{
 									__html: sambutan?.isi || 
-									`<p>Selamat datang di website resmi Kelurahan Bilokka. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.</p>
+									`<p>Selamat datang di website resmi Desa Benteng Gajah. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.</p>
 									
 									<p>Melalui website ini, kami berharap dapat memudahkan akses informasi dan pelayanan publik, serta memperkuat komunikasi antara pemerintah kelurahan dengan masyarakat yang kami layani.</p>`
 								}}
@@ -88,7 +88,7 @@ export default function SambutanCached() {
 							
 							<div className='pt-4'>
 								<p className='text-sm text-gray-500'>
-									<strong>Lurah Kelurahan Bilokka</strong><br />
+									<strong>Lurah Desa Benteng Gajah</strong><br />
 									Kecamatan Panca Lautang, Kabupaten Sidrap
 								</p>
 							</div>

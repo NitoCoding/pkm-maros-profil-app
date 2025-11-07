@@ -16,10 +16,10 @@ export default function Hero() {
 				<div className='w-full'>
 					<h1 className=' font-bold mb-4 drop-shadow-xl tracking-wide'>
 						<p className='text-3xl md:text-4xl'>
-							Selamat Datang Di Website Kelurahan Bilokka
+							Selamat Datang Di Website Desa Benteng Gajah
 						</p>
 						<p className='mt-2'>
-							Kelurahan Bilokka, Kecamatan Panca Lautang, Kabupaten Sidrap
+							Desa Benteng Gajah, Kecamatan Panca Lautang, Kabupaten Sidrap
 						</p>
 					</h1>
 				</div>

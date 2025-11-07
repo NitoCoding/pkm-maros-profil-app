@@ -57,11 +57,11 @@ export default function FooterCached() {
 					<div>
 						<div className='flex items-center mb-4'>
 							<span className='font-heading font-bold text-xl'>
-								Kelurahan Bilokka
+								Desa Benteng Gajah
 							</span>
 						</div>
 						<p className='mb-4'>
-							Website Kelurahan Bilokka yang menyediakan informasi desa
+							Website Desa Benteng Gajah yang menyediakan informasi desa
 							dan mendukung pemberdayaan UMKM lokal.
 						</p>
 						<div className='flex space-x-4'>

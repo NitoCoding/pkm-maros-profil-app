@@ -57,7 +57,7 @@ export default function AdminGaleriPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Kelola Galeri</h1>
           <p className="text-gray-600">
-            Kelola foto dan dokumentasi Kelurahan Bilokka
+            Kelola foto dan dokumentasi Desa Benteng Gajah
           </p>
         </div>
         <Link
@@ -105,11 +105,11 @@ export default function AdminGaleriPage() {
             <table className="min-w-full bg-white rounded-2xl overflow-hidden border-separate border-spacing-0">
               <thead>
                 <tr className="bg-blue-600 text-white">
-                  <th className="p-3 font-semibold text-left">Caption</th>
-                  <th className="p-3 font-semibold text-left">Preview</th>
-                  <th className="p-3 font-semibold text-left">Tanggal</th>
-                  <th className="p-3 font-semibold text-left">Tags</th>
-                  <th className="p-3 font-semibold text-center">Aksi</th>
+                  <th className="p-3 font-semibold text-left uppercase tracking-wider">Caption</th>
+                  <th className="p-3 font-semibold text-left uppercase tracking-wider">Preview</th>
+                  <th className="p-3 font-semibold text-left uppercase tracking-wider">Tanggal</th>
+                  <th className="p-3 font-semibold text-left uppercase tracking-wider">Tags</th>
+                  <th className="p-3 font-semibold text-center uppercase tracking-wider">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -134,7 +134,7 @@ export default function AdminGaleriPage() {
                       <PreviewImageButton gambarUrl={item.src} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(item.tanggal)}
+                      {formatDate(item.createdAt)}
                     </td>
                     <td className="p-3 align-middle">
                       <div className="flex flex-wrap gap-1">

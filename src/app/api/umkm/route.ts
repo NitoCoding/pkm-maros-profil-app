@@ -1,243 +1,101 @@
+// src/app/api/produk-umkm/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/libs/firebase-admin";
-import {
-  tambahUmkm,
-  ambilUmkmPaginate,
-  ambilUmkmById,
-  updateUmkm,
-  hapusUmkm,
-  ambilUmkmBySlug,
-} from "@/libs/api/umkm";
+import { tambahProdukUMKM, ambilProdukUMKMPaginate, ambilProdukUMKMById } from "@/libs/api/produkUMKM";
+import { IProdukUMKMUpdate } from "@/types/umkm";
+import { hapusProdukUMKM, updateProdukUMKM } from "@/libs/api/produkUMKM";
 
-function slugify(text: string) {
-	return text
-		.toLowerCase()
-		.replace(/[^\w\s-]/g, '') // Remove special chars
-		.replace(/\s+/g, '-') // Replace spaces with -
-		.replace(/--+/g, '-') // Remove double dash
-		.trim()
-}
+// ... fungsi getUserFromRequest tetap sama
 
-// Verify Firebase ID Token using Firebase Admin SDK
-async function verifyFirebaseToken(request: NextRequest) {
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+// Middleware akan menangani autentikasi dan menambahkan info user ke header
+function getUserFromRequest(request: NextRequest) {
+  const userId = request.headers.get('x-user-id');
+  const userEmail = request.headers.get('x-user-email');
+  const userName = request.headers.get('x-user-name');
+
+  if (!userId || !userEmail) {
     return null;
   }
 
-  const idToken = authHeader.substring(7);
-
-  try {
-    // Verify the Firebase ID token using Admin SDK
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    return decodedToken;
-  } catch (error) {
-    console.error("Token verification error:", error);
-    return null;
-  }
+  return { userId, userEmail, userName };
 }
 
-// POST /api/umkm - Create new UMKM
+// POST /api/produk-umkm - Create new produk
 export async function POST(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        {
-          error: "Unauthorized - Invalid or expired token",
-          details: "Please login again to get a valid token",
-        },
-        { status: 401 }
-      );
-    }
+    const user = getUserFromRequest(request);
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const data = await request.json();
-
-    // Add metadata with user information from verified token
-    const umkmData = {
+    const produkData = {
       ...data,
-      slug: slugify(data.nama),
-      startPrice: parseFloat(data.startPrice) || 0,
-      endPrice: parseFloat(data.endPrice) || 0,
-      lokasi: {
-        alamat: data.lokasi?.alamat || "",
-        latitude: parseFloat(data.lokasi?.latitude) || 0,
-        longitude: parseFloat(data.lokasi?.longitude) || 0,
-      },
-      createdAt: new Date().toISOString(),
-      createdBy: decodedToken.uid,
-      authorEmail: decodedToken.email || "unknown@email.com",
+      createdBy: user.userId,
+      authorName: user.userName,
+      authorEmail: user.userEmail,
     };
 
-    console.log("Creating UMKM with verified user:", {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      nama: umkmData.nama,
-    });
-
-    const result = await tambahUmkm(umkmData);
-
-    // console.log("UMKM created successfully with ID:", result.id);
-
-    return NextResponse.json(
-      {
-        success: true,
-        data: result,
-        message: "UMKM berhasil dibuat",
-      },
-      { status: 201 }
-    );
+    const result = await tambahProdukUMKM(produkData);
+    return NextResponse.json({ success: true, data: result, message: "Produk berhasil ditambahkan" }, { status: 201 });
   } catch (error: any) {
-    console.error("Error creating UMKM:", error);
-
-    // Handle specific Firebase errors
-    if (error.code === "auth/id-token-expired") {
-      return NextResponse.json(
-        {
-          error: "Token expired - Please login again",
-          code: "TOKEN_EXPIRED",
-        },
-        { status: 401 }
-      );
-    }
-
-    if (error.code === "auth/argument-error") {
-      return NextResponse.json(
-        {
-          error: "Invalid token format",
-          code: "INVALID_TOKEN",
-        },
-        { status: 401 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        error: error.message || "Failed to create UMKM",
-        details: error.toString(),
-        code: error.code || "UNKNOWN_ERROR",
-      },
-      { status: 500 }
-    );
+    console.error("Error creating produk:", error);
+    return NextResponse.json({ error: error.message || "Failed to create produk" }, { status: 500 });
   }
 }
 
-// GET /api/umkm - Get paginated UMKM list (Public access)
+// GET /api/produk-umkm - Get produk list or single produk
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
     const cursor = searchParams.get("cursor");
-
-    // If id is provided, get single UMKM by id
     const id = searchParams.get("id");
+
     if (id) {
-      const umkm = await ambilUmkmById(id);
-      return NextResponse.json({ success: true, data: umkm });
+      const produk = await ambilProdukUMKMById(id);
+      if (!produk) return NextResponse.json({ error: "Produk not found" }, { status: 404 });
+      return NextResponse.json({ success: true, data: produk });
     }
 
-    // If slug is provided, get single UMKM by slug
-    const slug = searchParams.get("slug");
-    if (slug) {
-      const umkm = await ambilUmkmBySlug(slug);
-      return NextResponse.json({ success: true, data: umkm });
-    }
-
-    // Otherwise return paginated list
-    const result = await ambilUmkmPaginate(
-      pageSize,
-      cursor ? JSON.parse(cursor) : null
-    );
+    const result = await ambilProdukUMKMPaginate(pageSize, cursor);
     return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
-    console.error("Error fetching UMKM:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Failed to fetch UMKM",
-      },
-      { status: 500 }
-    );
+    // ... error handling
   }
 }
 
-// PUT /api/umkm - Update UMKM
+// ... export PUT dan DELETE
+
 export async function PUT(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: "Unauthorized - Invalid or expired token" },
-        { status: 401 }
-      );
-    }
+    const user = getUserFromRequest(request);
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const data = await request.json();
     const { id, ...updateData } = data;
-
-    if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
-    }
-
-    // Process numeric fields and location
-    const processedData = {
+    const produkData: IProdukUMKMUpdate = {
       ...updateData,
-      startPrice: parseFloat(updateData.startPrice) || 0,
-      endPrice: parseFloat(updateData.endPrice) || 0,
-      lokasi: {
-        alamat: updateData.lokasi?.alamat || "",
-        latitude: parseFloat(updateData.lokasi?.latitude) || 0,
-        longitude: parseFloat(updateData.lokasi?.longitude) || 0,
-      },
-      updatedAt: new Date().toISOString(),
-      updatedBy: decodedToken.uid,
+      updatedBy: user.userId,
     };
-
-    await updateUmkm(id, processedData);
-    return NextResponse.json({
-      success: true,
-      message: "UMKM updated successfully",
-    });
+    const result = await updateProdukUMKM(id, produkData);
+    return NextResponse.json({ success: true, data: result, message: "Produk berhasil diperbarui" });
   } catch (error: any) {
-    console.error("Error updating UMKM:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to update UMKM" },
-      { status: 500 }
-    );
+    console.error("Error updating produk:", error);
+    return NextResponse.json({ error: error.message || "Failed to update produk" }, { status: 500 });
   }
 }
 
-// DELETE /api/umkm - Delete UMKM
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify Firebase ID Token
-    const decodedToken = await verifyFirebaseToken(request);
-    if (!decodedToken) {
-      return NextResponse.json(
-        { error: "Unauthorized - Invalid or expired token" },
-        { status: 401 }
-      );
-    }
+    const user = getUserFromRequest(request);
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const searchParams = request.nextUrl.searchParams;
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
-    }
-
-    await hapusUmkm(id);
-    return NextResponse.json({
-      success: true,
-      message: "UMKM deleted successfully",
-    });
+    const id = searchParams.get("id");;
+    if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    const success = await hapusProdukUMKM(id);
+    if (!success) return NextResponse.json({ error: "Produk not found" }, { status: 404 });
+    return NextResponse.json({ success: true, message: "Produk berhasil dihapus" });
   } catch (error: any) {
-    console.error("Error deleting UMKM:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to delete UMKM" },
-      { status: 500 }
-    );
+    console.error("Error deleting produk:", error);
+    return NextResponse.json({ error: error.message || "Failed to delete produk" }, { status: 500 });
   }
 }

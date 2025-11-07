@@ -1,4 +1,4 @@
-import { IDemografi } from '@/types/demografi';
+import { IUmum } from '@/types/umum';
 import { CardPendudukIcon } from './CardPenduduk';
 import CardPenduduk from './CardPenduduk';
 import HeaderPage from './HeaderPage';
@@ -6,6 +6,30 @@ import { usePenduduk } from '@/hooks/useUmum';
 
 export default function AdmPenduduk() {
   const { umum: penduduk, loading, error } = usePenduduk();
+
+  // Helper function untuk mengurai data JSON
+  const parseUmumData = (umumData: IUmum | null) => {
+    if (!umumData) return null;
+    
+    // Buat salinan objek untuk tidak mengubah state asli
+    const parsedData = { ...umumData };
+    
+    // Jika data adalah string, urai menjadi objek
+    if (typeof parsedData.data === 'string') {
+      try {
+        parsedData.data = JSON.parse(parsedData.data);
+      } catch (e) {
+        console.error("Failed to parse data JSON:", e);
+        // parsedData.data = null; // Atur ke null jika gagal mengurai
+      }
+    }
+    
+    return parsedData;
+  };
+
+  // Gunakan fungsi pembantu untuk mengurai data
+  const parsedPenduduk = parseUmumData(penduduk);
+  const data = parsedPenduduk?.data?.penduduk;
 
   if (loading) {
     return (
@@ -22,8 +46,6 @@ export default function AdmPenduduk() {
       </div>
     );
   }
-
-  const data = penduduk?.data.penduduk;
 
   if (!data) {
     return (
