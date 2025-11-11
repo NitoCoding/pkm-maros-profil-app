@@ -10,6 +10,7 @@ import {useState, useCallback, useEffect, use} from 'react'
 import {useDropzone} from 'react-dropzone'
 import { toast } from 'react-hot-toast'
 import { IGaleri } from '@/types/galeri'
+import Image from 'next/image'
 
 const galeriSchema = z.object({
     caption: z.string().min(3, 'Caption wajib diisi'),
@@ -304,11 +305,15 @@ export default function EditGaleriPage({ params }: { params: Promise<{ id: strin
                             </span>
                         ) : (srcUrl || previewUrl) ? (
                             <div className='text-center'>
-                                <img
+                                <div className='relative w-48 h-32'>
+
+                                <Image
                                     src={previewUrl || srcUrl}
+                                    fill
                                     alt='Preview'
                                     className='w-48 h-32 object-cover rounded mb-2 border mx-auto'
-                                />
+                                    />
+                                    </div>
                                 <p className='text-sm text-green-600'>✓ Gambar siap</p>
                                 <p className='text-xs text-gray-500 mt-1'>
                                     Klik atau drag file baru untuk mengganti gambar

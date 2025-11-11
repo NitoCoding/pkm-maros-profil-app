@@ -1,5 +1,6 @@
 "use client";
 import { useLurah } from "@/hooks/useDashboard";
+import Image from "next/image";
 import { User } from "lucide-react";
 
 export default function LurahInfo() {
@@ -25,9 +26,9 @@ export default function LurahInfo() {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="flex items-center gap-4">
         {lurah.photo ? (
-          <img
-            src={lurah.photo}
-            alt={lurah.name}
+          <Image
+            src={lurah.photo || 'default-image.png'}
+            alt={lurah.name || 'Lurah'}
             className="w-20 h-20 object-cover rounded-full border border-gray-200"
           />
         ) : (

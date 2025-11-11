@@ -1,5 +1,5 @@
 // src/hooks/useBerita.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { IBerita } from '@/types/berita';
 
 interface UseBeritaResult {
@@ -24,60 +24,65 @@ export function useBerita(options: UseBeritaOptions = {}): UseBeritaResult {
   const [hasMore, setHasMore] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
 
-  const fetchBerita = async (reset = false) => {
-    try {
-      setLoading(true);
-      setError(null);
+  // ✅ Gunakan useCallback agar stabil dan bisa jadi dependency useEffect
+  const fetchBerita = useCallback(
+    async (reset = false) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const params = new URLSearchParams({
-        pageSize: pageSize.toString(),
-      });
+        const params = new URLSearchParams({
+          pageSize: pageSize.toString(),
+        });
 
-      if (!reset && cursor) {
-        params.append('cursor', cursor);
-      }
-
-      const response = await fetch(`/api/berita?${params.toString()}`);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch berita');
-      }
-
-      if (result.success) {
-        const newBerita = result.data.data || []; // PERBAIKAN: akses result.data.data
-        if (reset) {
-          setBerita(newBerita);
-        } else {
-          setBerita((prev) => [...prev, ...newBerita]);
+        if (!reset && cursor) {
+          params.append('cursor', cursor);
         }
-        setHasMore(result.data.hasMore || false);
-        setCursor(result.data.nextCursor || null); // PERBAIKAN: gunakan nextCursor
-      }
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error fetching berita:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const loadMore = () => {
+        const response = await fetch(`/api/berita?${params.toString()}`);
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch berita');
+        }
+
+        if (result.success) {
+          const newBerita = result.data.data || [];
+          if (reset) {
+            setBerita(newBerita);
+          } else {
+            setBerita((prev) => [...prev, ...newBerita]);
+          }
+          setHasMore(result.data.hasMore || false);
+          setCursor(result.data.nextCursor || null);
+        }
+      } catch (err: any) {
+        setError(err.message);
+        console.error('Error fetching berita:', err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pageSize, cursor] // dependency yang mempengaruhi fetch
+  );
+
+  const loadMore = useCallback(() => {
     if (!loading && hasMore) {
       fetchBerita(false);
     }
-  };
+  }, [loading, hasMore, fetchBerita]);
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     setCursor(null);
     fetchBerita(true);
-  };
+  }, [fetchBerita]);
 
+  // ✅ Masukkan fetchBerita dan initialLoad ke dependency array
   useEffect(() => {
     if (initialLoad) {
       fetchBerita(true);
     }
-  }, []);
+  }, [initialLoad, fetchBerita]);
 
   return {
     berita,
@@ -88,6 +93,7 @@ export function useBerita(options: UseBeritaOptions = {}): UseBeritaResult {
     refresh,
   };
 }
+
 
 // Hook untuk admin - dapat mengakses semua berita (termasuk draft)
 export function useBeritaAdmin(options: UseBeritaOptions = {}): UseBeritaResult {
@@ -98,61 +104,64 @@ export function useBeritaAdmin(options: UseBeritaOptions = {}): UseBeritaResult 
   const [hasMore, setHasMore] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
 
-  const fetchBerita = async (reset = false) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const fetchBerita = useCallback(
+    async (reset = false) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const params = new URLSearchParams({
-        pageSize: pageSize.toString(),
-        admin: 'true', // Penting: untuk mengakses semua berita
-      });
+        const params = new URLSearchParams({
+          pageSize: pageSize.toString(),
+          admin: 'true',
+        });
 
-      if (!reset && cursor) {
-        params.append('cursor', cursor);
-      }
-
-      const response = await fetch(`/api/berita?${params.toString()}`);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch berita');
-      }
-
-      if (result.success) {
-        const newBerita = result.data.data || []; // PERBAIKAN
-        if (reset) {
-          setBerita(newBerita);
-        } else {
-          setBerita((prev) => [...prev, ...newBerita]);
+        if (!reset && cursor) {
+          params.append('cursor', cursor);
         }
-        setHasMore(result.data.hasMore || false);
-        setCursor(result.data.nextCursor || null); // PERBAIKAN
-      }
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error fetching berita:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const loadMore = () => {
+        const response = await fetch(`/api/berita?${params.toString()}`);
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch berita');
+        }
+
+        if (result.success) {
+          const newBerita = result.data.data || [];
+          if (reset) {
+            setBerita(newBerita);
+          } else {
+            setBerita((prev) => [...prev, ...newBerita]);
+          }
+          setHasMore(result.data.hasMore || false);
+          setCursor(result.data.nextCursor || null);
+        }
+      } catch (err: any) {
+        setError(err.message);
+        console.error('Error fetching berita (admin):', err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pageSize, cursor]
+  );
+
+  const loadMore = useCallback(() => {
     if (!loading && hasMore) {
       fetchBerita(false);
     }
-  };
+  }, [loading, hasMore, fetchBerita]);
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     setCursor(null);
     fetchBerita(true);
-  };
+  }, [fetchBerita]);
 
   useEffect(() => {
     if (initialLoad) {
       fetchBerita(true);
     }
-  }, []);
+  }, [initialLoad, fetchBerita]); // ✅ tambahkan dependencies di sini
 
   return {
     berita,
@@ -163,6 +172,7 @@ export function useBeritaAdmin(options: UseBeritaOptions = {}): UseBeritaResult 
     refresh,
   };
 }
+
 
 export function useBeritaById(id: number) {
   const [berita, setBerita] = useState<IBerita | null>(null);

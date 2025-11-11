@@ -32,7 +32,7 @@ export function CardPendudukIcon({ icon, kategori, jumlah }: { icon: string; kat
   return (
     <div className="bg-white rounded-lg shadow-md p-4 text-center hover:shadow-lg transition-shadow">
       <div className="flex justify-center mb-2">
-        <img src={icon} alt={kategori} className="w-12 h-12 object-contain" />
+        <Image src={icon} alt={kategori} className="w-12 h-12 object-contain" />
       </div>
       <div className="text-2xl font-bold text-gray-800">{jumlah.toLocaleString()}</div>
       <div className="text-sm text-gray-600">{kategori}</div>

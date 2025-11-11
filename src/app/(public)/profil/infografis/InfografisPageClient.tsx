@@ -7,6 +7,7 @@ import CardPenduduk from "@/components/CardPenduduk";
 import { Users, School, Heart, MapPin, BarChart3 } from "lucide-react";
 import { useInfografi, usePenduduk, useSaranaPendidikan, useSaranaKesehatan } from "@/hooks/useUmum";
 import { IUmum } from "@/types/umum";
+import Image from "next/image";
 
 export default function InfografiPage() {
   const { umum: infografi, loading: loadingInfografi } = useInfografi();
@@ -81,8 +82,8 @@ export default function InfografiPage() {
                     </p>
                     {parsedInfografi?.data?.infografi?.gambar && (
                       <div className="mt-4">
-                        <img 
-                          src={parsedInfografi.data.infografi.gambar} 
+                        <Image
+                          src={parsedInfografi.data.infografi.gambar || 'default-image.jpg'} 
                           alt="Infografi" 
                           className="w-full max-w-md rounded-lg border border-gray-200"
                         />

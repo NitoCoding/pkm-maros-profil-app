@@ -1,6 +1,6 @@
 // src/hooks/usePegawai.ts
-import { useState, useEffect } from 'react';
-import { IPegawai, IPegawaiPaginatedResponse } from '@/types/pegawai';
+import { useState, useEffect, useCallback } from 'react';
+import { IPegawai } from '@/types/pegawai';
 
 interface UsePegawaiOptions {
   pageSize?: number;
@@ -9,21 +9,24 @@ interface UsePegawaiOptions {
 
 interface UsePegawaiReturn {
   pegawai: IPegawai[];
-  loading:  boolean;
+  loading: boolean;
   error: string | null;
   hasMore: boolean;
   refresh: () => void;
   loadMore: () => void;
 }
 
-export function usePegawai({ pageSize = 10, initialLoad = true }: UsePegawaiOptions = {}): UsePegawaiReturn {
+export function usePegawai(
+  { pageSize = 10, initialLoad = true }: UsePegawaiOptions = {}
+): UsePegawaiReturn {
   const [pegawai, setPegawai] = useState<IPegawai[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
 
-  const fetchPegawai = async (reset = false) => {
+  // ✅ Bungkus fetchPegawai dengan useCallback agar tidak berubah setiap render
+  const fetchPegawai = useCallback(async (reset = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -45,7 +48,7 @@ export function usePegawai({ pageSize = 10, initialLoad = true }: UsePegawaiOpti
 
       if (result.success) {
         const newPegawai = result.data.data || [];
-        
+
         if (reset) {
           setPegawai(newPegawai);
         } else {
@@ -61,24 +64,25 @@ export function usePegawai({ pageSize = 10, initialLoad = true }: UsePegawaiOpti
     } finally {
       setLoading(false);
     }
-  };
+  }, [cursor, pageSize]); // dependensi penting saja
 
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
     if (!loading && hasMore) {
       fetchPegawai(false);
     }
-  };
+  }, [loading, hasMore, fetchPegawai]);
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     setCursor(null);
     fetchPegawai(true);
-  };
+  }, [fetchPegawai]);
 
+  // ✅ useEffect dengan dependensi lengkap
   useEffect(() => {
     if (initialLoad) {
       fetchPegawai(true);
     }
-  }, []);
+  }, [initialLoad, fetchPegawai]);
 
   return {
     pegawai,
@@ -89,6 +93,7 @@ export function usePegawai({ pageSize = 10, initialLoad = true }: UsePegawaiOpti
     loadMore,
   };
 }
+
 
 // Hook untuk single pegawai by id
 export function usePegawaiById(id: number) {

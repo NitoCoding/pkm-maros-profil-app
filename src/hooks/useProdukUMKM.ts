@@ -1,6 +1,5 @@
-// src/hooks/useProdukUMKM.ts
-import { useState, useEffect } from 'react';
-import { IProdukUMKM, IProdukUMKMPaginatedResponse } from '@/types/umkm';
+import { useState, useEffect, useCallback } from 'react';
+import { IProdukUMKM } from '@/types/umkm';
 
 interface UseProdukUMKMOptions {
   pageSize?: number;
@@ -16,14 +15,17 @@ interface UseProdukUMKMReturn {
   loadMore: () => void;
 }
 
-export function useProdukUMKM({ pageSize = 10, initialLoad = true }: UseProdukUMKMOptions = {}): UseProdukUMKMReturn {
+export function useProdukUMKM(
+  { pageSize = 10, initialLoad = true }: UseProdukUMKMOptions = {}
+): UseProdukUMKMReturn {
   const [umkm, setUmkm] = useState<IProdukUMKM[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
 
-  const fetchUmkm = async (reset = false) => {
+  // ✅ Bungkus fetch dengan useCallback agar stabil
+  const fetchUmkm = useCallback(async (reset = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -44,8 +46,7 @@ export function useProdukUMKM({ pageSize = 10, initialLoad = true }: UseProdukUM
       }
 
       if (result.success) {
-        const newUmkm = result.data.data || []; // PERBAIKAN: akses result.data.data
-        
+        const newUmkm = result.data.data || [];
         if (reset) {
           setUmkm(newUmkm);
         } else {
@@ -53,7 +54,7 @@ export function useProdukUMKM({ pageSize = 10, initialLoad = true }: UseProdukUM
         }
 
         setHasMore(result.data.hasMore || false);
-        setCursor(result.data.nextCursor || null); // PERBAIKAN: gunakan nextCursor
+        setCursor(result.data.nextCursor || null);
       }
     } catch (err: any) {
       setError(err.message);
@@ -61,32 +62,33 @@ export function useProdukUMKM({ pageSize = 10, initialLoad = true }: UseProdukUM
     } finally {
       setLoading(false);
     }
-  };
+  }, [cursor, pageSize]); // ✅ dependensi relevan saja
 
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
     if (!loading && hasMore) {
       fetchUmkm(false);
     }
-  };
+  }, [loading, hasMore, fetchUmkm]);
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     setCursor(null);
     fetchUmkm(true);
-  };
+  }, [fetchUmkm]);
 
+  // ✅ Tambahkan fetchUmkm & initialLoad ke dependensi agar konsisten
   useEffect(() => {
     if (initialLoad) {
       fetchUmkm(true);
     }
-  }, []);
+  }, [initialLoad, fetchUmkm]);
 
   return {
     umkm,
     loading,
     error,
     hasMore,
-    loadMore,
     refresh,
+    loadMore,
   };
 }
 

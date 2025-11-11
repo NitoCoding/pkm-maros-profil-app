@@ -1,5 +1,5 @@
 // src/hooks/useCachedData.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 // Cache configuration untuk komponen statis
 const CACHE_CONFIG = {
@@ -13,10 +13,10 @@ const CACHE_CONFIG = {
   },
   FOOTER: {
     key: 'static_footer_cache',
-    // duration: 30 * 60 * 1000, // 30 menit
+    duration: 30 * 60 * 1000, // 30 menit
     // Untuk testing, ubah ke 10 detik
-	duration: 10 * 1000, // 10 detik
-	
+    // duration: 10 * 1000, // 10 detik
+    
     // duration: 1 * 60 * 1000, // 1 menit
   },
 } as const;
@@ -36,27 +36,24 @@ export function useCachedData<T>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFromCache, setIsFromCache] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   const config = CACHE_CONFIG[type];
 
-  // Load from cache
-  const loadFromCache = (): T | null => {
+  const loadFromCache = useCallback((): T | null => {
     try {
       if (typeof window === 'undefined') return null;
-      
       const cached = localStorage.getItem(config.key);
       if (!cached) return null;
 
       const parsed: CachedData = JSON.parse(cached);
       const now = Date.now();
 
-      // Check if cache is still valid
       if (now - parsed.timestamp < config.duration) {
         console.log(`[${type}] Loading from cache, age: ${Math.round((now - parsed.timestamp) / 1000)}s`);
         return parsed.data;
       }
 
-      // Remove expired cache
       console.log(`[${type}] Cache expired, removing...`);
       localStorage.removeItem(config.key);
       return null;
@@ -64,38 +61,20 @@ export function useCachedData<T>(
       console.error(`Error loading ${type} from cache:`, error);
       return null;
     }
-  };
+  }, [config.key, config.duration, type]);
 
-  // Save to cache
-  const saveToCache = (data: T) => {
+  const saveToCache = useCallback((data: T) => {
     try {
       if (typeof window === 'undefined') return;
-
-      const cacheData: CachedData = {
-        data,
-        timestamp: Date.now(),
-      };
-
+      const cacheData: CachedData = { data, timestamp: Date.now() };
       localStorage.setItem(config.key, JSON.stringify(cacheData));
       console.log(`[${type}] Data saved to cache`);
     } catch (error) {
       console.error(`Error saving ${type} to cache:`, error);
     }
-  };
+  }, [config.key, type]);
 
-  // Clear cache
-  const clearCache = () => {
-    try {
-      if (typeof window === 'undefined') return;
-      localStorage.removeItem(config.key);
-      console.log(`[${type}] Cache cleared`);
-    } catch (error) {
-      console.error(`Error clearing ${type} cache:`, error);
-    }
-  };
-
-  // Fetch fresh data
-  const fetchFreshData = async () => {
+  const fetchFreshData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -103,8 +82,6 @@ export function useCachedData<T>(
 
       console.log(`[${type}] Fetching fresh data...`);
       const freshData = await fetchFunction();
-      console.log(`[${type}] Fresh data received:`, freshData);
-      
       setData(freshData);
       saveToCache(freshData);
     } catch (err: any) {
@@ -113,37 +90,47 @@ export function useCachedData<T>(
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchFunction, saveToCache, type]);
 
-  // Force refresh
-  const forceRefresh = async () => {
+  const clearCache = useCallback(() => {
+    try {
+      if (typeof window === 'undefined') return;
+      localStorage.removeItem(config.key);
+      console.log(`[${type}] Cache cleared`);
+    } catch (error) {
+      console.error(`Error clearing ${type} cache:`, error);
+    }
+  }, [config.key, type]);
+
+  const forceRefresh = useCallback(async () => {
     console.log(`[${type}] Force refreshing...`);
     clearCache();
     await fetchFreshData();
-  };
+  }, [clearCache, fetchFreshData, type]);
 
   useEffect(() => {
+    // Hanya jalankan sekali saat komponen dimount
+    if (initialized) return;
+    
     const initializeData = async () => {
-      // Try to load from cache first
       const cached = loadFromCache();
-      
       if (cached) {
-        console.log(`[${type}] Using cached data`);
         setData(cached);
         setIsFromCache(true);
         setLoading(false);
-        
-        // Fetch fresh data in background
-        fetchFreshData();
+        // Hanya refresh di background jika data sudah ada di cache lebih dari 5 menit
+        const cacheAge = Date.now() - JSON.parse(localStorage.getItem(config.key) || '{}').timestamp;
+        if (cacheAge > 5 * 60 * 1000) {
+          fetchFreshData(); // refresh di background
+        }
       } else {
-        // No cache available, fetch fresh data
-        console.log(`[${type}] No cache available, fetching fresh data`);
         await fetchFreshData();
       }
+      setInitialized(true);
     };
-
+    
     initializeData();
-  }, []);
+  }, [initialized, loadFromCache, fetchFreshData, type, config.key]);
 
   return {
     data: data || fallbackData,
@@ -157,8 +144,8 @@ export function useCachedData<T>(
 
 // Specialized hooks for specific components
 export function useHeroCached() {
-  // Fetch hero data from dashboard API
-  const fetchHeroData = async () => {
+  // Memoize fetchHeroData to prevent unnecessary re-renders
+  const fetchHeroData = useMemo(() => async () => {
     try {
       console.log('[HERO] Fetching from /api/dashboard...');
       const response = await fetch('/api/dashboard');
@@ -170,11 +157,11 @@ export function useHeroCached() {
         throw new Error(result.error || 'Failed to fetch hero data');
       }
 
-	  console.log('[HERO] Response OK', response.ok);
-	  console.log('[HERO] Result success', result.success);
-	  console.log('[HERO] Result data', result.data);
-	  console.log('[HERO] Result data hero', result.data?.hero);
-	  console.log('[HERO] Result hero', result.hero);
+      console.log('[HERO] Response OK', response.ok);
+      console.log('[HERO] Result success', result.success);
+      console.log('[HERO] Result data', result.data);
+      console.log('[HERO] Result data hero', result.data?.hero);
+      console.log('[HERO] Result hero', result.hero);
 
       if (result.hero) {
         const heroData = {
@@ -202,7 +189,7 @@ export function useHeroCached() {
         subtitle: 'Desa Benteng Gajah, Kecamatan Panca Lautang, Kabupaten Sidrap'
       };
     }
-  };
+  }, []);
 
   const fallbackData = {
     image: '',
@@ -218,8 +205,8 @@ export function useHeroCached() {
 }
 
 export function useSambutanCached() {
-  // Fetch sambutan data from dashboard API
-  const fetchSambutanData = async () => {
+  // Memoize fetchSambutanData to prevent unnecessary re-renders
+  const fetchSambutanData = useMemo(() => async () => {
     try {
       console.log('[SAMBUTAN] Fetching from /api/dashboard...');
       const response = await fetch('/api/dashboard');
@@ -257,7 +244,7 @@ export function useSambutanCached() {
         gambar: ''
       };
     }
-  };
+  }, []);
 
   const fallbackData = {
     judul: 'Sambutan Lurah',
@@ -273,8 +260,8 @@ export function useSambutanCached() {
 }
 
 export function useFooterCached() {
-  // Fetch footer data from dashboard API
-  const fetchFooterData = async () => {
+  // Memoize fetchFooterData to prevent unnecessary re-renders
+  const fetchFooterData = useMemo(() => async () => {
     try {
       console.log('[FOOTER] Fetching from /api/dashboard...');
       const response = await fetch('/api/dashboard');
@@ -330,7 +317,7 @@ export function useFooterCached() {
         }
       };
     }
-  };
+  }, []);
 
   const fallbackData = {
     alamat: 'Bilokka, Kec. Panca Lautang, Kabupaten Sidenreng Rappang, Sulawesi Selatan 91672',

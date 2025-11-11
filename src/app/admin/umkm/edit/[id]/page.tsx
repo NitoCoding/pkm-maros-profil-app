@@ -235,12 +235,12 @@ export default function EditProdukUmkmPage() {
 			<form onSubmit={handleSubmit(onSubmit)} className='bg-white rounded-xl border border-gray-200 shadow px-6 py-8 space-y-5'>
 				<div className='flex items-center mb-8'>
 					<Link
-            href='/admin/umkm'
-            className='flex items-center text-gray-600 hover:text-gray-900 mb-4'
-          >
-            <ArrowLeft size={18} />
-            Kembali
-          </Link>
+						href='/admin/umkm'
+						className='flex items-center text-gray-600 hover:text-gray-900 mb-4'
+					>
+						<ArrowLeft size={18} />
+						Kembali
+					</Link>
 				</div>
 
 				{/* ... Salin semua field form dari halaman tambah di sini ... */}
@@ -287,12 +287,19 @@ export default function EditProdukUmkmPage() {
 				{/* --- Field Gambar tetap --- */}
 				<div>
 					<label className='font-medium'>Gambar Produk</label>
-					<div {...getRootProps()} className={`mt-1 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'} ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
+					<div {...getRootProps()} className={`mt-1 border-2 border-dashed rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer transition ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'} ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
 						<input {...getInputProps()} />
 						{uploading ? (
 							<span className='flex items-center gap-2 text-blue-600'><Loader2 className='animate-spin' size={18} /> Mengupload...</span>
 						) : gambarUrl ? (
-							<Image src={gambarUrl} alt='Preview' width={160} height={128} className='w-40 h-32 object-cover rounded mb-2 border mx-auto' />
+							<div className='relative w-40 h-32'>
+
+								<Image src={gambarUrl} alt='Preview' fill className='w-40 h-32 object-cover rounded mb-2 border mx-auto' />
+								<p className='text-sm text-green-600'>✓ Gambar siap</p>
+								<p className='text-xs text-gray-500 mt-1'>
+									Klik atau drag file baru untuk mengganti gambar
+								</p>
+							</div>
 						) : (
 							<div className='text-center'>
 								<span className='text-gray-400 block mb-2'>Klik atau drag file gambar di sini</span>

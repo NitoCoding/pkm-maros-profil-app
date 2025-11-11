@@ -1,5 +1,5 @@
 // src/hooks/useUser.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { IUser, IUserCreate, IUserUpdate, IPasswordReset, IPasswordChange } from '@/types/user';
 
 interface UseUsersResult {
@@ -77,7 +77,7 @@ export function useUser(id: number): UseUserResult {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchUser = async () => {
+    const fetchUser = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
@@ -98,24 +98,17 @@ export function useUser(id: number): UseUserResult {
         } finally {
             setLoading(false);
         }
-    };
+    }, [id]); // ✅ hanya berubah jika id berubah
+
+    useEffect(() => {
+        if (id) fetchUser();
+    }, [id, fetchUser]); // ✅ tidak akan looping terus
 
     const refresh = () => {
         fetchUser();
     };
 
-    useEffect(() => {
-        if (id) {
-            fetchUser();
-        }
-    }, [id]);
-
-    return {
-        user,
-        loading,
-        error,
-        refresh,
-    };
+    return { user, loading, error, refresh };
 }
 
 // Hook untuk mutasi data user

@@ -51,7 +51,6 @@ export default function OptimizedImage({
   // Common props
   const commonProps = {
     src: optimizedSrc,
-    alt,
     className,
     priority,
     unoptimized: false, // Let Cloudinary handle optimization
@@ -67,6 +66,7 @@ export default function OptimizedImage({
       <Image
         {...commonProps}
         fill
+        alt={alt}
         sizes="(max-width: 768px) 100vw, 300px"
       />
     );
@@ -77,6 +77,7 @@ export default function OptimizedImage({
   
   return (
     <Image
+      alt={alt}
       {...commonProps}
       {...dimensions}
     />

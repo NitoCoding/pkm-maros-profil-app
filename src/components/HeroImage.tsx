@@ -1,5 +1,6 @@
 "use client";
 import { useHero } from "@/hooks/useDashboard";
+import Image from "next/image";
 
 export default function HeroImage() {
   const { hero, loading, error } = useHero();
@@ -23,7 +24,7 @@ export default function HeroImage() {
   return (
     <div className="relative w-full h-64 md:h-96 overflow-hidden rounded-lg">
       {hero.image ? (
-        <img
+        <Image
           src={hero.image}
           alt="Hero"
           className="w-full h-full object-cover"

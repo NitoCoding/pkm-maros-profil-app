@@ -317,13 +317,17 @@ export default function EditBeritaPage() {
 							</span>
 						) : gambarUrl ? (
 							<div className='text-center'>
+								<div className='relative w-40 h-32'>
+
 								<Image
 									src={gambarUrl}
 									alt='Preview'
-									width={160}
-									height={128}
+									fill
+									// width={160}
+									// height={128}
 									className='w-40 h-32 object-cover rounded mb-2 border mx-auto'
-								/>
+									/>
+									</div>
 								<p className='text-sm text-green-600'>✓ Gambar berhasil diupload</p>
 							</div>
 						) : (

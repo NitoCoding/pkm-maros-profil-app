@@ -236,11 +236,15 @@ export default function TambahBeritaPage() {
               </span>
             ) : gambarUrl ? (
               <div className='text-center'>
-                <img
+                <div className='relative w-48 h-32'>
+
+                <Image
                   src={gambarUrl}
                   alt='Preview'
+                  fill
                   className='w-48 h-32 object-cover rounded mb-2 border mx-auto'
-                />
+                  />
+                  </div>
                 <p className='text-sm text-green-600'>✓ Gambar berhasil diupload</p>
               </div>
             ) : (

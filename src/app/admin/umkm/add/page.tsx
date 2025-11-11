@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Loader2, MapPin, ExternalLink, Plus, X } from 'lucide-react'
 import Link from 'next/link'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, Suspense } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { toast } from 'react-hot-toast'
 import Image from 'next/image'
@@ -66,7 +66,8 @@ const uploadImage = async (file: File): Promise<string> => {
   }
 }
 
-export default function TambahProdukUmkmPage() {
+
+function TambahProdukUmkmContent() {
   const router = useRouter()
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/admin/umkm';
@@ -243,7 +244,10 @@ export default function TambahProdukUmkmPage() {
             {uploading ? (
               <span className='flex items-center gap-2 text-blue-600'><Loader2 className='animate-spin' size={18} /> Mengupload...</span>
             ) : gambarUrl ? (
+              <div className='relative w-40 h-32'>
+
               <Image src={gambarUrl} alt='Preview' width={160} height={128} className='w-40 h-32 object-cover rounded mb-2 border mx-auto' />
+              </div>
             ) : (
               <div className='text-center'>
                 <span className='text-gray-400 block mb-2'>Klik atau drag file gambar di sini</span>
@@ -330,5 +334,13 @@ export default function TambahProdukUmkmPage() {
         </div>
       </form>
     </div>
+  )
+}
+
+export default function TambahProdukUmkmPage() {
+  return (
+    <Suspense fallback={<div>Loading halaman...</div>}>
+      <TambahProdukUmkmContent />
+    </Suspense>
   )
 }

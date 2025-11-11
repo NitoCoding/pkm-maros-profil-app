@@ -111,6 +111,7 @@ export async function PUT(request: NextRequest) {
       ...updateData,
       updatedBy: user.userId,
     };
+    // console.log(dataWithTimestamp)
 
     const success = await updateGaleri(id, dataWithTimestamp);
     

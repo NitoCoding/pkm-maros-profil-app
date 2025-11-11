@@ -33,7 +33,7 @@ const MapFix = dynamic(() => import('./MapFix'), { ssr: false })
 
 // Data geografi lokal
 const Geografi: IGeografi = {
-	nama: 'Desa Bilokka',
+	nama: 'Desa Benteng Gajah',
 	luasWilayah: 150.5,
 	jumlahDesa: 10,
 	jumlahDusun: 25,
@@ -43,11 +43,11 @@ const Geografi: IGeografi = {
 	batasSelatan: 'Gunung Tinggi',
 	batasTimur: 'Laut Selatan',
 	batasBarat: 'Hutan Lindung',
-	ketinggian: 300,
+	ketinggian: 500,
 	koordinat: {
         
-		latitude: -4.06115,
-		longitude: 119.83009,
+		latitude: -5.1492644,
+		longitude: 119.6320096,
 	},
 	kondisiGeografis:
 		'Daerah pegunungan dengan sungai yang mengalir di tengahnya.',
@@ -114,7 +114,7 @@ export default function MapSimple() {
 								{Geografi.koordinat.longitude}
 							</p>
 							<Link 
-								href="https://maps.app.goo.gl/fNawpkXyfaf82GYv8" 
+								href="https://maps.app.goo.gl/ZxiejwxNSV7D8ZRP9" 
 								target='_blank'
 								className='text-blue-600 hover:text-blue-800 underline'
 							>

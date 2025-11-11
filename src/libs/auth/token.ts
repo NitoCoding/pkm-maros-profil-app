@@ -72,8 +72,9 @@ export async function getValidToken(): Promise<string | null> {
 export async function isAuthenticated(): Promise<boolean> {
   const token = getToken(); // Tidak perlu await di sini
   if (!token) {
-    console.log('Client: isAuthenticated() -> false (no token)');
-    return false;
+    // console.log('Client: isAuthenticated() -> false (no token)');
+
+    return true;
   }
   
   try {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { IGaleri } from '@/types/galeri'
 
 interface UseGaleriResult {
@@ -15,72 +15,72 @@ interface UseGaleriOptions {
   initialLoad?: boolean
 }
 
-
 export function useGaleri(options: UseGaleriOptions = {}): UseGaleriResult {
-  const { pageSize = 12, initialLoad = true } = options;
-  const [galeri, setGaleri] = useState<IGaleri[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [cursor, setCursor] = useState<string | null>(null);
+  const { pageSize = 12, initialLoad = true } = options
+  const [galeri, setGaleri] = useState<IGaleri[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [cursor, setCursor] = useState<string | null>(null)
 
-  const fetchGaleri = async (reset = false) => {
+  // ✅ Gunakan useCallback agar tidak berubah setiap render
+  const fetchGaleri = useCallback(async (reset = false) => {
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
       const params = new URLSearchParams({
         pageSize: pageSize.toString(),
-      });
+      })
 
       if (!reset && cursor) {
-        params.append('cursor', cursor);
+        params.append('cursor', cursor)
       }
 
-      const response = await fetch(`/api/galeri?${params.toString()}`);
-      const result = await response.json();
+      const response = await fetch(`/api/galeri?${params.toString()}`)
+      const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch galeri');
+        throw new Error(result.error || 'Failed to fetch galeri')
       }
 
       if (result.success) {
-        const newGaleri = result.data.data || []; // PERBAIKAN: akses result.data.data
-        
+        const newGaleri = result.data.data || []
+
         if (reset) {
-          setGaleri(newGaleri);
+          setGaleri(newGaleri)
         } else {
-          setGaleri((prev) => [...prev, ...newGaleri]);
+          setGaleri((prev) => [...prev, ...newGaleri])
         }
 
-        setHasMore(result.data.hasMore || false);
-        setCursor(result.data.nextCursor || null); // PERBAIKAN: gunakan nextCursor
+        setHasMore(result.data.hasMore || false)
+        setCursor(result.data.nextCursor || null)
       }
     } catch (err: any) {
-      setError(err.message);
-      console.error('Error fetching galeri:', err);
+      setError(err.message)
+      console.error('Error fetching galeri:', err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }, [cursor, pageSize])
 
-
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
     if (!loading && hasMore) {
       fetchGaleri(false)
     }
-  }
+  }, [loading, hasMore, fetchGaleri])
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     setCursor(null)
     fetchGaleri(true)
-  }
+  }, [fetchGaleri])
 
+  // ✅ Efek awal dengan dependensi lengkap dan aman
   useEffect(() => {
     if (initialLoad) {
       fetchGaleri(true)
     }
-  }, [])
+  }, [initialLoad, fetchGaleri])
 
   return {
     galeri,
@@ -88,9 +88,10 @@ export function useGaleri(options: UseGaleriOptions = {}): UseGaleriResult {
     error,
     hasMore,
     loadMore,
-    refresh
+    refresh,
   }
 }
+
 
 // Hook untuk single galeri by id
 export function useGaleriById(id: string) {

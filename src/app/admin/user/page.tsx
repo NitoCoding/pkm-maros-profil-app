@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useUsers, useUserMutation } from '@/hooks/useUser';
 import { IUser } from '@/types/user';
 import { Plus, Edit, Trash2, Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react';
@@ -106,7 +107,7 @@ export default function AdminUserPage() {
                                     <td className="p-4 align-middle">
                                         <div className="flex items-center gap-3">
                                             {user.avatar_url ? (
-                                                <img
+                                                <Image
                                                     src={user.avatar_url}
                                                     alt={user.name}
                                                     className="h-10 w-10 rounded-full object-cover shadow-sm border"

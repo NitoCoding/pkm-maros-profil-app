@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "react-hot-toast";
 import { useDashboard, useDashboardMutation } from "@/hooks/useDashboard";
 import { IDashboardUpdate } from "@/types/dashboard";
+import Image from "next/image";
 
 export default function AdminDashboardPage() {
   // Hooks untuk data dashboard
@@ -68,13 +69,13 @@ export default function AdminDashboardPage() {
       }
 
       const result = await response.json();
-      
+
       if (modalType === "hero") {
         setFormData({ ...formData, image: result.url });
       } else if (modalType === "lurah") {
         setFormData({ ...formData, photo: result.url });
       }
-      
+
       toast.success("Gambar berhasil diupload dengan kualitas HD!");
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -89,7 +90,7 @@ export default function AdminDashboardPage() {
 
     try {
       const success = await updateDashboardSection(modalType, formData);
-      
+
       if (success) {
         toast.success("Data berhasil disimpan!");
         refresh(); // Refresh data setelah berhasil disimpan
@@ -170,20 +171,24 @@ export default function AdminDashboardPage() {
                 <span className="hidden sm:inline">Edit</span>
               </button>
             </div>
-            
+
             <div className="space-y-3">
               {dashboard?.hero?.image ? (
-                <img
-                  src={dashboard.hero.image}
-                  alt="Hero"
-                  className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                />
+                <div className="relative w-full h-32">
+
+                  <Image
+                    src={dashboard.hero.image}
+                    alt="Hero"
+                    fill
+                    className="object-cover rounded-lg border border-gray-200"
+                  />
+                </div>
               ) : (
                 <div className="w-full h-32 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
                   <span className="text-gray-400 text-sm">Belum ada gambar</span>
                 </div>
               )}
-              
+
               <div className="text-sm text-gray-600">
                 <p><strong>Judul:</strong> {dashboard?.hero?.title || 'Selamat Datang di Desa Benteng Gajah'}</p>
                 <p><strong>Subtitle:</strong> {dashboard?.hero?.subtitle || 'Melayani Masyarakat dengan Sepenuh Hati'}</p>
@@ -210,20 +215,24 @@ export default function AdminDashboardPage() {
                 <span className="hidden sm:inline">Edit</span>
               </button>
             </div>
-            
+
             <div className="flex items-center gap-4">
               {dashboard?.lurah?.photo ? (
-                <img
-                  src={dashboard.lurah.photo}
-                  alt="Lurah"
-                  className="w-16 h-16 object-cover rounded-full border border-gray-200"
-                />
+                <div className="relative w-16 h-16">
+
+                  <Image
+                    src={dashboard.lurah.photo}
+                    alt="Lurah"
+                    fill
+                    className="object-cover rounded-full border border-gray-200"
+                  />
+                </div>
               ) : (
                 <div className="w-16 h-16 bg-gray-100 rounded-full border border-gray-200 flex items-center justify-center">
                   <User className="w-6 h-6 text-gray-400" />
                 </div>
               )}
-              
+
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-800">{dashboard?.lurah?.name || 'Nama Lurah'}</h4>
                 <p className="text-sm text-gray-600">{dashboard?.lurah?.position || 'Lurah Desa Benteng Gajah'}</p>
@@ -250,7 +259,7 @@ export default function AdminDashboardPage() {
                 <span className="hidden sm:inline">Edit</span>
               </button>
             </div>
-            
+
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Hari:</span>
@@ -287,7 +296,7 @@ export default function AdminDashboardPage() {
                 <span className="hidden sm:inline">Edit</span>
               </button>
             </div>
-            
+
             <div className="space-y-3 text-sm">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gray-400" />
@@ -345,15 +354,24 @@ export default function AdminDashboardPage() {
                             Uploading...
                           </span>
                         ) : formData.image ? (
-                          <img
-                            src={formData.image}
-                            alt="Preview"
-                            className="w-40 h-32 object-cover rounded mb-2 border"
-                          />
+                          <div className="relative w-40 h-32">
+
+                            <Image
+                              src={formData.image}
+                              alt="Preview"
+                              fill
+                              className="w-40 h-32 object-cover rounded mb-2 border"
+                            />
+                          </div>
                         ) : (
-                          <span className="text-gray-400">
-                            Klik/drag file gambar di sini (maks 10MB)
-                          </span>
+                          <div className='text-center'>
+                            <span className='text-gray-400 block mb-2'>
+                              Klik atau drag file gambar di sini
+                            </span>
+                            <span className='text-xs text-gray-500'>
+                              Format: JPG, PNG, WebP (Maksimal 5MB)
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -406,11 +424,15 @@ export default function AdminDashboardPage() {
                             Uploading...
                           </span>
                         ) : formData.photo ? (
-                          <img
-                            src={formData.photo}
-                            alt="Preview"
-                            className="w-32 h-32 object-cover rounded-full mb-2 border"
-                          />
+                          <div className="relative w-32 h-32">
+
+                            <Image
+                              src={formData.photo}
+                              alt="Preview"
+                              fill
+                              className="object-cover rounded-full mb-2 border"
+                            />
+                          </div>
                         ) : (
                           <span className="text-gray-400">
                             Klik/drag foto lurah di sini (maks 10MB)

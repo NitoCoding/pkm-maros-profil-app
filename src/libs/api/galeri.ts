@@ -99,14 +99,15 @@ export async function updateGaleri(id: string, data: IGaleriUpdate): Promise<boo
   if (data.caption !== undefined) { fields.push('caption = ?'); values.push(data.caption); }
   if (data.tanggal !== undefined) { fields.push('tanggal = ?'); values.push(data.tanggal); }
   if (data.tags !== undefined) { fields.push('tags = ?'); values.push(JSON.stringify(data.tags)); }
-  if (data.updatedBy !== undefined) { fields.push('updated_by = ?'); values.push(data.updatedBy); }
 
   if (fields.length === 0) return true;
 
   values.push(id);
   const query = `UPDATE galeri SET ${fields.join(', ')} WHERE id = ?`;
 
-  const [updateResult] = await executeQuery(query, values);
+  console.log(query, values);
+
+  const updateResult = await executeQuery(query, values);
   return (updateResult as any).affectedRows > 0;
 }
 

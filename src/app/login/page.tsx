@@ -1,11 +1,11 @@
 // src/app/login/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/admin';
@@ -145,7 +145,7 @@ export default function LoginPage() {
             {loading ? 'Loading...' : 'Login'}
           </button>
         </form>
-        <div className='flex items-center my-4'>
+        {/* <div className='flex items-center my-4'>
           <div className='flex-grow border-t border-gray-300'></div>
           <span className='mx-2 text-gray-500 text-xs'>atau</span>
           <div className='flex-grow border-t border-gray-300'></div>
@@ -159,7 +159,14 @@ export default function LoginPage() {
           <Image src='/google.svg' alt='Google' width={24} height={24} />
           {googleLoading ? 'Loading...' : 'Login dengan Google'}
         </button>
+          {/* </div> */}
       </div>
     </div>
   );
+}
+
+export default function LoginPage() {
+  return <Suspense fallback={<div>Loading halaman...</div>}>
+        <LoginPageContent />
+      </Suspense>
 }

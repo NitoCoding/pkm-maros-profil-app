@@ -4,29 +4,30 @@ import { useState } from 'react';
 import { useUmum, useUmumMutation } from '@/hooks/useUmum';
 import { IUmum } from '@/types/umum';
 import CardPenduduk from '@/components/CardPenduduk';
-import { BarChart3, Users, School, Heart, MapPin, Edit, Save, X, Upload, Image } from 'lucide-react';
+import { BarChart3, Users, School, Heart, MapPin, Edit, Save, X, Upload } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import CKEditorWrapper from '@/components/ckeditor/CKEditorWrapper';
 import { toast } from 'react-hot-toast';
 import { get } from 'http';
+import Image from 'next/image';
 
 export default function AdminUmumPage() {
   const { umum, loading, error, refresh } = useUmum();
   const { updateUmumByJenis, loading: mutationLoading } = useUmumMutation();
-  
+
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [formData, setFormData] = useState<IUmum | Record<string, any>>({});
   const [uploading, setUploading] = useState(false);
 
-  
+
   // Helper function untuk mendapatkan data berdasarkan jenis
-    const getDataByJenis = (jenis: IUmum['jenis']) => {
+  const getDataByJenis = (jenis: IUmum['jenis']) => {
     const item = umum.find(item => item.jenis === jenis);
     if (!item) return null;
-    
+
     // Buat salinan objek untuk tidak mengubah state asli
     const parsedItem = { ...item };
-    
+
     // Jika data adalah string, urai menjadi objek
     if (typeof parsedItem.data === 'string') {
       try {
@@ -36,7 +37,7 @@ export default function AdminUmumPage() {
         // parsedItem.data = null; // Atur ke null jika gagal mengurai
       }
     }
-    
+
     return parsedItem;
   };
 
@@ -176,11 +177,15 @@ export default function AdminUmumPage() {
           </div>
           {getDataByJenis('infografi')?.data.infografi?.gambar && (
             <div className="mt-4">
-              <img 
-                src={getDataByJenis('infografi')?.data.infografi?.gambar} 
-                alt="Infografi" 
+              <div className='relative w-full'>
+
+              <Image
+                src={getDataByJenis('infografi')?.data.infografi?.gambar || 'default-image.png'}
+                alt="Infografi"
+                fill
                 className="w-full max-w-md rounded-lg border border-gray-200"
-              />
+                />
+                </div>
             </div>
           )}
         </div>
@@ -298,7 +303,7 @@ export default function AdminUmumPage() {
                     <div className="text-2xl font-bold text-teal-600">{getDataByJenis('geografi')!.data.geografi!.luasWilayah} Ha</div>
                     <div className="text-sm text-gray-600">Luas Wilayah</div>
                   </div>
-                  
+
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <div className="text-2xl font-bold text-blue-600">{getDataByJenis('geografi')!.data.geografi!.jumlahDusun}</div>
                     <div className="text-sm text-gray-600">Jumlah Lingkungan</div>
@@ -336,8 +341,8 @@ export default function AdminUmumPage() {
                           <span className="text-sm text-gray-600 capitalize">{key}</span>
                           <div className="flex items-center gap-2">
                             <div className="w-20 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-teal-500 h-2 rounded-full" 
+                              <div
+                                className="bg-teal-500 h-2 rounded-full"
                                 style={{ width: `${value}%` }}
                               ></div>
                             </div>
@@ -429,10 +434,9 @@ export default function AdminUmumPage() {
                     <div
                       {...getRootProps()}
                       className={`mt-1 border-2 border-dashed rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer transition
-                        ${
-                          isDragActive
-                            ? "border-blue-400 bg-blue-50"
-                            : "border-gray-300 bg-gray-50"
+                        ${isDragActive
+                          ? "border-blue-400 bg-blue-50"
+                          : "border-gray-300 bg-gray-50"
                         }
                         ${uploading ? "opacity-60 pointer-events-none" : ""}
                       `}
@@ -445,17 +449,25 @@ export default function AdminUmumPage() {
                         </span>
                       ) : formData.data?.infografi?.gambar ? (
                         <div className="flex flex-col items-center">
-                          <img
+                          <div className='relative w-40 h-32'>
+
+                          <Image
                             src={formData.data?.infografi?.gambar}
                             alt="Preview"
+                            fill
                             className="w-40 h-32 object-cover rounded mb-2 border"
-                          />
+                            />
+                            </div>
                           <span className="text-sm text-gray-500">Klik atau drag untuk mengganti gambar</span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center">
-                          <Image className="w-10 h-10 text-gray-400 mb-2" />
-                          <span className="text-gray-400">Klik/drag file gambar di sini (maks 5MB)</span>
+                          <span className='text-gray-400 block mb-2'>
+                            Klik atau drag file gambar di sini
+                          </span>
+                          <span className='text-xs text-gray-500'>
+                            Format: JPG, PNG, WebP (Maksimal 5MB)
+                          </span>
                         </div>
                       )}
                     </div>

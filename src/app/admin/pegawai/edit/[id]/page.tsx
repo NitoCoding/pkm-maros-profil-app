@@ -1,15 +1,16 @@
 'use client'
 
-import {useForm} from 'react-hook-form'
-import {zodResolver} from '@hookform/resolvers/zod'
-import {z} from 'zod'
-import {useRouter} from 'next/navigation'
-import {ArrowLeft, Loader2} from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import {useState, useCallback, useEffect, use} from 'react'
-import {useDropzone} from 'react-dropzone'
+import { useState, useCallback, useEffect, use } from 'react'
+import { useDropzone } from 'react-dropzone'
 import { toast } from 'react-hot-toast'
 import { IPegawai } from '@/types/pegawai'
+import Image from 'next/image'
 
 const pegawaiSchema = z.object({
 	nama: z.string().min(3, 'Nama wajib diisi'),
@@ -59,7 +60,7 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 		handleSubmit,
 		setValue,
 		watch,
-		formState: {errors},
+		formState: { errors },
 	} = useForm<PegawaiFormValues>({
 		resolver: zodResolver(pegawaiSchema),
 		defaultValues: {
@@ -75,7 +76,7 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 		const fetchPegawaiData = async () => {
 			try {
 				setFetchingData(true)
-				
+
 				const response = await fetch(`/api/pegawai?id=${resolvedParams.id}`)
 				const result = await response.json()
 
@@ -84,29 +85,29 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 				}
 
 				const pegawaiData: IPegawai = result.data
-				
+
 				// Set form values
 				setValue('nama', pegawaiData.nama)
 				setValue('jabatan', pegawaiData.jabatan)
 				setValue('fotoUrl', pegawaiData.fotoUrl)
 				setValue('urutanTampil', pegawaiData.urutanTampil?.toString() || '1')
-				
+
 				// Set preview URL
 				setPreviewUrl(pegawaiData.fotoUrl)
-				
+
 			} catch (error: any) {
 				console.error('Error fetching pegawai data:', error)
-				
+
 				// Don't show error toast if user was redirected to login
-				if (error.message !== 'NO_TOKEN' && 
-					error.message !== 'TOKEN_REFRESH_FAILED' && 
+				if (error.message !== 'NO_TOKEN' &&
+					error.message !== 'TOKEN_REFRESH_FAILED' &&
 					error.message !== 'TOKEN_STILL_INVALID') {
 					toast.error(error.message || 'Gagal memuat data pegawai')
 				}
-				
+
 				// Redirect back to pegawai list on error
 				router.push('/admin/pegawai')
-				
+
 			} finally {
 				setFetchingData(false)
 			}
@@ -121,14 +122,14 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 	const onDrop = useCallback(
 		async (acceptedFiles: File[]) => {
 			if (!acceptedFiles[0]) return
-			
+
 			console.log('Uploading file:', acceptedFiles[0])
 			setUploading(true)
 			setPreviewUrl(URL.createObjectURL(acceptedFiles[0]))
-			
+
 			try {
 				const url = await uploadImage(acceptedFiles[0])
-				setValue('fotoUrl', url, {shouldValidate: true})
+				setValue('fotoUrl', url, { shouldValidate: true })
 				toast.success('Gambar berhasil diupload')
 			} catch (error) {
 				// Error already handled in uploadImage function
@@ -142,9 +143,9 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 		[setValue, watch],
 	)
 
-	const {getRootProps, getInputProps, isDragActive} = useDropzone({
+	const { getRootProps, getInputProps, isDragActive } = useDropzone({
 		onDrop,
-		accept: {'image/*': []},
+		accept: { 'image/*': [] },
 		multiple: false,
 		maxSize: 5 * 1024 * 1024, // 5MB
 	})
@@ -189,10 +190,10 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 			}
 		} catch (error: any) {
 			console.error('❌ Submit error:', error)
-			
+
 			// Don't show error toast if user was redirected to login
-			if (error.message !== 'NO_TOKEN' && 
-				error.message !== 'TOKEN_REFRESH_FAILED' && 
+			if (error.message !== 'NO_TOKEN' &&
+				error.message !== 'TOKEN_REFRESH_FAILED' &&
 				error.message !== 'TOKEN_STILL_INVALID') {
 				toast.error(error.message || 'Terjadi kesalahan saat mengupdate pegawai')
 			}
@@ -222,12 +223,12 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 			>
 				<div className='flex items-center mb-8'>
 					<Link
-            href='/admin/pegawai'
-            className='flex items-center text-gray-600 hover:text-gray-900 mb-4'
-          >
-            <ArrowLeft size={18} />
-            Kembali
-          </Link>
+						href='/admin/pegawai'
+						className='flex items-center text-gray-600 hover:text-gray-900 mb-4'
+					>
+						<ArrowLeft size={18} />
+						Kembali
+					</Link>
 				</div>
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
 					<div className='space-y-4'>
@@ -235,9 +236,8 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 							<label className='font-medium'>Nama</label>
 							<input
 								{...register('nama')}
-								className={`border w-full px-3 py-2 rounded mt-1 ${
-									errors.nama && 'border-red-500'
-								}`}
+								className={`border w-full px-3 py-2 rounded mt-1 ${errors.nama && 'border-red-500'
+									}`}
 								placeholder='Nama pegawai'
 							/>
 							{errors.nama && (
@@ -248,9 +248,8 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 							<label className='font-medium'>Jabatan</label>
 							<input
 								{...register('jabatan')}
-								className={`border w-full px-3 py-2 rounded mt-1 ${
-									errors.jabatan && 'border-red-500'
-								}`}
+								className={`border w-full px-3 py-2 rounded mt-1 ${errors.jabatan && 'border-red-500'
+									}`}
 								placeholder='Jabatan pegawai'
 							/>
 							{errors.jabatan && (
@@ -266,9 +265,8 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 							<input
 								{...register('urutanTampil')}
 								type='number'
-								className={`border w-full px-3 py-2 rounded mt-1 ${
-									errors.urutanTampil && 'border-red-500'
-								}`}
+								className={`border w-full px-3 py-2 rounded mt-1 ${errors.urutanTampil && 'border-red-500'
+									}`}
 								placeholder='Urutan tampil pegawai'
 							/>
 							{errors.urutanTampil && (
@@ -283,11 +281,10 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 						<div
 							{...getRootProps()}
 							className={`mt-1 border-2 border-dashed rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer transition 
-							${
-								isDragActive
+							${isDragActive
 									? 'border-blue-400 bg-blue-50'
 									: 'border-gray-300 bg-gray-50'
-							}
+								}
 							${uploading ? 'opacity-60 pointer-events-none' : ''}
 							`}
 						>
@@ -298,11 +295,15 @@ export default function EditPegawaiPage({ params }: { params: Promise<{ id: stri
 								</span>
 							) : (gambarUrl || previewUrl) ? (
 								<div className='text-center'>
-									<img
-										src={previewUrl || gambarUrl}
-										alt='Preview'
-										className='w-48 h-32 object-cover rounded mb-2 border mx-auto'
-									/>
+									<div className='relative w-48 h-32'>
+
+										<Image
+											src={previewUrl || gambarUrl}
+											alt='Preview'
+											fill
+											className='w-48 h-32 object-cover rounded mb-2 border mx-auto'
+										/>
+									</div>
 									<p className='text-sm text-green-600'>✓ Gambar siap</p>
 									<p className='text-xs text-gray-500 mt-1'>
 										Klik atau drag file baru untuk mengganti gambar

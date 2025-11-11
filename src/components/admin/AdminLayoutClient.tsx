@@ -23,6 +23,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
 			const authenticated = await isAuthenticated()
 
 			console.log('AdminLayout: Is authenticated?', authenticated);
+			
 
 			if (!authenticated) {
 				console.log(`AdminLayout: Not authenticated, redirecting to login with redirect=${pathname}`);
@@ -35,7 +36,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
 
 		// Cleanup interval on unmount
 		return cleanup
-	}, [router])
+	}, [router,pathname])
 
 
 

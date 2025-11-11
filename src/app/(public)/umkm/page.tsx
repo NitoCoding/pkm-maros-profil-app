@@ -4,11 +4,11 @@
 import HeaderPage from '@/components/HeaderPage'
 import Main from '@/components/Main'
 import CardUmkm from '@/components/CardUmkm'
-import { useUmkm } from '@/hooks/useUmkm'
+import { useProdukUMKM } from '@/hooks/useProdukUMKM'
 import { Loader2 } from 'lucide-react'
 
 export default function UmkmPage() {
-    const { umkm = [], loading, error, hasMore, loadMore } = useUmkm({ pageSize: 12 })
+    const { umkm = [], loading, error, hasMore, loadMore } = useProdukUMKM({ pageSize: 12 })
 
     return (
         <div className='pt-12 min-h-screen pb-3'>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { IUmum } from '@/types/umum'
 
 interface UseUmumResult {
@@ -69,49 +69,50 @@ export function useUmum(): UseUmumResult {
 
 // Hook untuk mengambil umum berdasarkan jenis
 export function useUmumByJenis(jenis: IUmum['jenis']): UseUmumByJenisResult {
-  const [umum, setUmum] = useState<IUmum | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [umum, setUmum] = useState<IUmum | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchUmumByJenis = async () => {
+  // ✅ Bungkus dengan useCallback agar stabil antar render
+  const fetchUmumByJenis = useCallback(async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
-      const response = await fetch(`/api/umum?jenis=${encodeURIComponent(jenis)}`)
-      const result = await response.json()
+      const response = await fetch(`/api/umum?jenis=${encodeURIComponent(jenis)}`);
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Data umum tidak ditemukan')
+        throw new Error(result.error || 'Data umum tidak ditemukan');
       }
 
       if (result.success) {
-        setUmum(result.data)
+        setUmum(result.data);
       }
     } catch (err: any) {
-      setError(err.message)
-      console.error('Error fetching umum by jenis:', err)
+      setError(err.message);
+      console.error('Error fetching umum by jenis:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-
-  const refresh = () => {
-    fetchUmumByJenis()
-  }
+  }, [jenis]); // ✅ fetch hanya berubah jika jenis berubah
 
   useEffect(() => {
     if (jenis) {
-      fetchUmumByJenis()
+      fetchUmumByJenis();
     }
-  }, [jenis])
+  }, [jenis, fetchUmumByJenis]); // ✅ aman dan tidak warning
+
+  const refresh = () => {
+    fetchUmumByJenis();
+  };
 
   return {
     umum,
     loading,
     error,
-    refresh
-  }
+    refresh,
+  };
 }
 
 // Hook untuk mutasi data umum (create, update, delete)

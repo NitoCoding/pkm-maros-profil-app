@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Edit, X, Loader2 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import CKEditorWrapper from "@/components/ckeditor/CKEditorWrapper";
@@ -7,6 +7,8 @@ import ReactPlayer from "react-player";
 import { IProfil } from "@/types/profil";
 import { prepareHTMLForRender } from "@/libs/utils/htmlUtils";
 import { useProfil } from "@/hooks/useProfil";
+import { toast } from 'react-hot-toast'
+import Image from "next/image";
 
 export default function ProfilAdminPage() {
   // Hook untuk mengambil data profil
@@ -26,6 +28,7 @@ export default function ProfilAdminPage() {
   const [modalType, setModalType] = useState<IProfil["jenis"]>("visi");
   const [formData, setFormData] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   // Helper function untuk mendapatkan data berdasarkan jenis
   const getProfilByJenis = (jenis: IProfil["jenis"]) => {
@@ -68,15 +71,59 @@ export default function ProfilAdminPage() {
     setFormData("");
     setUploading(false);
     setSaveError(null);
+    setPreviewUrl(null);
   };
 
-  // Dropzone configuration
-  const onDrop = (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
-      handleFileUpload(file);
+  // Upload image to Cloudinary with HD quality
+  const uploadImage = async (file: File): Promise<string> => {
+    try {
+      const formDataUpload = new FormData()
+      formDataUpload.append('file', file)
+      formDataUpload.append('folder', 'galeri')
+      formDataUpload.append('quality', 'high') // Use high quality for HD images
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formDataUpload,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to upload image')
+      }
+
+      const result = await response.json()
+      toast.success('Gambar berhasil diupload dengan kualitas HD!')
+      return result.url
+    } catch (error) {
+      toast.error('Gagal mengupload gambar')
+      console.error('Error uploading image:', error)
+      throw error
     }
-  };
+  }
+
+  // Dropzone configuration
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (!acceptedFiles[0]) return
+
+      console.log('Uploading file:', acceptedFiles[0])
+      setUploading(true)
+      setPreviewUrl(URL.createObjectURL(acceptedFiles[0]))
+
+      try {
+        const url = await uploadImage(acceptedFiles[0])
+        setFormData(url) // Mengganti setValue dengan setFormData
+        toast.success('Gambar berhasil diupload')
+      } catch (error) {
+        // Error already handled in uploadImage function
+        setPreviewUrl(null)
+      } finally {
+        setUploading(false)
+      }
+    },
+    [setFormData], // Mengganti setValue dengan setFormData
+  )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -208,10 +255,10 @@ export default function ProfilAdminPage() {
   return (
     <div className="px-6 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Profil Kelurahan</h2>
+        <h2 className="text-2xl font-bold text-gray-800">Profil Daerah</h2>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white p-4 shadow">
+      <div className="overflow-x-auto rounded-2xl p-4 ">
         <div className="flex flex-col items-center mb-4 space-y-6">
           {/* Card Sambutan Lurah */}
           <div className="w-full max-w-4xl bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -327,11 +374,15 @@ export default function ProfilAdminPage() {
                 {/* Gambar di kiri */}
                 <div className="flex-shrink-0 md:w-80">
                   {getImage("struktur") ? (
-                    <img
+                    <div className="relative w-full h-64">
+
+                    <Image
                       src={getImage("struktur")}
                       alt="Struktur Organisasi"
+                      fill
                       className="w-full h-64 object-cover rounded-lg border border-gray-200"
-                    />
+                      />
+                      </div>
                   ) : (
                     <div className="w-full h-64 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
                       <span className="text-gray-400">Belum ada gambar</span>
@@ -444,12 +495,16 @@ export default function ProfilAdminPage() {
                             <Loader2 className="animate-spin" size={18} />{" "}
                             Uploading...
                           </span>
-                        ) : formData ? (
-                          <img
-                            src={formData}
+                        ) : formData || previewUrl ? (
+                          <div className="relative w-40 h-32">
+
+                          <Image
+                            src={formData || previewUrl || ""}
                             alt="Preview"
+                            fill
                             className="w-40 h-32 object-cover rounded mb-2 border"
-                          />
+                            />
+                            </div>
                         ) : (
                           <span className="text-gray-400">
                             Klik/drag file gambar di sini (maks 5MB)

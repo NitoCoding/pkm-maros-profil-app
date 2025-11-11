@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { toast } from 'react-hot-toast'
+import Image from 'next/image'
 
 const galeriSchema = z.object({
     caption: z.string().min(3, 'Caption wajib diisi'),
@@ -240,11 +241,15 @@ export default function TambahGaleriPage() {
                             </span>
                         ) : srcUrl ? (
                             <div className='text-center'>
-                                <img
-                                    src={srcUrl}
-                                    alt='Preview'
-                                    className='w-48 h-32 object-cover rounded mb-2 border mx-auto'
-                                />
+                                <div className='relative w-48 h-32'>
+
+                                    <Image
+                                        src={srcUrl}
+                                        fill
+                                        alt='Preview'
+                                        className='w-48 h-32 object-cover rounded mb-2 border mx-auto'
+                                    />
+                                </div>
                                 <p className='text-sm text-green-600'>✓ Gambar berhasil diupload</p>
                             </div>
                         ) : (

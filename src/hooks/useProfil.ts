@@ -1,5 +1,5 @@
 // src/hooks/useProfil.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { IProfil } from '@/types/profil';
 
 interface UseProfilResult {
@@ -66,7 +66,8 @@ export function useProfilByJenis(jenis: IProfil['jenis']) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProfilByJenis = async () => {
+  // ✅ Bungkus dengan useCallback agar stabil
+  const fetchProfilByJenis = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -87,17 +88,17 @@ export function useProfilByJenis(jenis: IProfil['jenis']) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const refresh = () => {
-    fetchProfilByJenis();
-  };
+  }, [jenis]); // ✅ hanya berubah jika "jenis" berubah
 
   useEffect(() => {
     if (jenis) {
       fetchProfilByJenis();
     }
-  }, [jenis]);
+  }, [jenis, fetchProfilByJenis]); // ✅ aman dan tidak infinite loop
+
+  const refresh = () => {
+    fetchProfilByJenis();
+  };
 
   return {
     profil,
