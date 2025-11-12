@@ -11,7 +11,7 @@ import { logout } from '@/libs/auth/token'
 const MENU_ITEMS: IMenu[] = [
 	{label: 'Beranda', href: '/', show: true},
 	{
-		label: 'Profil Kelurahan',
+		label: 'Profil Desa',
 		show: true,
 		children: [
 			{label: 'Tentang', href: '/profil/tentang', show: true},
@@ -109,7 +109,7 @@ export default function Navbar() {
 						/>
 						<div className='flex flex-col'>
 							<h1>Desa Benteng Gajah</h1>
-							<p className='text-sm'>Kecamatan Panca Lautang</p>
+							<p className='text-sm'>Kecamatan Tompobulu</p>
 						</div>
 					</a>
 					<div className='flex items-center gap-6'>
