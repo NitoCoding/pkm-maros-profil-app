@@ -187,3 +187,31 @@ CREATE TABLE `galeri` (
   CONSTRAINT `galeri_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+
+-- pkm_maros_profil.inovasi definition
+
+CREATE TABLE `inovasi` (
+  `id` varchar(255) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `judul` varchar(255) NOT NULL,
+  `kategori` varchar(100) NOT NULL,
+  `deskripsi` text DEFAULT NULL,
+  `tahun` int(4) NOT NULL,
+  `gambar` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`gambar`)),
+  `alt_text` varchar(255) DEFAULT NULL,
+  `link_proyek` varchar(500) DEFAULT NULL,
+  `link_dana_desa` varchar(500) DEFAULT NULL,
+  `social_media` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`social_media`)),
+  `created_by` int(11) DEFAULT NULL,
+  `updated_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `slug` (`slug`),
+  KEY `idx_inovasi_kategori` (`kategori`),
+  KEY `idx_inovasi_tahun` (`tahun`),
+  KEY `idx_inovasi_created_at` (`created_at` DESC),
+  KEY `created_by` (`created_by`),
+  CONSTRAINT `inovasi_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+

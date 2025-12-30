@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { IGaleri } from '@/types/galeri'
+import { set } from 'zod'
 
 interface UseGaleriResult {
   galeri: IGaleri[]
+  setGaleri?: React.Dispatch<React.SetStateAction<IGaleri[]>>
   loading: boolean
   error: string | null
   hasMore: boolean
@@ -24,6 +26,10 @@ export function useGaleri(options: UseGaleriOptions = {}): UseGaleriResult {
   const [cursor, setCursor] = useState<string | null>(null)
 
   // ✅ Gunakan useCallback agar tidak berubah setiap render
+  const cursorRef = useRef<string | null>(null)
+  useEffect(() => {
+    cursorRef.current = cursor
+  }, [cursor])
   const fetchGaleri = useCallback(async (reset = false) => {
     try {
       setLoading(true)
@@ -33,9 +39,94 @@ export function useGaleri(options: UseGaleriOptions = {}): UseGaleriResult {
         pageSize: pageSize.toString(),
       })
 
-      if (!reset && cursor) {
-        params.append('cursor', cursor)
+      const currentCursor = reset ? null : cursorRef.current
+        if (currentCursor) {
+          params.append('cursor', currentCursor)
+        }
+
+      const response = await fetch(`/api/galeri?${params.toString()}`)
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch galeri')
       }
+      
+      // console.log(result.data.nextCursor)
+      if (result.success) {
+        const newGaleri = result.data.data || []
+
+        if (reset) {
+          setGaleri(newGaleri)
+        } else {
+          setGaleri((prev) => [...prev, ...newGaleri])
+        }
+        setHasMore(result.data.hasMore || false)
+        setCursor(result.data.nextCursor || null)
+      }
+    } catch (err: any) {
+      setError(err.message)
+      console.error('Error fetching galeri:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [pageSize])
+
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      fetchGaleri(false)
+    }
+  }, [loading, hasMore, fetchGaleri])
+
+  const refresh = useCallback(() => {
+    setCursor(null)
+    setGaleri([])
+    setHasMore(true)
+    fetchGaleri(true)
+  }, [fetchGaleri])
+
+  // ✅ Efek awal dengan dependensi lengkap dan aman
+  useEffect(() => {
+    if (initialLoad) {
+      fetchGaleri(true)
+    }
+  }, [initialLoad, fetchGaleri])
+
+  return {
+    galeri,
+    loading,
+    error,
+    hasMore,
+    loadMore,
+    refresh,
+  }
+}
+
+export function useAdminGaleri(options: UseGaleriOptions = {}): UseGaleriResult {
+  const { pageSize = 12, initialLoad = true } = options
+  const [galeri, setGaleri] = useState<IGaleri[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [cursor, setCursor] = useState<string | null>(null)
+
+  const cursorRef = useRef<string | null>(null)
+  useEffect(() => {
+    cursorRef.current = cursor
+  }, [cursor])
+  const fetchGaleri = useCallback(async (reset = false) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const params = new URLSearchParams({
+        pageSize: pageSize.toString(),
+        admin: 'true',
+      })
+
+      const currentCursor = reset ? null : cursorRef.current
+        if (currentCursor) {
+          params.append('cursor', currentCursor)
+        }
 
       const response = await fetch(`/api/galeri?${params.toString()}`)
       const result = await response.json()
@@ -58,11 +149,11 @@ export function useGaleri(options: UseGaleriOptions = {}): UseGaleriResult {
       }
     } catch (err: any) {
       setError(err.message)
-      console.error('Error fetching galeri:', err)
+      console.error('Error fetching galeri (admin):', err)
     } finally {
       setLoading(false)
     }
-  }, [cursor, pageSize])
+  }, [pageSize])
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -72,18 +163,20 @@ export function useGaleri(options: UseGaleriOptions = {}): UseGaleriResult {
 
   const refresh = useCallback(() => {
     setCursor(null)
+    setGaleri([])
+    setHasMore(true)
     fetchGaleri(true)
   }, [fetchGaleri])
 
-  // ✅ Efek awal dengan dependensi lengkap dan aman
   useEffect(() => {
     if (initialLoad) {
-      fetchGaleri(true)
+      refresh()
     }
-  }, [initialLoad, fetchGaleri])
+  }, [initialLoad, refresh])
 
   return {
     galeri,
+    setGaleri,
     loading,
     error,
     hasMore,

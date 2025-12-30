@@ -70,7 +70,7 @@ export function useDashboardMutation() {
 
       // API kita mengembalikan { success: true, message: '...' }
       const result = await response.json();
-      console.log(result.message); // Bisa digunakan untuk notifikasi
+      // console.log(result.message); // Bisa digunakan untuk notifikasi
       
       return true;
     } catch (err: any) {
@@ -154,9 +154,26 @@ export function useContact() {
   return {
     contact: dashboard?.contact || {
       phone: '+62 123 456 789',
-      email: 'kelurahan.bilokka@example.com',
-      address: 'Jl. Contoh No. 123, Bilokka, Kota Contoh',
+      email: 'pemerintahan.daerah@example.com',
+      address: 'contoh alamat',
       whatsapp: '+62 123 456 789'
+    },
+    loading,
+    error,
+    refresh,
+  };
+}
+
+
+export function useSocialMedia() {
+  const { dashboard, loading, error, refresh } = useDashboard();
+  
+  return {
+    socialMedia: dashboard?.socialMedia || {
+      facebook: '',
+      instagram: '',
+      youtube: '',
+      tiktok: ''
     },
     loading,
     error,

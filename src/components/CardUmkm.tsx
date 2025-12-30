@@ -45,22 +45,22 @@ export default function CardUmkm({ umkm }: CardUmkmProps) {
 	const handleLinkClick = (url: string) => {
 		window.open(url, '_blank')
 	}
-	// console.log(umkm.linkPenjualan.shopee);
+	// // console.log(umkm.linkPenjualan.shopee);
 
 	const hasLinkPenjualan = (): boolean => {
 		const links = umkm.linkPenjualan;
-		console.log("umkm.linkPenjualan:", links);
+		// console.log("umkm.linkPenjualan:", links);
 
 		if (!links) return false;
 
-		// console.log("Link penjualan keys:", links.shopee);
+		// // console.log("Link penjualan keys:", links.shopee);
 
 		// Cek apakah ada minimal satu link yang valid (tidak kosong)
 		return Object.values(links).some(value => Boolean(value && value.trim() !== ""));
 	};
 
 
-	// console.log(hasLinkPenjualan());
+	// // console.log(hasLinkPenjualan());
 
 	return (
 		<div className='bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 w-full h-full flex flex-col transform hover:-translate-y-1'>

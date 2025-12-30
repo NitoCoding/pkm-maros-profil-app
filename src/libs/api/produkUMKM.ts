@@ -7,29 +7,29 @@ import { v4 as uuidv4 } from 'uuid';
 export async function tambahProdukUMKM(data: Omit<IProdukUMKM, 'id' | 'createdAt' | 'updatedAt'>): Promise<IProdukUMKM> {
     const newId = uuidv4();
 
-    console.log('Adding new produk UMKM with data:', [
-            newId,
-            data.namaProduk,
-            data.namaUMKM,
-            data.kategori,
-            data.deskripsi,
-            data.gambar,
-            data.harga?.awal || null,
-            data.harga?.akhir || null,
-            data.kontak.telepon,
-            data.kontak.whatsapp,
-            data.lokasi.alamat,
-            data.lokasi.latitude,
-            data.lokasi.longitude,
-            data.lokasi.googleMapsLink || null,
-            JSON.stringify(data.linkPenjualan || {}),
-            data.createdBy,
-            data.authorName,
-            data.authorEmail,
-        ]);
+    // console.log('Adding new produk UMKM with data:', [
+        //     newId,
+        //     data.namaProduk,
+        //     data.namaUMKM,
+        //     data.kategori,
+        //     data.deskripsi,
+        //     data.gambar,
+        //     data.harga?.awal || null,
+        //     data.harga?.akhir || null,
+        //     data.kontak.telepon,
+        //     data.kontak.whatsapp,
+        //     data.lokasi.alamat,
+        //     data.lokasi.latitude,
+        //     data.lokasi.longitude,
+        //     data.lokasi.googleMapsLink || null,
+        //     JSON.stringify(data.linkPenjualan || {}),
+        //     data.createdBy,
+        //     data.authorName,
+        //     data.authorEmail,
+        // ]);
 
     const result = await executeQuery(
-        `INSERT INTO produk_umkm (id, nama_produk, nama_umkm, kategori, deskripsi, gambar, harga_awal, harga_akhir, kontak_telepon, kontak_whatsapp, lokasi_alamat, lokasi_latitude, lokasi_longitude, lokasi_google_maps_link, link_penjualan, created_by, author_name, author_email)
+        `INSERT INTO produk_umkm (id_uuid, nama_produk, nama_umkm, kategori, deskripsi, gambar, harga_awal, harga_akhir, kontak_telepon, kontak_whatsapp, lokasi_alamat, lokasi_latitude, lokasi_longitude, lokasi_google_maps_link, link_penjualan, created_by, author_name, author_email)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             newId,
@@ -72,12 +72,12 @@ export async function ambilProdukUMKMPaginate(pageSize: number, cursor: string |
     const params: any[] = [];
 
     if (cursor) {
-        query += ` WHERE created_at < ?`;
-        params.push(new Date(cursor));
-    }
+    query += ` AND id < ?`;
+    params.push(parseInt(cursor));
+  }
 
-    query += ` ORDER BY created_at DESC LIMIT ?`;
-    params.push(pageSize + 1);
+  query += ` ORDER BY id DESC LIMIT ?`;
+  params.push(pageSize + 1);
 
     const results = await executeQuery<any>(query, params);
     const data = results.map(row => ({
@@ -100,7 +100,7 @@ export async function ambilProdukUMKMPaginate(pageSize: number, cursor: string |
     const hasMore = data.length > pageSize;
     if (hasMore) data.pop();
 
-    const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].createdAt : null;
+    const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].id.toString() : null;
 
     return { data, hasMore, nextCursor };
 }
@@ -130,7 +130,7 @@ export async function ambilProdukUMKMById(id: string): Promise<IProdukUMKM | nul
 
 
 export async function updateProdukUMKM(id: string, updateData: IProdukUMKMUpdate): Promise<boolean> {
-    console.log('Updating produk UMKM with data:', updateData);
+    // console.log('Updating produk UMKM with data:', updateData);
     const fields: string[] = [];
     const values: any[] = [];
     if (updateData.namaProduk !== undefined) { fields.push('nama_produk = ?'); values.push(updateData.namaProduk); }
@@ -151,10 +151,10 @@ export async function updateProdukUMKM(id: string, updateData: IProdukUMKMUpdate
 
     if (fields.length === 0) return true;
     values.push(id);
-    console.log('Executing update with fields:', fields, 'and values:', values);
+    // console.log('Executing update with fields:', fields, 'and values:', values);
     const query = `UPDATE produk_umkm SET ${fields.join(', ')} WHERE id = ?`;
     const result = await executeQuery(query, values);
-    console.log('Update result:', result);
+    // console.log('Update result:', result);
     return (result as any).affectedRows > 0;
 }
 

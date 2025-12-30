@@ -7,9 +7,9 @@ async function testDB() {
   try {
     const isConnected = await testConnection();
     if (isConnected) {
-      console.log('✅ Database connection successful');
+      // console.log('✅ Database connection successful');
     } else {
-      console.log('❌ Database connection failed');
+      // console.log('❌ Database connection failed');
       process.exit(1);
     }
   } catch (error) {

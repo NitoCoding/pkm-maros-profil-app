@@ -14,7 +14,7 @@ interface PageHeadProps {
 export default function PageHead({
 	title = 'Desa Benteng Gajah',
 	description = 'Website resmi Desa Benteng Gajah',
-	keywords = 'kelurahan, bilokka, pemerintah, desa',
+	keywords = ' benteng gajah, pemerintah, desa',
 	ogTitle,
 	ogDescription,
 	ogType = 'website'

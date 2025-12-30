@@ -1,35 +1,32 @@
-// src/app/admin/berita/edit/[id]/page.tsx
 'use client'
 
+import { useState, useCallback, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import { ArrowLeft, Save, Loader2, Upload } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Loader2 } from 'lucide-react'
-import Link from 'next/link'
-import { useEffect, useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import CKEditorWrapper from '@/components/ckeditor/CKEditorWrapper'
-import { toast } from 'react-hot-toast'
 import Image from 'next/image'
-import { IBerita } from '@/types/berita'; // Menggunakan tipe baru
-import { useBeritaById } from '@/hooks/useBerita'; // Menggunakan hook baru
+import CKEditorWrapper from '@/components/ckeditor/CKEditorWrapper'
+import { IBerita } from '@/types/berita'
+import { useBeritaById } from '@/hooks/useBerita'
 
-// --- PERBAIKAN: Schema baru yang sesuai dengan tipe data IBerita ---
 const beritaSchema = z.object({
 	judul: z.string().min(1, 'Judul harus diisi'),
 	slug: z.string().min(1, 'Slug harus diisi'),
 	ringkasan: z.string().min(1, 'Ringkasan harus diisi'),
 	isi: z.string().min(1, 'Isi berita harus diisi'),
-	gambar: z.string().nullable(), // Gambar bisa null
+	gambar: z.string().url('Gambar harus berupa URL').nullable().optional(),
 	status: z.enum(['draft', 'published']),
-	// tags: z.array(z.string()).optional(), // Tags adalah array
-	tags: z.string().optional(),
-});
+	tags: z.array(z.string()).optional(),
+	kategori: z.string().min(1, 'Kategori harus dipilih'),
+	tanggal: z.string().refine(val => !isNaN(Date.parse(val)), { message: "Tanggal tidak valid" }),
+})
 
-type BeritaFormValues = z.infer<typeof beritaSchema>;
+type BeritaFormValues = z.infer<typeof beritaSchema>
 
-// Slugify utility
 function slugify(text: string) {
 	return text
 		.toLowerCase()
@@ -39,14 +36,27 @@ function slugify(text: string) {
 		.trim()
 }
 
+const kategoriOptions = [
+	'Teknologi',
+	'Pertanian',
+	'Kesehatan',
+	'Pendidikan',
+	'Ekonomi',
+	'Lingkungan',
+	'Infrastruktur',
+	'Sosial',
+	'Lainnya',
+]
+
 export default function EditBeritaPage() {
-	const params = useParams();
-	const id = params.id as string;
-	const router = useRouter();
-	const [loading, setLoading] = useState(false);
-	const [uploading, setUploading] = useState(false);
-	const [fetching, setFetching] = useState(true);
-	const [berita, setBerita] = useState<IBerita | null>(null);
+	const params = useParams()
+	const { id } = params as { id: string }
+	const router = useRouter()
+	const [uploading, setUploading] = useState(false)
+	const [slugEdited, setSlugEdited] = useState(false)
+	const [tagInput, setTagInput] = useState('')
+
+	const { berita: fetchedBerita, loading: isLoading, error } = useBeritaById(Number(id))
 
 	const {
 		register,
@@ -63,328 +73,440 @@ export default function EditBeritaPage() {
 			slug: '',
 			ringkasan: '',
 			isi: '',
-			gambar: '',
+			gambar: null,
 			status: 'draft',
-			tags: '',
+			tags: [],
+			kategori: '',
+			tanggal: new Date().toISOString().split('T')[0],
 		},
-	});
+	})
 
-	// --- PERBAIKAN: Fetch data menggunakan hook baru ---
-	const { berita: fetchedBerita, loading: isLoading, error } = useBeritaById(Number(id));
-
-	console.log('Fetched berita for editing:', fetchedBerita?.kategori);
-
+	// Reset form ketika data dimuat
 	useEffect(() => {
 		if (fetchedBerita) {
-			setBerita(fetchedBerita);
-			// --- PERBAIKAN: Reset form dengan data yang sudah sesuai ---
 			reset({
 				judul: fetchedBerita.judul || '',
 				slug: fetchedBerita.slug || '',
 				ringkasan: fetchedBerita.ringkasan || '',
 				isi: fetchedBerita.isi || '',
-				gambar: fetchedBerita.gambar || '',
+				gambar: fetchedBerita.gambar || null,
 				status: fetchedBerita.status || 'draft',
-				tags: Array.isArray(fetchedBerita.kategori)
-					? fetchedBerita.kategori.join(', ')
-					: '',
-			});
-			setFetching(false);
-		} else if (!isLoading) {
-			setFetching(false);
-		}
-	}, [fetchedBerita, isLoading, reset]);
-
-	const judulValue = watch('judul');
-	const [slugEdited, setSlugEdited] = useState(false);
-
-	useEffect(() => {
-		if (!slugEdited && judulValue) {
-			setValue('slug', slugify(judulValue));
-		}
-	}, [judulValue, setValue, slugEdited]);
-
-	// Fungsi upload gambar tetap sama
-	const uploadImage = async (file: File): Promise<string> => {
-		// ... (salin fungsi uploadImage dari halaman tambah)
-		try {
-			const formData = new FormData()
-			formData.append('file', file)
-			formData.append('folder', 'berita')
-			formData.append('quality', 'high')
-
-			const response = await fetch('/api/berita', {
-				method: 'POST',
-				body: formData,
+				tags: Array.isArray(fetchedBerita.tags) ? fetchedBerita.tags : [],
+				kategori: fetchedBerita.kategori || '',
+				tanggal: fetchedBerita.tanggal || new Date().toISOString().split('T')[0],
 			})
-
-			if (!response.ok) {
-				const error = await response.json()
-				throw new Error(error.message || 'Failed to upload image')
-			}
-
-			const result = await response.json()
-			toast.success('Gambar berhasil diupload dengan kualitas HD!')
-			return result.url
-		} catch (error) {
-			toast.error('Gagal mengupload gambar')
-			console.error('Error uploading image:', error)
-			throw error
 		}
+	}, [fetchedBerita, reset])
+
+	const judul = watch('judul')
+	const tags = watch('tags') || []
+	const gambar = watch('gambar')
+
+	// Auto-slug dari judul
+	useEffect(() => {
+		if (!slugEdited && judul && !isLoading) {
+			setValue('slug', slugify(judul), { shouldValidate: true })
+		}
+	}, [judul, setValue, slugEdited, isLoading])
+
+	// Upload image
+	const uploadImage = async (file: File): Promise<string> => {
+		const formData = new FormData()
+		formData.append('file', file)
+		formData.append('folder', 'berita')
+		formData.append('quality', 'high')
+
+		const res = await fetch('/api/upload', {
+			method: 'POST',
+			body: formData,
+		})
+
+		if (!res.ok) {
+			const error = await res.json()
+			throw new Error(error.message || 'Upload gagal')
+		}
+
+		const result = await res.json()
+		toast.success('Gambar berhasil diupload!')
+		return result.url
 	}
 
-	// Dropzone config
+	// Dropzone
 	const onDrop = useCallback(
 		async (acceptedFiles: File[]) => {
-			if (!acceptedFiles[0]) return;
-			setUploading(true);
+			if (!acceptedFiles[0]) return
+			setUploading(true)
+
 			try {
-				const url = await uploadImage(acceptedFiles[0]);
-				setValue('gambar', url, { shouldValidate: true });
-				toast.success('Gambar berhasil diupload');
+				const url = await uploadImage(acceptedFiles[0])
+				setValue('gambar', url, { shouldValidate: true })
 			} catch (error) {
-				// Error already handled
+				// Sudah dihandle
 			} finally {
-				setUploading(false);
+				setUploading(false)
 			}
 		},
-		[setValue],
-	);
+		[setValue]
+	)
 
 	const { getRootProps, getInputProps, isDragActive } = useDropzone({
 		onDrop,
 		accept: { 'image/*': [] },
 		multiple: false,
 		maxSize: 5 * 1024 * 1024,
-	});
+	})
 
-	const gambarUrl = watch('gambar');
+	// Tambah tag saat koma atau enter
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === ',' || e.key === 'Enter') {
+			e.preventDefault()
+			const value = tagInput.trim().replace(/,+$/, '')
+			if (value && !tags.includes(value)) {
+				setValue('tags', [...tags, value], { shouldValidate: true })
+				setTagInput('')
+			}
+		}
+	}
 
-	// --- PERBAIKAN: onSubmit yang bersih ---
+	// Hapus tag
+	const removeTag = (tagToRemove: string) => {
+		setValue('tags', tags.filter(tag => tag !== tagToRemove), { shouldValidate: true })
+	}
+
+	// Submit handler
 	const onSubmit = async (data: BeritaFormValues) => {
 		try {
-			setLoading(true);
 
+			// // console.log('Submitting data:', data)
 			const payload = {
 				id: Number(id),
 				...data,
-				// API akan menangani updatedAt
-			};
-
-			// --- Hapus makeAuthenticatedRequest ---
-			const response = await fetch(`/api/berita?id=${id}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload),
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json();
-				if (response.status === 401) {
-					toast.error('Sesi Anda telah berakhir. Silakan login kembali.');
-					router.push('/login');
-					return;
-				}
-				throw new Error(errorData.error || 'Gagal mengupdate berita');
 			}
 
-			toast.success('Berita berhasil diupdate!');
-			router.push('/admin/berita');
-		} catch (error: any) {
-			const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat mengupdate berita';
-			toast.error(errorMessage);
-		} finally {
-			setLoading(false);
-		}
-	};
+			const response = await fetch(`/api/berita?id=${id}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(payload),
+			})
 
-	if (isLoading || fetching) {
+			if (!response.ok) {
+				const errorData = await response.json()
+				if (response.status === 401) {
+					toast.error('Sesi Anda telah berakhir. Silakan login ulang.')
+					router.push('/login')
+					return
+				}
+				throw new Error(errorData.error || 'Gagal menyimpan perubahan')
+			}
+
+			toast.success('Berita berhasil diperbarui!')
+			router.push('/admin/berita')
+		} catch (error: any) {
+			toast.error(error.message || 'Terjadi kesalahan saat mengupdate')
+		}
+	}
+
+	// Loading state
+	if (isLoading) {
 		return (
-			<div className='flex justify-center items-center py-24'>
-				<div className='text-center'>
-					<Loader2 className='animate-spin mx-auto mb-4' size={32} />
-					<p className='text-gray-600'>Memuat data berita...</p>
+			<div className="p-6">
+				<div className="flex items-center gap-4 mb-6">
+					<button
+						onClick={() => router.back()}
+						className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+					>
+						<ArrowLeft size={20} />
+					</button>
+					<div>
+						<h1 className="text-2xl font-bold text-gray-900">Edit Berita</h1>
+						<p className="text-gray-600">Memuat data berita...</p>
+					</div>
+				</div>
+				<div className="flex justify-center py-12">
+					<Loader2 className="animate-spin h-8 w-8 text-blue-600" />
+					<span className="ml-2 text-gray-600">Memuat data berita...</span>
 				</div>
 			</div>
-		);
+		)
 	}
 
-	if (error) {
+	// Error state
+	if (error || !fetchedBerita) {
 		return (
-			<div className='text-center py-12'>
-				<p className='text-red-600 text-lg mb-4'>{error}</p>
-				<Link href='/admin/berita' className='text-blue-600 hover:underline'>
-					Kembali ke Daftar Berita
-				</Link>
+			<div className="p-6">
+				<div className="flex items-center gap-4 mb-6">
+					<button
+						onClick={() => router.back()}
+						className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+					>
+						<ArrowLeft size={20} />
+					</button>
+					<div>
+						<h1 className="text-2xl font-bold text-gray-900">Edit Berita</h1>
+						<p className="text-gray-600">Gagal memuat data</p>
+					</div>
+				</div>
+				<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg max-w-md mx-auto">
+					<p className="font-medium">{error || 'Berita tidak ditemukan'}</p>
+					<button
+						onClick={() => router.back()}
+						className="mt-2 text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded transition-colors"
+					>
+						Kembali
+					</button>
+				</div>
 			</div>
-		);
-	}
-
-	if (!berita) {
-		return null; // Atau tampilkan pesan "Berita tidak ditemukan"
+		)
 	}
 
 	return (
-		<div className='mx-auto py-8 px-6'>
-			<h1 className='text-2xl font-bold mb-6'>Edit Berita</h1>
-			<form onSubmit={handleSubmit(onSubmit)} className='bg-white rounded-xl border border-gray-200 shadow px-6 py-8 space-y-5'>
-				<div className='flex items-center mb-8'>
-					<Link
-						href='/admin/berita'
-						className='flex items-center text-gray-600 hover:text-gray-900 mb-4'
-					>
-						<ArrowLeft size={18} />
-						Kembali
-					</Link>
-				</div>
-
-				{/* --- PERBAIKAN: Hapus field yang tidak lagi digunakan --- */}
+		<div className="p-6">
+			{/* HEADER */}
+			<div className="flex items-center gap-4 mb-6">
+				<button
+					onClick={() => router.back()}
+					className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+				>
+					<ArrowLeft size={20} />
+				</button>
 				<div>
-					<label className='font-medium'>Judul</label>
-					<input {...register('judul')} className={`border w-full px-3 py-2 rounded mt-1 ${errors.judul && 'border-red-500'}`} placeholder='Judul berita' />
-					{errors.judul && <div className='text-red-600 text-sm'>{errors.judul.message}</div>}
+					<h1 className="text-2xl font-bold text-gray-900">Edit Berita</h1>
+					<p className="text-gray-600">Perbarui konten berita desa</p>
 				</div>
+			</div>
 
-				<div>
-					<label className='font-medium'>Slug</label>
-					<Controller
-						name='slug'
-						control={control}
-						render={({ field }) => (
+			<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+				<div className="bg-white rounded-lg shadow p-6">
+					<h2 className="text-lg font-semibold mb-4">Informasi Dasar</h2>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								Judul Berita *
+							</label>
 							<input
-								{...field}
-								onChange={e => {
-									setSlugEdited(true);
-									field.onChange(e);
+								{...register('judul')}
+								type="text"
+								className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.judul ? 'border-red-500' : 'border-gray-300'
+									}`}
+							/>
+							{errors.judul && (
+								<p className="text-red-500 text-xs mt-1">{errors.judul.message}</p>
+							)}
+						</div>
+
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								Slug *
+							</label>
+							<input
+								{...register('slug')}
+								type="text"
+								onChange={(e) => {
+									setSlugEdited(true)
+									setValue('slug', e.target.value, { shouldValidate: true })
 								}}
-								className={`border w-full px-3 py-2 rounded mt-1 ${errors.slug && 'border-red-500'}`}
-								placeholder='slug-berita'
+								className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.slug ? 'border-red-500' : 'border-gray-300'
+									}`}
+								placeholder="judul-berita-baru"
 							/>
+							<p className="text-xs text-gray-500 mt-1">
+								Otomatis dari judul, bisa diubah manual
+							</p>
+							{errors.slug && (
+								<p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>
+							)}
+						</div>
+					</div>
+
+					<div className="mt-4">
+						<label className="block text-sm font-medium text-gray-700 mb-1">
+							Ringkasan Berita *
+						</label>
+						<textarea
+							{...register('ringkasan')}
+							rows={3}
+							className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.ringkasan ? 'border-red-500' : 'border-gray-300'
+								}`}
+						/>
+						{errors.ringkasan && (
+							<p className="text-red-500 text-xs mt-1">{errors.ringkasan.message}</p>
 						)}
-					/>
-					<div className='text-xs text-gray-400 mt-1'>Slug otomatis dari judul, bisa diubah manual</div>
-					{errors.slug && <div className='text-red-600 text-sm'>{errors.slug.message}</div>}
+					</div>
+
+					<div className="mt-4">
+						<label className="block text-sm font-medium text-gray-700 mb-1">Kategori *</label>
+						<select
+							{...register('kategori')}
+							className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.kategori ? 'border-red-500' : ''}`}
+						>
+							<option value="">Pilih Kategori</option>
+							{kategoriOptions.map((kategori) => (
+								<option key={kategori} value={kategori.toLowerCase()}>
+									{kategori}
+								</option>
+							))}
+						</select>
+						{errors.kategori && <p className="text-red-500 text-xs mt-1">{errors.kategori.message}</p>}
+					</div>
 				</div>
 
-				<div>
-					<label className='font-medium mb-1 block'>Ringkasan Berita</label>
+
+
+				<div className="bg-white rounded-lg shadow p-6">
+					<h2 className="text-lg font-semibold mb-4">Isi Berita</h2>
 					<Controller
-						name='ringkasan'
+						name="isi"
 						control={control}
 						render={({ field }) => (
 							<CKEditorWrapper
-								value={field.value}
+								value={field.value?.toString() || ''}
 								onChange={field.onChange}
-								placeholder='Ringkasan berita...'
+								placeholder="Tulis isi berita di sini..."
 							/>
 						)}
 					/>
-					{errors.ringkasan && <div className='text-red-600 text-sm'>{errors.ringkasan.message}</div>}
+					{errors.isi && (
+						<p className="text-red-500 text-xs mt-2">{errors.isi.message}</p>
+					)}
 				</div>
 
-				<div>
-					<label className='font-medium mb-1 block'>Isi Berita</label>
-					<Controller
-						name='isi'
-						control={control}
-						render={({ field }) => (
-							<CKEditorWrapper
-								value={field.value}
-								onChange={field.onChange}
-								placeholder='Isi berita...'
-							/>
-						)}
-					/>
-					{errors.isi && <div className='text-red-600 text-sm'>{errors.isi.message}</div>}
-				</div>
+				<div className="bg-white rounded-lg shadow p-6">
+					<h2 className="text-lg font-semibold mb-4">Gambar Utama</h2>
 
-				<div>
-					<label className='font-medium'>Gambar Berita</label>
 					<div
 						{...getRootProps()}
 						className={`mt-1 border-2 border-dashed rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer transition 
-            ${isDragActive
-								? 'border-blue-400 bg-blue-50'
-								: 'border-gray-300 bg-gray-50'
-							}
-            ${uploading ? 'opacity-60 pointer-events-none' : ''
-							}`}
+                        ${isDragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50'}
+                        ${uploading ? 'opacity-60 pointer-events-none' : ''}`}
 					>
 						<input {...getInputProps()} />
 						{uploading ? (
-							<span className='flex items-center gap-2 text-blue-600'>
-								<Loader2 className='animate-spin' size={18} /> Mengupload...
+							<span className="flex items-center gap-2 text-blue-600">
+								<Loader2 className="animate-spin" size={18} /> Mengupload...
 							</span>
-						) : gambarUrl ? (
-							<div className='text-center'>
-								<div className='relative w-40 h-32'>
-
-								<Image
-									src={gambarUrl}
-									alt='Preview'
-									fill
-									// width={160}
-									// height={128}
-									className='w-40 h-32 object-cover rounded mb-2 border mx-auto'
+						) : gambar ? (
+							<div className="text-center">
+								<div className="relative w-48 h-32 mx-auto mb-2">
+									<Image
+										src={gambar}
+										alt="Preview Gambar"
+										fill
+										className="object-cover rounded border"
 									/>
-									</div>
-								<p className='text-sm text-green-600'>✓ Gambar berhasil diupload</p>
+								</div>
+								<p className="text-sm text-green-600">✓ Gambar berhasil diupload</p>
 							</div>
 						) : (
-							<div className='text-center'>
-								<span className='text-gray-400 block mb-2'>Klik atau drag file gambar di sini</span>
-								<span className='text-xs text-gray-500'>Format: JPG, PNG, WebP (Maksimal 5MB)</span>
+							<div className="text-center">
+								<Upload size={24} className="mx-auto mb-2 text-gray-400" />
+								<span className="text-gray-400 block mb-2">
+									Klik atau drag file gambar di sini
+								</span>
+								<span className="text-xs text-gray-500">
+									Format: JPG, PNG, WebP (Maksimal 5MB)
+								</span>
 							</div>
 						)}
 					</div>
-					<input {...register('gambar')} type='hidden' />
-					{errors.gambar && <div className='text-red-600 text-sm'>{errors.gambar.message}</div>}
+
+					<input {...register('gambar')} type="hidden" />
+					{errors.gambar && (
+						<p className="text-red-500 text-xs mt-2">{errors.gambar.message}</p>
+					)}
 				</div>
 
-				<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+				<div className="bg-white rounded-lg shadow p-6">
+					<h2 className="text-lg font-semibold mb-4">Tags</h2>
+
 					<div>
-						<label className='font-medium'>Status</label>
-						<select {...register('status')} className='border w-full px-3 py-2 rounded mt-1'>
-							<option value='draft'>Draft</option>
-							<option value='published'>Published</option>
-						</select>
-						{errors.status && <div className='text-red-600 text-sm'>{errors.status.message}</div>}
+						<label className="block text-sm font-medium text-gray-700 mb-1">
+							Tags{' '}
+							<span className="text-xs text-gray-500">(pisahkan dengan koma atau enter)</span>
+						</label>
+						<input
+							type="text"
+							value={tagInput}
+							onChange={(e) => setTagInput(e.target.value)}
+							onKeyDown={handleKeyDown}
+							placeholder="alam, keluarga, pendidikan"
+							className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+						/>
+					</div>
+
+					{/* Display tags */}
+					<div className="flex flex-wrap gap-2 mt-3">
+						{tags.map((tag, i) => (
+							<span
+								key={i}
+								className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm flex items-center gap-2"
+							>
+								{tag}
+								<button
+									type="button"
+									onClick={() => removeTag(tag)}
+									className="text-blue-600 hover:text-blue-800"
+								>
+									×
+								</button>
+							</span>
+						))}
 					</div>
 				</div>
 
-				<div>
-					<label className='font-medium'>Tags <span className='text-xs text-gray-400'>(pisahkan dengan koma)</span></label>
-					{/* --- PERBAIKAN: Controller untuk tags agar berupa array --- */}
-					{/* <Controller
-						name="tags"
-						control={control}
-						render={({ field }) => (
+				<div className="bg-white rounded-lg shadow p-6">
+					<h2 className="text-lg font-semibold mb-4">Metadata</h2>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								Status
+							</label>
+							<select
+								{...register('status')}
+								className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+							>
+								<option value="draft">Draft</option>
+								<option value="published">Published</option>
+							</select>
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Berita *</label>
 							<input
-								value={field.value ? field.value.join(', ') : ''}
-								onChange={e => {
-									const tagsArray = e.target.value.split(',').map(tag => tag.trim()).filter(Boolean);
-									field.onChange(tagsArray);
-								}}
-								className="border w-full px-3 py-2 rounded mt-1"
-								placeholder="berita, desa, teknologi"
+								type="date"
+								{...register('tanggal')}
+								className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.tanggal ? 'border-red-500' : 'border-gray-300'}`}
 							/>
-						)}
-					/> */}
-					<input
-						{...register('tags')}
-						className='border w-full px-3 py-2 rounded mt-1'
-						placeholder='berita, desa, teknologi'
-					/>
+							{errors.tanggal && <p className="text-red-500 text-xs mt-1">{errors.tanggal.message}</p>}
+						</div>
+					</div>
 				</div>
 
-				<div className='pt-3 flex justify-end'>
+				<div className="flex justify-end gap-4">
 					<button
-						type='submit'
-						disabled={loading || uploading}
-						className='bg-blue-600 text-white px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-blue-700 transition disabled:opacity-60'
+						type="button"
+						onClick={() => router.back()}
+						className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
 					>
-						{(loading || uploading) && <Loader2 size={18} className='animate-spin' />}
-						{loading ? 'Menyimpan...' : uploading ? 'Mengupload...' : 'Simpan Perubahan'}
+						Batal
+					</button>
+					<button
+						type="submit"
+						disabled={uploading}
+						className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+					>
+						{uploading ? (
+							<>
+								<Loader2 size={16} className="animate-spin" />
+								Menyimpan...
+							</>
+						) : (
+							<>
+								<Save size={16} />
+								Simpan Perubahan
+							</>
+						)}
 					</button>
 				</div>
 			</form>

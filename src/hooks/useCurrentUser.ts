@@ -15,7 +15,7 @@ export function useCurrentUser(): UseCurrentUserResult {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    console.log('useCurrentUser hook invoked');
+    // console.log('useCurrentUser hook invoked');
     const fetchCurrentUser = async () => {
         try {
             setLoading(true);
@@ -24,22 +24,22 @@ export function useCurrentUser(): UseCurrentUserResult {
             const response = await fetch('/api/auth/me');
             const result = await response.json();
 
-            console.log('Fetched current user data:', result);
+            // console.log('Fetched current user data:', result);
 
             if (!response.ok) {
                 if (response.status === 401) {
                     // User tidak terautentikasi, ini bukan error
-                    console.log('User is not authenticated');
+                    // console.log('User is not authenticated');
                     setUser(null);
                 } else {
                     throw new Error(result.error || 'Failed to fetch user data');
                 }
             } else {
-                // console.log('User data fetched successfully:', result);
-                // console.log('Result success status:', result.success);
-                // console.log('Result data:', result.data);
+                // // console.log('User data fetched successfully:', result);
+                // // console.log('Result success status:', result.success);
+                // // console.log('Result data:', result.data);
                 if (result.user) {
-                    console.log('Setting current user:', result.user);
+                    // console.log('Setting current user:', result.user);
                     setUser(result.user);
                     // Simpan ke localStorage sebagai backup/cache
                     

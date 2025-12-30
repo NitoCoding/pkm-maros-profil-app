@@ -5,11 +5,11 @@ import { createUser } from '../libs/auth/database';
 
 async function seedTestAccounts() {
   try {
-    console.log('🚀 Seeding test accounts...');
+    // console.log('🚀 Seeding test accounts...');
     
     // Test connection
     await executeQuery('SELECT 1');
-    console.log('✅ Database connection established');
+    // console.log('✅ Database connection established');
     
     // Test accounts data
     const testAccounts = [
@@ -43,7 +43,7 @@ async function seedTestAccounts() {
         );
         
         if (existingUser.length > 0) {
-          console.log(`⚠️  Account ${account.email} already exists, skipping...`);
+          // console.log(`⚠️  Account ${account.email} already exists, skipping...`);
           continue;
         }
         
@@ -54,19 +54,19 @@ async function seedTestAccounts() {
           name: account.name
         });
         
-        console.log(`✅ Created account: ${result.email} (${result.name})`);
+        // console.log(`✅ Created account: ${result.email} (${result.name})`);
       } catch (error) {
         console.error(`❌ Failed to create account ${account.email}:`, error);
       }
     }
     
-    console.log('🎉 Test accounts seeding completed successfully');
-    console.log('\n📋 Test Account Credentials:');
-    console.log('---------------------------');
-    console.log('Email: admin@test.com | Password: admin123');
-    console.log('Email: user@test.com | Password: user123');
-    console.log('Email: editor@test.com | Password: editor123');
-    console.log('---------------------------');
+    // console.log('🎉 Test accounts seeding completed successfully');
+    // console.log('\n📋 Test Account Credentials:');
+    // console.log('---------------------------');
+    // console.log('Email: admin@test.com | Password: admin123');
+    // console.log('Email: user@test.com | Password: user123');
+    // console.log('Email: editor@test.com | Password: editor123');
+    // console.log('---------------------------');
     
   } catch (error) {
     console.error('❌ Test accounts seeding failed:', error);

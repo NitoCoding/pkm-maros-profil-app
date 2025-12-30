@@ -5,7 +5,7 @@ import InfografiPageClient from './InfografisPageClient';
 export const metadata: Metadata = {
 	title: 'Infografis',
 	description: 'Website resmi Desa Benteng Gajah',
-	keywords: 'kelurahan, bilokka, pemerintah, desa',
+	keywords: ' benteng gajah, pemerintah, desa',
 	openGraph: {
 		title: 'Desa Benteng Gajah',
 		description: 'Website resmi Desa Benteng Gajah',

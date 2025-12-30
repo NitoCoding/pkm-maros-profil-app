@@ -42,7 +42,7 @@ export default function AdminUmumPage() {
   };
 
 
-  // console.log(getDataByJenis('infografi'));
+  // // console.log(getDataByJenis('infografi'));
   // Helper function untuk membuka modal edit
   const openEditModal = (jenis: IUmum['jenis']) => {
     const data = getDataByJenis(jenis);

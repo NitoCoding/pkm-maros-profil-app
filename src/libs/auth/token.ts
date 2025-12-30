@@ -13,19 +13,19 @@ export function setToken(token: string) {
 export function getToken(): string | null {
   if (typeof window !== 'undefined') {
     // Tambahkan log untuk melihat semua cookie yang ada
-    console.log('Client: All cookies:', document.cookie);
+    // console.log('Client: All cookies:', document.cookie);
     
     const cookies = document.cookie.split(';');
     for (let i = 0; i < cookies.length; i++) {
       const cookie = cookies[i].trim();
       if (cookie.startsWith('token=')) {
         const tokenValue = cookie.substring('token='.length, cookie.length);
-        console.log('Client: Found token:', tokenValue.substring(0, 20) + '...');
+        // console.log('Client: Found token:', tokenValue.substring(0, 20) + '...');
         return tokenValue;
       }
     }
   }
-  console.log('Client: Token not found in cookies');
+  // console.log('Client: Token not found in cookies');
   return null;
 }
 
@@ -72,17 +72,17 @@ export async function getValidToken(): Promise<string | null> {
 export async function isAuthenticated(): Promise<boolean> {
   const token = getToken(); // Tidak perlu await di sini
   if (!token) {
-    // console.log('Client: isAuthenticated() -> false (no token)');
+    // // console.log('Client: isAuthenticated() -> false (no token)');
 
     return true;
   }
   
   try {
     verifyToken(token);
-    console.log('Client: isAuthenticated() -> true (token valid)');
+    // console.log('Client: isAuthenticated() -> true (token valid)');
     return true;
   } catch (error) {
-    console.log('Client: isAuthenticated() -> false (token invalid)', error);
+    // console.log('Client: isAuthenticated() -> false (token invalid)', error);
     return false;
   }
 }

@@ -50,29 +50,29 @@ export function useCachedData<T>(
       const now = Date.now();
 
       if (now - parsed.timestamp < config.duration) {
-        console.log(`[${type}] Loading from cache, age: ${Math.round((now - parsed.timestamp) / 1000)}s`);
+        // // console.log(`[${type}] Loading from cache, age: ${Math.round((now - parsed.timestamp) / 1000)}s`);
         return parsed.data;
       }
 
-      console.log(`[${type}] Cache expired, removing...`);
+      // // console.log(`[${type}] Cache expired, removing...`);
       localStorage.removeItem(config.key);
       return null;
     } catch (error) {
       console.error(`Error loading ${type} from cache:`, error);
       return null;
     }
-  }, [config.key, config.duration, type]);
+  }, [config.key, config.duration]); // type dihapus
 
   const saveToCache = useCallback((data: T) => {
     try {
       if (typeof window === 'undefined') return;
       const cacheData: CachedData = { data, timestamp: Date.now() };
       localStorage.setItem(config.key, JSON.stringify(cacheData));
-      console.log(`[${type}] Data saved to cache`);
+      // // console.log(`[${type}] Data saved to cache`);
     } catch (error) {
       console.error(`Error saving ${type} to cache:`, error);
     }
-  }, [config.key, type]);
+  }, [config.key]); // type dihapus
 
   const fetchFreshData = useCallback(async () => {
     try {
@@ -80,7 +80,7 @@ export function useCachedData<T>(
       setError(null);
       setIsFromCache(false);
 
-      console.log(`[${type}] Fetching fresh data...`);
+      // // console.log(`[${type}] Fetching fresh data...`);
       const freshData = await fetchFunction();
       setData(freshData);
       saveToCache(freshData);
@@ -90,23 +90,23 @@ export function useCachedData<T>(
     } finally {
       setLoading(false);
     }
-  }, [fetchFunction, saveToCache, type]);
+  }, [fetchFunction, saveToCache]); // type dihapus
 
   const clearCache = useCallback(() => {
     try {
       if (typeof window === 'undefined') return;
       localStorage.removeItem(config.key);
-      console.log(`[${type}] Cache cleared`);
+      // console.log(`[${type}] Cache cleared`);
     } catch (error) {
       console.error(`Error clearing ${type} cache:`, error);
     }
-  }, [config.key, type]);
+  }, [config.key]); // type dihapus
 
   const forceRefresh = useCallback(async () => {
-    console.log(`[${type}] Force refreshing...`);
+    // console.log(`[${type}] Force refreshing...`);
     clearCache();
     await fetchFreshData();
-  }, [clearCache, fetchFreshData, type]);
+  }, [clearCache, fetchFreshData]); // type dihapus
 
   useEffect(() => {
     // Hanya jalankan sekali saat komponen dimount
@@ -130,7 +130,7 @@ export function useCachedData<T>(
     };
     
     initializeData();
-  }, [initialized, loadFromCache, fetchFreshData, type, config.key]);
+  }, [initialized, loadFromCache, fetchFreshData, config.key]); // type dihapus
 
   return {
     data: data || fallbackData,
@@ -147,21 +147,21 @@ export function useHeroCached() {
   // Memoize fetchHeroData to prevent unnecessary re-renders
   const fetchHeroData = useMemo(() => async () => {
     try {
-      console.log('[HERO] Fetching from /api/dashboard...');
+      // console.log('[HERO] Fetching from /api/dashboard...');
       const response = await fetch('/api/dashboard');
       const result = await response.json();
 
-      console.log('[HERO] API Response:', result);
+      // console.log('[HERO] API Response:', result);
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch hero data');
       }
 
-      console.log('[HERO] Response OK', response.ok);
-      console.log('[HERO] Result success', result.success);
-      console.log('[HERO] Result data', result.data);
-      console.log('[HERO] Result data hero', result.data?.hero);
-      console.log('[HERO] Result hero', result.hero);
+      // console.log('[HERO] Response OK', response.ok);
+      // console.log('[HERO] Result success', result.success);
+      // console.log('[HERO] Result data', result.data);
+      // console.log('[HERO] Result data hero', result.data?.hero);
+      // console.log('[HERO] Result hero', result.hero);
 
       if (result.hero) {
         const heroData = {
@@ -169,11 +169,11 @@ export function useHeroCached() {
           title: result.hero.title || 'Selamat Datang Di Website Desa Benteng Gajah',
           subtitle: result.hero.subtitle || 'Desa Benteng Gajah, Kecamatan Panca Lautang, Kabupaten Sidrap'
         };
-        console.log('[HERO] Processed hero data:', heroData);
+        // console.log('[HERO] Processed hero data:', heroData);
         return heroData;
       } else {
         // Fallback data if no hero info found
-        console.log('[HERO] No hero data found, using fallback');
+        // console.log('[HERO] No hero data found, using fallback');
         return {
           image: '',
           title: 'Selamat Datang Di Website Desa Benteng Gajah',
@@ -208,11 +208,11 @@ export function useSambutanCached() {
   // Memoize fetchSambutanData to prevent unnecessary re-renders
   const fetchSambutanData = useMemo(() => async () => {
     try {
-      console.log('[SAMBUTAN] Fetching from /api/dashboard...');
+      // console.log('[SAMBUTAN] Fetching from /api/dashboard...');
       const response = await fetch('/api/dashboard');
       const result = await response.json();
 
-      console.log('[SAMBUTAN] API Response:', result);
+      // console.log('[SAMBUTAN] API Response:', result);
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch sambutan data');
@@ -224,11 +224,11 @@ export function useSambutanCached() {
           isi: result.sambutan.isi || 'Selamat datang di website resmi Desa Benteng Gajah. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
           gambar: result.sambutan.gambar || ''
         };
-        console.log('[SAMBUTAN] Processed sambutan data:', sambutanData);
+        // console.log('[SAMBUTAN] Processed sambutan data:', sambutanData);
         return sambutanData;
       } else {
         // Fallback data if no sambutan found
-        console.log('[SAMBUTAN] No sambutan data found, using fallback');
+        // console.log('[SAMBUTAN] No sambutan data found, using fallback');
         return {
           judul: 'Sambutan Lurah',
           isi: 'Selamat datang di website resmi Desa Benteng Gajah. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
@@ -263,11 +263,11 @@ export function useFooterCached() {
   // Memoize fetchFooterData to prevent unnecessary re-renders
   const fetchFooterData = useMemo(() => async () => {
     try {
-      console.log('[FOOTER] Fetching from /api/dashboard...');
+      // console.log('[FOOTER] Fetching from /api/dashboard...');
       const response = await fetch('/api/dashboard');
       const result = await response.json();
 
-      console.log('[FOOTER] API Response:', result);
+      // console.log('[FOOTER] API Response:', result);
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch footer data');
@@ -275,7 +275,7 @@ export function useFooterCached() {
 
       if (result.contact) {
         const footerData = {
-          alamat: result.contact.address || 'Bilokka, Kec. Panca Lautang, Kabupaten Sidenreng Rappang, Sulawesi Selatan 91672',
+          alamat: result.contact.address || 'Contoh Alamat',
           telepon: result.contact.phone || '031 3970961',
           email: result.contact.email || '',
           jamKerja: result.workingHours?.hours || 'Senin - Jumat: 08.00 - 15.00',
@@ -285,13 +285,13 @@ export function useFooterCached() {
             youtube: result.contact.youtube || ''
           }
         };
-        console.log('[FOOTER] Processed footer data:', footerData);
+        // console.log('[FOOTER] Processed footer data:', footerData);
         return footerData;
       } else {
         // Fallback data if no contact info found
-        console.log('[FOOTER] No footer data found, using fallback');
+        // console.log('[FOOTER] No footer data found, using fallback');
         return {
-          alamat: 'Bilokka, Kec. Panca Lautang, Kabupaten Sidenreng Rappang, Sulawesi Selatan 91672',
+          alamat: 'Contoh Alamat',
           telepon: '031 3970961',
           email: '',
           jamKerja: 'Senin - Jumat: 08.00 - 15.00',
@@ -306,7 +306,7 @@ export function useFooterCached() {
       console.error('[FOOTER] Error fetching footer data:', error);
       // Return fallback data on error
       return {
-        alamat: 'Bilokka, Kec. Panca Lautang, Kabupaten Sidenreng Rappang, Sulawesi Selatan 91672',
+        alamat: 'Contoh Alamat',
         telepon: '031 3970961',
         email: '',
         jamKerja: 'Senin - Jumat: 08.00 - 15.00',
@@ -320,7 +320,7 @@ export function useFooterCached() {
   }, []);
 
   const fallbackData = {
-    alamat: 'Bilokka, Kec. Panca Lautang, Kabupaten Sidenreng Rappang, Sulawesi Selatan 91672',
+    alamat: 'Contoh Alamat',
     telepon: '031 3970961',
     email: '',
     jamKerja: 'Senin - Jumat: 08.00 - 15.00',

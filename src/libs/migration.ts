@@ -8,7 +8,7 @@ import { IProdukUMKM } from '@/types/umkm';
 
 export async function migrateData() {
   try {
-    console.log('Starting data migration...');
+    // console.log('Starting data migration...');
     
     // Migrate profil data
     const profilData = await getFirebaseData('profil_kelurahan');
@@ -27,7 +27,7 @@ export async function migrateData() {
           [item.jenis, item.judul, item.isi, item.gambar, item.videoUrl, item.updatedAt, item.updatedAt]
         );
       }
-      console.log('Profil data migrated successfully');
+      // console.log('Profil data migrated successfully');
     }
     
     // Migrate berita data
@@ -50,7 +50,7 @@ export async function migrateData() {
           [item.judul, item.slug, item.ringkasan, item.isi, item.gambar, item.tanggal, item.penulis, item.kategori, item.status, item.createdAt, item.updatedAt]
         );
       }
-      console.log('Berita data migrated successfully');
+      // console.log('Berita data migrated successfully');
     }
     
     // Migrate galeri data
@@ -69,7 +69,7 @@ export async function migrateData() {
           [item.src, item.alt, item.caption, item.tanggal, JSON.stringify(item.tags || []), item.createdAt, item.updatedAt]
         );
       }
-      console.log('Galeri data migrated successfully');
+      // console.log('Galeri data migrated successfully');
     }
     
     // Migrate pegawai data
@@ -88,7 +88,7 @@ export async function migrateData() {
           [item.nama, item.jabatan, item.foto, item.urutanTampil, item.createdAt, item.updatedAt]
         );
       }
-      console.log('Pegawai data migrated successfully');
+      // console.log('Pegawai data migrated successfully');
     }
     
     // Migrate UMKM data
@@ -114,10 +114,10 @@ export async function migrateData() {
           [item.nama, item.slug, item.kategori, item.deskripsi, item.gambar, item.startPrice, item.endPrice, item.telepon, item.lokasi?.alamat, item.lokasi?.latitude, item.lokasi?.longitude, item.lokasi?.googleMapsLink, item.createdAt, item.updatedAt]
         );
       }
-      console.log('UMKM data migrated successfully');
+      // console.log('UMKM data migrated successfully');
     }
     
-    console.log('Data migration completed successfully');
+    // console.log('Data migration completed successfully');
   } catch (error) {
     console.error('Migration error:', error);
     throw error;

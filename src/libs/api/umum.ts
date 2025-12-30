@@ -99,7 +99,7 @@ export async function updateUmumByJenis(jenis: IUmum['jenis'], updateData: Parti
 export async function initializeUmumData(): Promise<void> {
   const existingData = await getUmumKelurahan();
   if (existingData.length > 0) {
-    console.log('Umum data already exists.');
+    // console.log('Umum data already exists.');
     return;
   }
 
@@ -205,5 +205,5 @@ export async function initializeUmumData(): Promise<void> {
     // ]);
   }
   
-  console.log('Default umum data has been initialized.');
+  // console.log('Default umum data has been initialized.');
 }

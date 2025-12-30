@@ -1,14 +1,27 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Edit, X, Loader2 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import CKEditorWrapper from "@/components/ckeditor/CKEditorWrapper";
-import ReactPlayer from "react-player";
 import { IProfil } from "@/types/profil";
 import { prepareHTMLForRender } from "@/libs/utils/htmlUtils";
 import { useProfil } from "@/hooks/useProfil";
 import { toast } from 'react-hot-toast'
 import Image from "next/image";
+import dynamic from "next/dynamic";
+
+// Dynamic import YouTubePlayer dengan SSR disabled
+const YouTubePlayer = dynamic(() => import("@/components/YouTubePlayer"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400 mx-auto"></div>
+        <p className="text-gray-500 text-sm mt-2">Memuat video...</p>
+      </div>
+    </div>
+  ),
+});
 
 export default function ProfilAdminPage() {
   // Hook untuk mengambil data profil
@@ -107,7 +120,7 @@ export default function ProfilAdminPage() {
     async (acceptedFiles: File[]) => {
       if (!acceptedFiles[0]) return
 
-      console.log('Uploading file:', acceptedFiles[0])
+      // // console.log('Uploading file:', acceptedFiles[0])
       setUploading(true)
       setPreviewUrl(URL.createObjectURL(acceptedFiles[0]))
 
@@ -195,7 +208,7 @@ export default function ProfilAdminPage() {
       }
 
       if (result.success) {
-        console.log("Data saved successfully");
+        // // console.log("Data saved successfully");
         refreshProfil(); // Refresh data setelah berhasil disimpan
         closeModal();
       } else {
@@ -428,13 +441,7 @@ export default function ProfilAdminPage() {
 
               <div className="w-full aspect-video bg-gray-100 rounded-lg border border-gray-200">
                 {getVideoProfil("video") ? (
-                  <ReactPlayer
-                    src={getVideoProfil("video")}
-                    width="100%"
-                    height="100%"
-                    controls={true}
-                    className="rounded-lg"
-                  />
+                  <YouTubePlayer url={getVideoProfil("video")} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <span className="text-gray-400">Belum ada video</span>
@@ -534,15 +541,7 @@ export default function ProfilAdminPage() {
                         <label className="block text-sm font-medium text-gray-700">
                           Preview Video
                         </label>
-                        <div className="w-full aspect-video bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
-                          <ReactPlayer
-                            src={formData}
-                            width="100%"
-                            height="100%"
-                            controls={true}
-                            className="rounded-lg"
-                          />
-                        </div>
+                        <YouTubePlayer url={formData} />
                       </div>
                     )}
                   </div>

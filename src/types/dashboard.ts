@@ -24,9 +24,17 @@ export interface IDashboard {
     address: string | null;
     whatsapp: string | null;
   };
+  socialMedia?: {
+    facebook?: string | null;
+    twitter?: string | null;
+    instagram?: string | null;
+    youtube?: string | null;
+    tiktok?: string | null;
+    whatsapp?: string | null;
+  };
   createdAt: string;
   updatedAt: string;
 }
 
 // Tipe untuk data yang bisa di-update (semua field opsional)
-export type IDashboardUpdate = Partial<Pick<IDashboard, 'hero' | 'lurah' | 'workingHours' | 'contact'>>;
+export type IDashboardUpdate = Partial<Pick<IDashboard, 'hero' | 'lurah' | 'workingHours' | 'contact' | 'socialMedia'>>;

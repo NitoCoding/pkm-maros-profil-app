@@ -5,7 +5,7 @@ import AdminLayoutClient from '@/components/admin/AdminLayoutClient'
 export const metadata: Metadata = {
 	title: 'Admin',
 	description: 'Halaman Administrasi Web Desa Benteng Gajah',
-	keywords: 'admin, kelurahan, bilokka, administrasi',
+	keywords: 'admin, desa, benteng gajah, administrasi',
 	robots: 'noindex, nofollow', // Admin pages tidak boleh di-index
 }
 

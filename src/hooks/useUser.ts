@@ -1,11 +1,13 @@
 // src/hooks/useUser.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { IUser, IUserCreate, IUserUpdate, IPasswordReset, IPasswordChange } from '@/types/user';
 
 interface UseUsersResult {
     users: IUser[];
     loading: boolean;
     error: string | null;
+    hasMore: boolean;
+    loadMore: () => void;
     refresh: () => void;
 }
 
@@ -26,18 +28,41 @@ interface UseUserMutationResult {
     resetPassword: (email: string) => Promise<string>;
 }
 
-// Hook untuk mengambil semua user
-export function useUsers(): UseUsersResult {
+interface UseUsersOptions {
+    pageSize?: number;
+    initialLoad?: boolean;
+}
+
+// Hook untuk mengambil semua user dengan pagination
+export function useUsers(options: UseUsersOptions = {}): UseUsersResult {
+    const { pageSize = 10, initialLoad = true } = options;
     const [users, setUsers] = useState<IUser[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [hasMore, setHasMore] = useState(true);
+    const [cursor, setCursor] = useState<string | null>(null);
 
-    const fetchUsers = async () => {
+    // Gunakan ref untuk menyimpan nilai terbaru dari cursor
+    const cursorRef = useRef<string | null>(null);
+    useEffect(() => {
+        cursorRef.current = cursor;
+    }, [cursor]);
+
+    const fetchUsers = useCallback(async (reset = false) => {
         try {
             setLoading(true);
             setError(null);
 
-            const response = await fetch('/api/user');
+            const params = new URLSearchParams({
+                pageSize: pageSize.toString(),
+            });
+
+            const currentCursor = reset ? null : cursorRef.current;
+            if (currentCursor) {
+                params.append('cursor', currentCursor);
+            }
+
+            const response = await fetch(`/api/user?${params.toString()}`);
             const result = await response.json();
 
             if (!response.ok) {
@@ -45,7 +70,16 @@ export function useUsers(): UseUsersResult {
             }
 
             if (result.success) {
-                setUsers(result.data || []);
+                const newUsers = result.data?.data || [];
+
+                if (reset) {
+                    setUsers(newUsers);
+                } else {
+                    setUsers(prev => [...prev, ...newUsers]);
+                }
+                
+                setHasMore(result.data?.hasMore || false);
+                setCursor(result.data?.nextCursor || null);
             }
         } catch (err: any) {
             setError(err.message);
@@ -53,25 +87,39 @@ export function useUsers(): UseUsersResult {
         } finally {
             setLoading(false);
         }
-    };
+    }, [pageSize]);
 
-    const refresh = () => {
-        fetchUsers();
-    };
+    const loadMore = useCallback(() => {
+        if (!loading && hasMore) {
+            fetchUsers(false);
+        }
+    }, [loading, hasMore, fetchUsers]);
 
+    const refresh = useCallback(() => {
+        setCursor(null);
+        setUsers([]);
+        setHasMore(true);
+        fetchUsers(true);
+    }, [fetchUsers]);
+
+    // Efek awal untuk memuat data pertama kali
     useEffect(() => {
-        fetchUsers();
-    }, []);
+        if (initialLoad) {
+            fetchUsers(true);
+        }
+    }, [initialLoad, fetchUsers]);
 
     return {
         users,
         loading,
         error,
+        hasMore,
+        loadMore,
         refresh,
     };
 }
 
-// Hook untuk mengambil user berdasarkan ID
+// Hook untuk mengambil user berdasarkan ID (tidak perlu loadMore)
 export function useUser(id: number): UseUserResult {
     const [user, setUser] = useState<IUser | null>(null);
     const [loading, setLoading] = useState(false);
@@ -98,11 +146,11 @@ export function useUser(id: number): UseUserResult {
         } finally {
             setLoading(false);
         }
-    }, [id]); // ✅ hanya berubah jika id berubah
+    }, [id]);
 
     useEffect(() => {
         if (id) fetchUser();
-    }, [id, fetchUser]); // ✅ tidak akan looping terus
+    }, [id, fetchUser]);
 
     const refresh = () => {
         fetchUser();

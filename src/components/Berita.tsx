@@ -31,7 +31,7 @@ export default function Berita() {
                     <HeaderPage title='Berita Terbaru' description='Informasi terkini seputar Desa Benteng Gajah' />
                     <div className='text-center py-12'>
                         <p className='text-red-600 mb-4'>Gagal memuat berita: {error}</p>
-                        <button 
+                        <button
                             onClick={() => window.location.reload()}
                             className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700'
                         >
@@ -47,11 +47,11 @@ export default function Berita() {
         <section className='px-4 sm:px-6 lg:px-8 mb-4'>
             <div className='container mx-auto max-w-7xl'>
                 <HeaderPage title='Berita Terbaru' description='Informasi terkini seputar Desa Benteng Gajah' />
-                
+
                 {!berita ? (
                     <div className='text-center py-12'>
                         <p className='text-gray-600 mb-4'>Belum ada berita yang dipublikasikan.</p>
-                        <Link 
+                        <Link
                             href='/berita'
                             className='bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700'
                         >
@@ -61,9 +61,20 @@ export default function Berita() {
                 ) : (
                     <>
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
-                            <BeritaCard key={berita.id} berita={berita} />
+                            {berita.length > 0 ? (
+                                berita.map((item) => (
+                                    <BeritaCard
+                                        key={item.id}
+                                        berita={item}
+                                    />
+                                ))
+                            ) : (
+                                <p className='col-span-full text-center text-gray-500'>
+                                    Belum ada berita yang tersedia.
+                                </p>
+                            )}
                         </div>
-                        
+
                         <div className='text-center mt-8'>
                             <Link
                                 href='/berita'

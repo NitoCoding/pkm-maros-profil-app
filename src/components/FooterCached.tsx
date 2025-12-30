@@ -102,6 +102,11 @@ export default function FooterCached() {
 									Berita
 								</Link>
 							</li>
+							<li>
+								<Link href='/login' className='text-white hover:text-accent transition-colors'>
+									Admin
+								</Link>
+							</li>
 						</ul>
 					</div>
 

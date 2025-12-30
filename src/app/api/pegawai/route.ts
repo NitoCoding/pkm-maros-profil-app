@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     const id = searchParams.get("id");
 
     if (id) {
-      const pegawai = await ambilPegawaiById(id);
+      const pegawai = await ambilPegawaiById(parseInt(id));
       if (!pegawai) {
         return NextResponse.json({ error: "Pegawai not found" }, { status: 404 });
       }

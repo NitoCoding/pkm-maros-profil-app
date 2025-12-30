@@ -11,7 +11,7 @@ export default function CardStok({
 	jabatan: string
 	foto: string
 }) {
-	console.log('CardStok foto URL:', foto);
+	// // console.log('CardStok foto URL:', foto);
 	const optimizedImageUrl = getCardStokImageUrl(foto);
 	const blurredImageUrl = getBlurredImageUrl(foto);
 	return (

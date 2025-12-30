@@ -15,7 +15,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 export default function AdminProfilePage() {
     const router = useRouter();
     const { user, loading } = useCurrentUser();
-    console.log('Current User:', user);
+    // // console.log('Current User:', user);
 
     const { updateUser, changePassword, loading: mutationLoading } = useUserMutation();
 
@@ -159,7 +159,7 @@ export default function AdminProfilePage() {
                 description="Kelola informasi profil dan password akun admin Anda"
             />
             <div className="min-h-screen bg-gray-50 py-12">
-                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Header */}
                     <div className="mb-8">
                         <Link
@@ -509,7 +509,7 @@ export default function AdminProfilePage() {
                                             Kirim Email ke Developer
                                         </a> */}
                                         <a
-                                            href="https://wa.me/6282151827775?text=Halo%20saya%20ingin%20bertanya%20tentang%20CMS%20Bilokka"
+                                            href="https://wa.me/6282151827775?text=Halo%20saya%20ingin%20bertanya%20tentang%20CMS%Benteng%20Gajah."
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="block w-full text-center px-4 py-2 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"

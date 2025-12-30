@@ -6,7 +6,7 @@ import { useState } from 'react';
 export default function HeroCached() {
 	const { data: hero, loading, error, isFromCache, refresh } = useHeroCached();
 	const [imageLoaded, setImageLoaded] = useState(false);
-	// console.log('[HERO] Data:', hero);
+	// // console.log('[HERO] Data:', hero);
 
 	if (loading) {
 		return (

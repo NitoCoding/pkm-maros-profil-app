@@ -10,10 +10,10 @@ export default function AdmPenduduk() {
   // Helper function untuk mengurai data JSON
   const parseUmumData = (umumData: IUmum | null) => {
     if (!umumData) return null;
-    
+
     // Buat salinan objek untuk tidak mengubah state asli
     const parsedData = { ...umumData };
-    
+
     // Jika data adalah string, urai menjadi objek
     if (typeof parsedData.data === 'string') {
       try {
@@ -23,7 +23,7 @@ export default function AdmPenduduk() {
         // parsedData.data = null; // Atur ke null jika gagal mengurai
       }
     }
-    
+
     return parsedData;
   };
 
@@ -62,43 +62,14 @@ export default function AdmPenduduk() {
           title="Administrasi Penduduk"
           description="Sistem digital yang berfungsi mempermudah pengelolaan data dan informasi terkait dengan kependudukan dan pendayagunaannya untuk pelayanan publik yang efektif dan efisien"
         />
-        
-        {/* Tampil pada tablet dan desktop (sm ke atas) */}
-        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+
+        {/* Grid responsif untuk SEMUA ukuran layar */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-8">
           <CardPenduduk kategori="Total Penduduk" jumlah={data.total} color="blue" />
           <CardPenduduk kategori="Laki-laki" jumlah={data.lakiLaki} color="green" />
           <CardPenduduk kategori="Perempuan" jumlah={data.perempuan} color="pink" />
           <CardPenduduk kategori="Kartu Keluarga" jumlah={data.kk} color="purple" />
           <CardPenduduk kategori="Wajib Pilih" jumlah={data.wajibPilih} color="orange" />
-        </div>
-        
-        {/* Tampil pada mobile (di bawah sm) */}
-        <div className="sm:hidden grid grid-cols-2 gap-4">
-          <CardPendudukIcon
-            icon="/jugend.png"
-            kategori="Populasi"
-            jumlah={data.total}
-          />
-          <CardPendudukIcon 
-            icon="/boss.png" 
-            kategori="Pria" 
-            jumlah={data.lakiLaki} 
-          />
-          <CardPendudukIcon
-            icon="/businesswoman.png"
-            kategori="Wanita"
-            jumlah={data.perempuan}
-          />
-          <CardPendudukIcon
-            icon="/family.png"
-            kategori="Kartu Keluarga"
-            jumlah={data.kk}
-          />
-          <CardPendudukIcon
-            icon="/voting-box.png"
-            kategori="Wajib Pilih"
-            jumlah={data.wajibPilih}
-          />
         </div>
       </div>
     </div>

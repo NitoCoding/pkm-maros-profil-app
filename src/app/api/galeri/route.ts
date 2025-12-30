@@ -8,7 +8,6 @@ import {
   hapusGaleri,
 } from "@/libs/api/galeri";
 import { IGaleriUpdate } from "@/types/galeri";
-import { ta } from "zod/v4/locales";
 
 // Middleware akan menangani autentikasi dan menambahkan info user ke header
 function getUserFromRequest(request: NextRequest) {
@@ -111,7 +110,7 @@ export async function PUT(request: NextRequest) {
       ...updateData,
       updatedBy: user.userId,
     };
-    // console.log(dataWithTimestamp)
+    // // console.log(dataWithTimestamp)
 
     const success = await updateGaleri(id, dataWithTimestamp);
     

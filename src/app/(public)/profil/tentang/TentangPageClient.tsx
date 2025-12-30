@@ -4,7 +4,6 @@ import Main from "@/components/Main";
 import { IPegawai } from "@/types/pegawai";
 import { IProfil } from "@/types/profil";
 import Image from "next/image";
-import ReactPlayer from "react-player";
 import { useProfil } from "@/hooks/useProfil";
 import { usePegawai } from "@/hooks/usePegawai";
 import { prepareHTMLForRender } from "@/libs/utils/htmlUtils";
@@ -12,6 +11,20 @@ import PageHead from "@/components/PageHead";
 import CardStokLite from "@/components/CardStokLite";
 import { getCardStokImageUrl } from "@/libs/utils/cloudinary";
 import { MapPin } from "lucide-react";
+import dynamic from "next/dynamic";
+
+// Dynamic import YouTubePlayer dengan SSR disabled
+const YouTubePlayer = dynamic(() => import("@/components/YouTubePlayer"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-700 mx-auto mb-3"></div>
+        <p className="text-gray-600 text-sm">Memuat video...</p>
+      </div>
+    </div>
+  ),
+});
 
 export default function TentangPageClient() {
   const { profil, loading: loadingProfil } = useProfil();
@@ -33,9 +46,9 @@ export default function TentangPageClient() {
 
   return (
     <>
-      <PageHead 
-        title="Tentang Desa Benteng Gajah" 
-        description="Informasi lengkap seputar Desa Benteng Gajah" 
+      <PageHead
+        title="Tentang Desa Benteng Gajah"
+        description="Informasi lengkap seputar Desa Benteng Gajah"
       />
       <div className="pt-12 pt-12 min-h-screen pb-3">
         <Main>
@@ -50,18 +63,14 @@ export default function TentangPageClient() {
               </div>
               <div className="w-full space-y-6 sm:space-y-8">
                 {/* Video Section */}
-                {video?.videoUrl && (
+                {video?.videoUrl ? (
                   <div className="flex justify-center w-full max-w-md sm:max-w-lg md:max-w-4xl mx-auto bg-white rounded-lg p-4 sm:p-6 shadow-lg">
-                    <div className="w-full aspect-video">
-                      <ReactPlayer
-                        src={video.videoUrl}
-                        controls
-                        width="100%"
-                        height="100%"
-                      />
+                    <div className="w-full">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-3 text-center">Video Profil</h3>
+                      <YouTubePlayer url={video.videoUrl} />
                     </div>
                   </div>
-                )}
+                ) : null}
                 
                 {/* Sejarah Section */}
                 {sejarah && (

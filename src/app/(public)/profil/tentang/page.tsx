@@ -5,7 +5,7 @@ import TentangPageClient from './TentangPageClient';
 export const metadata: Metadata = {
 	title: 'Tentang',
 	description: 'Website resmi Desa Benteng Gajah',
-	keywords: 'kelurahan, bilokka, pemerintah, desa',
+	keywords: ' benteng gajah, pemerintah, desa',
 	openGraph: {
 		title: 'Desa Benteng Gajah',
 		description: 'Website resmi Desa Benteng Gajah',

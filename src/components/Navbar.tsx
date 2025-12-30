@@ -19,6 +19,14 @@ const MENU_ITEMS: IMenu[] = [
 			{label: 'Geografis', href: '/profil/geografis', show: true},
 		],
 	},
+	{
+		label: 'Potensi Desa',
+		show: true,
+		children: [
+			{label: 'Wisata', href: '/potensi/wisata', show: true},
+			{label: 'Inovasi', href: '/potensi/inovasi', show: true},
+		],
+	},
 	// {
 	// 	label: 'Layanan',
 	// 	show: true,

@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     if (id) {
       const produk = await ambilProdukUMKMById(id);
-      console.log(produk);
+      // // console.log(produk);
       if (!produk) return NextResponse.json({ error: "Produk not found" }, { status: 404 });
       return NextResponse.json({ success: true, data: produk });
     }
@@ -71,13 +71,13 @@ export async function PUT(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const data = await request.json();
-    console.log(data);
+    // // console.log(data);
     const { id, ...updateData } = data;
     const produkData: IProdukUMKMUpdate = {
       ...updateData,
       updatedBy: user.userId,
     };
-    console.log(id);
+    // // console.log(id);
     const result = await updateProdukUMKM(id, produkData);
     return NextResponse.json({ success: true, data: result, message: "Produk berhasil diperbarui" });
   } catch (error: any) {

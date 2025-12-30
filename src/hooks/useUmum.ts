@@ -34,7 +34,7 @@ export function useUmum(): UseUmumResult {
 
       const response = await fetch('/api/umum')
       const result = await response.json()
-      // console.log('Fetched umum data:', result)
+      // // console.log('Fetched umum data:', result)
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch umum')

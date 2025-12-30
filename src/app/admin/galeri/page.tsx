@@ -11,7 +11,8 @@ import { formatDate } from "@/libs/utils/date";
 import PreviewImageButton from "@/components/PreviewImageModal";
 
 export default function AdminGaleriPage() {
-  const { galeri, loading, error, refresh } = useGaleri({ pageSize: 20 });
+  const pageSize = 10;
+  const { galeri, loading, error, hasMore, loadMore, refresh } = useGaleri({ pageSize: pageSize });
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const handleDelete = async (id: string, caption: string) => {
@@ -53,12 +54,11 @@ export default function AdminGaleriPage() {
 
   return (
     <div className="p-6">
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Kelola Galeri</h1>
-          <p className="text-gray-600">
-            Kelola foto dan dokumentasi Desa Benteng Gajah
-          </p>
+          <p className="text-gray-600">Kelola foto dan dokumentasi Desa Benteng Gajah</p>
         </div>
         <Link
           href="/admin/galeri/add"
@@ -69,6 +69,7 @@ export default function AdminGaleriPage() {
         </Link>
       </div>
 
+      {/* ERROR */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
           <p className="font-medium">Gagal memuat data galeri</p>
@@ -82,16 +83,19 @@ export default function AdminGaleriPage() {
         </div>
       )}
 
-      {loading && galeri.length === 0 ? (
+      {/* LOADING PERTAMA KALI */}
+      {loading && galeri.length === 0 && (
         <div className="flex justify-center items-center py-12">
           <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
           <span className="ml-2 text-gray-600">Memuat data galeri...</span>
         </div>
-      ) : galeri.length === 0 ? (
+      )}
+
+      {/* DATA KOSONG */}
+      {/* {!loading && !error && ...} */}
+      {!loading && !error && galeri.length === 0 && (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-600 text-lg mb-4">
-            Belum ada galeri yang dibuat
-          </p>
+          <p className="text-gray-600 text-lg mb-4">Belum ada galeri yang dibuat</p>
           <Link
             href="/admin/galeri/add"
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
@@ -99,44 +103,44 @@ export default function AdminGaleriPage() {
             Buat Galeri Pertama
           </Link>
         </div>
-      ) : (
+      )}
+
+      {/* TABEL GALERI + LOAD MORE */}
+      {galeri.length > 0 && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white rounded-2xl overflow-hidden border-separate border-spacing-0">
               <thead>
                 <tr className="bg-blue-600 text-white">
-                  <th className="p-3 font-semibold text-left uppercase tracking-wider">Caption</th>
-                  <th className="p-3 font-semibold text-left uppercase tracking-wider">Preview</th>
-                  <th className="p-3 font-semibold text-left uppercase tracking-wider">Tanggal</th>
-                  <th className="p-3 font-semibold text-left uppercase tracking-wider">Tags</th>
-                  <th className="p-3 font-semibold text-center uppercase tracking-wider">Aksi</th>
+                  <th className="p-3 text-center font-semibold uppercase tracking-wider w-12">
+                    #
+                  </th>
+                  <th className="p-3 text-left font-semibold uppercase tracking-wider">Caption</th>
+                  <th className="p-3 text-left font-semibold uppercase tracking-wider">Preview</th>
+                  <th className="p-3 text-left font-semibold uppercase tracking-wider">Tanggal</th>
+                  <th className="p-3 text-left font-semibold uppercase tracking-wider">Tags</th>
+                  <th className="p-3 text-center font-semibold uppercase tracking-wider">Aksi</th>
                 </tr>
               </thead>
-              <tbody>
-                {galeri.map((item, idx) => (
-                  <tr
-                    key={item.id}
-                    className={`hover:bg-blue-50 transition ${
-                      idx === galeri.length - 1
-                        ? ""
-                        : "border-b border-gray-200"
-                    }`}
-                  >
-                    <td className="p-3 align-middle">
-                      <div className="text-sm font-medium text-gray-900 line-clamp-2">
-                        {item.caption}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {item.alt}
-                      </div>
+              <tbody className="divide-y divide-gray-200">
+                {galeri.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-blue-50 transition">
+                    <td className="p-3 text-center text-sm text-gray-600 font-medium">
+                      {index + 1}
                     </td>
-                    <td className="p-3 align-middle">
+                    <td className="p-3">
+                      <div className="text-sm font-medium text-gray-900 line-clamp-2">
+                        {item.caption || "-"}
+                      </div>
+                      <div className="text-xs text-gray-500">{item.alt}</div>
+                    </td>
+                    <td className="p-3">
                       <PreviewImageButton gambarUrl={item.src} />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="p-3 text-sm text-gray-500">
                       {formatDate(item.createdAt)}
                     </td>
-                    <td className="p-3 align-middle">
+                    <td className="p-3">
                       <div className="flex flex-wrap gap-1">
                         {item.tags?.slice(0, 3).map((tag) => (
                           <span
@@ -153,33 +157,33 @@ export default function AdminGaleriPage() {
                         )}
                       </div>
                     </td>
-                    <td className="p-3 align-middle text-center space-x-1 w-[10%]">
-                      <div className="flex items-center gap-2 justify-center">
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-3">
                         <Link
-                          href={`/galeri`}
+                          href="/galeri"
                           target="_blank"
-                          className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded transition-colors"
-                          title="Lihat galeri"
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Lihat di publik"
                         >
-                          <EyeIcon size={16} />
+                          <EyeIcon size={18} />
                         </Link>
                         <Link
                           href={`/admin/galeri/edit/${item.id}`}
-                          className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded transition-colors"
-                          title="Edit galeri"
+                          className="text-green-600 hover:text-green-900"
+                          title="Edit"
                         >
-                          <Edit size={16} />
+                          <Edit size={18} />
                         </Link>
                         <button
-                          onClick={() => handleDelete(item.id, item.caption || 'Galeri')}
+                          onClick={() => handleDelete(item.id, item.caption || "Galeri ini")}
                           disabled={deleting === item.id}
-                          className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-                          title="Hapus galeri"
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                          title="Hapus"
                         >
                           {deleting === item.id ? (
-                            <Loader2 size={16} className="animate-spin" />
+                            <Loader2 size={18} className="animate-spin" />
                           ) : (
-                            <Trash size={16} />
+                            <Trash size={18} />
                           )}
                         </button>
                       </div>
@@ -189,13 +193,37 @@ export default function AdminGaleriPage() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
 
-      {loading && galeri.length > 0 && (
-        <div className="flex justify-center items-center py-4">
-          <Loader2 className="animate-spin h-6 w-6 text-blue-600" />
-          <span className="ml-2 text-gray-600">Memuat data...</span>
+          {/* FOOTER: LOADING + TOMBOL LOAD MORE */}
+          <div className="p-4 border-t border-gray-200 bg-gray-50">
+            {/* Loading saat ambil data tambahan */}
+            {loading && galeri.length > 0 && (
+              <div className="flex justify-center items-center py-4">
+                <Loader2 className="animate-spin h-6 w-6 text-blue-600" />
+                <span className="ml-2 text-gray-600">Memuat galeri lainnya...</span>
+              </div>
+            )}
+
+            {/* Tombol Load More */}
+            {hasMore && !loading && (
+              <div className="text-center">
+                <button
+                  onClick={loadMore}
+                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
+                >
+                  <Plus size={20} />
+                  Muat Galeri Lainnya
+                </button>
+              </div>
+            )}
+
+            {/* Semua data sudah dimuat */}
+            {!hasMore && galeri.length > pageSize && (
+              <p className="text-center text-gray-500 text-sm py-4">
+                Semua galeri telah dimuat
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -9,7 +9,8 @@ import { toast } from 'react-hot-toast'
 import { IPegawai } from '@/types/pegawai'
 
 export default function AdminPegawaiPage() {
-  const { pegawai, loading, error, refresh } = usePegawai({ pageSize: 20 })
+  const pageSize = 10
+  const { pegawai, loading, error, refresh, loadMore, hasMore } = usePegawai({ pageSize: pageSize })
   const [deleting, setDeleting] = useState<string | null>(null)
 
   const handleDelete = async (id: string, nama: string) => {
@@ -25,9 +26,7 @@ export default function AdminPegawaiPage() {
       toast.success('Pegawai berhasil dihapus')
       refresh()
     } catch (error: any) {
-      if (
-        !['NO_TOKEN', 'TOKEN_REFRESH_FAILED', 'TOKEN_STILL_INVALID'].includes(error.message)
-      ) {
+      if (!['NO_TOKEN', 'TOKEN_REFRESH_FAILED', 'TOKEN_STILL_INVALID'].includes(error.message)) {
         toast.error(error.message || 'Terjadi kesalahan saat menghapus pegawai')
       }
       console.error('Error deleting pegawai:', error)
@@ -38,11 +37,11 @@ export default function AdminPegawaiPage() {
 
   return (
     <div className="p-6">
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Kelola Pegawai</h1>
-          <p className="text-gray-600">Kelola data pegawai Desa Bilokka</p>
+          <p className="text-gray-600">Kelola data pegawai Desa</p>
         </div>
         <Link
           href="/admin/pegawai/add"
@@ -53,7 +52,7 @@ export default function AdminPegawaiPage() {
         </Link>
       </div>
 
-      {/* Error */}
+      {/* ERROR STATE */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
           <p className="font-medium">Gagal memuat data pegawai</p>
@@ -67,26 +66,30 @@ export default function AdminPegawaiPage() {
         </div>
       )}
 
-      {/* Loading & Empty State */}
-      {loading && pegawai.length === 0 ? (
+      {/* LOADING PERTAMA KALI */}
+      {loading && pegawai.length === 0 && (
         <div className="flex justify-center items-center py-12">
           <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
           <span className="ml-2 text-gray-600">Memuat data pegawai...</span>
         </div>
-      ) : pegawai.length === 0 ? (
+      )}
+
+      {/* DATA KOSONG */}
+      {!loading && !error && pegawai.length === 0 && (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-600 text-lg mb-4">
-            Belum ada pegawai yang ditambahkan
-          </p>
+          <p className="text-gray-600 text-lg mb-4">Belum ada pegawai yang ditambahkan</p>
           <Link
             href="/admin/pegawai/add"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2 mx-auto"
           >
+            <Plus size={18} />
             Tambah Pegawai Pertama
           </Link>
         </div>
-      ) : (
-        // Table
+      )}
+
+      {/* DAFTAR PEGAWAI */}
+      {pegawai.length > 0 && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white rounded-2xl border-separate border-spacing-0">
@@ -109,7 +112,7 @@ export default function AdminPegawaiPage() {
                   >
                     {/* Urutan */}
                     <td className="p-3 text-center font-medium text-gray-900">
-                      {item.urutanTampil ?? '-'}
+                      {item.urutanBeranda ?? '-'}
                     </td>
 
                     {/* Nama */}
@@ -118,9 +121,7 @@ export default function AdminPegawaiPage() {
                     </td>
 
                     {/* Jabatan */}
-                    <td className="p-3 text-gray-700 text-sm">
-                      {item.jabatan || '-'}
-                    </td>
+                    <td className="p-3 text-gray-700 text-sm">{item.jabatan || '-'}</td>
 
                     {/* Foto */}
                     <td className="p-3 text-left">
@@ -132,8 +133,8 @@ export default function AdminPegawaiPage() {
                     </td>
 
                     {/* Aksi */}
-                    <td className="p-3 text-center w-[10%]">
-                      <div className="flex justify-center gap-2">
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-3">
                         <Link
                           href={`/admin/pegawai/edit/${item.id}`}
                           className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded transition-colors"
@@ -160,14 +161,37 @@ export default function AdminPegawaiPage() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
 
-      {/* Loading saat refresh */}
-      {loading && pegawai.length > 0 && (
-        <div className="flex justify-center items-center py-4">
-          <Loader2 className="animate-spin h-6 w-6 text-blue-600" />
-          <span className="ml-2 text-gray-600">Memuat data...</span>
+          {/* FOOTER: LOADING TAMBAHAN */}
+          <div className="p-4 border-t border-gray-200 bg-gray-50">
+            {/* Loading tambahan */}
+            {loading && pegawai.length > 0 && (
+              <div className="flex justify-center items-center py-4">
+                <Loader2 className="animate-spin h-6 w-6 text-blue-600" />
+                <span className="ml-2 text-gray-600">Memuat pegawai lainnya...</span>
+              </div>
+            )}
+
+            {/* Tombol Load More */}
+            {hasMore && !loading && (
+              <div className="text-center">
+                <button
+                  onClick={loadMore}
+                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
+                >
+                  <Plus size={20} />
+                  Muat Pegawai Lainnya
+                </button>
+              </div>
+            )}
+
+            {/* Semua data dimuat */}
+            {!hasMore && pegawai.length > pageSize && (
+              <p className="text-center text-gray-500 text-sm py-4">
+                Semua pegawai telah dimuat
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

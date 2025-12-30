@@ -14,11 +14,11 @@ export default function AdminDashboardPage() {
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"hero" | "lurah" | "workingHours" | "contact">("hero");
+  const [modalType, setModalType] = useState<"hero" | "lurah" | "workingHours" | "contact" | "socialMedia">("hero");
   const [formData, setFormData] = useState<any>({});
   const [uploading, setUploading] = useState(false);
 
-  const openModal = (type: "hero" | "lurah" | "workingHours" | "contact") => {
+  const openModal = (type: "hero" | "lurah" | "workingHours" | "contact" | "socialMedia") => {
     setModalType(type);
     if (dashboard) {
       setFormData(dashboard[type]);
@@ -110,6 +110,7 @@ export default function AdminDashboardPage() {
       lurah: "Informasi Lurah",
       workingHours: "Jam Kerja",
       contact: "Informasi Kontak",
+      socialMedia: "Media Sosial",
     };
     return titles[modalType] || "";
   };
@@ -304,16 +305,93 @@ export default function AdminDashboardPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-600">{dashboard?.contact?.email || 'kelurahan.bilokka@example.com'}</span>
+                <span className="text-gray-600">{dashboard?.contact?.email || 'pemerintahan.daerah@example.com'}</span>
               </div>
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                <span className="text-gray-600 text-xs">{dashboard?.contact?.address || 'Jl. Contoh No. 123, Bilokka, Kota Contoh'}</span>
+                <span className="text-gray-600 text-xs">{dashboard?.contact?.address || 'Jl. Contoh No. 123, daerah Contoh, Kota Contoh'}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Card Sosial Media */}
+      {/* <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-600">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold">Media Sosial</h3>
+            </div>
+            <button
+              onClick={() => openModal("socialMedia")}
+              className="flex items-center gap-2 bg-pink-600 text-white px-3 py-2 rounded-lg shadow hover:bg-pink-700 transition text-sm"
+            >
+              <Edit size={14} />
+              <span className="hidden sm:inline">Edit</span>
+            </button>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            {dashboard?.socialMedia?.instagram ? (
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                </svg>
+                <span className="text-gray-600">@{dashboard.socialMedia.instagram}</span>
+              </div>
+            ) : null}
+
+            {dashboard?.socialMedia?.facebook ? (
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                </svg>
+                <span className="text-gray-600">{dashboard.socialMedia.facebook}</span>
+              </div>
+            ) : null}
+
+            {dashboard?.socialMedia?.youtube ? (
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                  <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+                  <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+                </svg>
+                <span className="text-gray-600">{dashboard.socialMedia.youtube}</span>
+              </div>
+            ) : null}
+
+            {dashboard?.socialMedia?.tiktok ? (
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                  <path d="M9 12a4 4 0 0 1 8 0"></path>
+                  <path d="M17 12v-2a8 8 0 0 0-8-8"></path>
+                  <path d="M5 10.5C5 14.5 7.5 17 10.5 17H17v-2h-6.5C8.6 15 7 13.4 7 11.5S8.6 8 10.5 8"></path>
+                </svg>
+                <span className="text-gray-600">@{dashboard.socialMedia.tiktok}</span>
+              </div>
+            ) : null}
+
+            {dashboard?.socialMedia?.whatsapp ? (
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                </svg>
+                <span className="text-gray-600">{dashboard.socialMedia.whatsapp}</span>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div> */}
 
       {/* Modal */}
       {isModalOpen && (

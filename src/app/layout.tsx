@@ -28,7 +28,7 @@ export const metadata: Metadata = {
         address: false,
         telephone: false,
     },
-    metadataBase: new URL('https://www.kelurahanbilokka.my.id'),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
     alternates: {
         canonical: '/',
     },
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
         description: 'Website resmi Desa Benteng Gajah, menyediakan informasi dan layanan untuk masyarakat.',
         type: 'website',
         locale: 'id_ID',
-        url: 'https://www.kelurahanbilokka.my.id',
+        url: 'https://www.desabentenggajah.com',
         siteName: 'Desa Benteng Gajah',
         images: [
             {

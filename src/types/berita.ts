@@ -1,4 +1,4 @@
-// src/types/berita.ts
+// pkm-maros-profil-app\src\types\berita.ts
 
 export interface IBerita {
   id: number;

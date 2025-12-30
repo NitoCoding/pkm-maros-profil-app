@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react'
 
 export default function STOK() {
 	const { pegawai, loading, error } = usePegawai({ pageSize: 4 }); // Get more pegawai for display
-	console.log('STOK pegawai data:', pegawai);
+	// // console.log('STOK pegawai data:', pegawai);
 	return (
 		<div className='px-4 sm:px-6 lg:px-8'>
 			<div className='container mx-auto max-w-7xl'>

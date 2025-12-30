@@ -60,5 +60,7 @@ export const config = {
     '/api/pegawai', // Lindungi endpoint pegawai
     '/api/profil', // Lindungi endpoint profil
     '/api/umum', // Lindungi endpoint umum
+    '/api/wisata', // Lindungi endpoint wisata
+    '/api/inovasi', // Lindungi endpoint inovasi
   ],
 };

@@ -50,7 +50,7 @@ export default function Sambutan() {
 		<>
 			<PageHead
 				title="Sambutan Lurah"
-				description="Sambutan dari Lurah Desa Benteng Gajah"
+				description="Sambutan dari Desa Benteng Gajah"
 			/>
 			<div className='px-4 sm:px-6 lg:px-8 py-12'>
 				<div className='container mx-auto max-w-7xl'>
@@ -85,7 +85,7 @@ export default function Sambutan() {
 							{/* Header */}
 							<div className='text-center lg:text-left'>
 								<h1 className='text-3xl md:text-4xl font-bold text-green-700 mb-2'>
-									Sambutan Lurah
+									Sambutan
 								</h1>
 								<div className='h-1 w-20 bg-green-600 mx-auto lg:mx-0 rounded-full'></div>
 							</div>

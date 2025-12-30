@@ -8,7 +8,7 @@ export default function HeaderPage({
 	customClass?: string
 }) {
 	return (
-		<div className={`container mx-auto md:py-6 pb-0 text-center ${customClass ? customClass : 'md:text-start'}`}>
+		<div className={`container mx-auto md:py-6 pb-0 text-center mt-6 md:mt-0 ${customClass ? customClass : 'md:text-start'}`}>
 			<h1 className='text-2xl font-bold mb-4 text-green-700 md:text-4xl'>
 				{title}
 			</h1>

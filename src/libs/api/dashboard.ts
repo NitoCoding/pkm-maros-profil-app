@@ -27,34 +27,34 @@ export async function getDashboard(): Promise<IDashboard | null> {
   if (!result) {
     return null;
   }
-  console.log('Raw dashboard data from DB:', result);
-  console.log('Formatted dashboard data:', {
-    id: result.id,
-    label: result.label,
-    hero: {
-      image: result['hero.image'],
-      title: result['hero.title'],
-      subtitle: result['hero.subtitle'],
-    },
-    lurah: {
-      name: result['lurah.name'],
-      photo: result['lurah.photo'],
-      position: result['lurah.position'],
-    },
-    workingHours: {
-      days: result['workingHours.days'],
-      hours: result['workingHours.hours'],
-      note: result['workingHours.note'],
-    },
-    contact: {
-      phone: result['contact.phone'],
-      email: result['contact.email'],
-      address: result['contact.address'],
-      whatsapp: result['contact.whatsapp'],
-    },
-    createdAt: result.created_at ? result.created_at.toISOString() : null,
-    updatedAt: result.updated_at ? result.updated_at.toISOString() : null,
-  });
+  // console.log('Raw dashboard data from DB:', result);
+  // console.log('Formatted dashboard data:', {
+  //   id: result.id,
+  //   label: result.label,
+  //   hero: {
+  //     image: result['hero.image'],
+  //     title: result['hero.title'],
+  //     subtitle: result['hero.subtitle'],
+  //   },
+  //   lurah: {
+  //     name: result['lurah.name'],
+  //     photo: result['lurah.photo'],
+  //     position: result['lurah.position'],
+  //   },
+  //   workingHours: {
+  //     days: result['workingHours.days'],
+  //     hours: result['workingHours.hours'],
+  //     note: result['workingHours.note'],
+  //   },
+  //   contact: {
+  //     phone: result['contact.phone'],
+  //     email: result['contact.email'],
+  //     address: result['contact.address'],
+  //     whatsapp: result['contact.whatsapp'],
+  //   },
+  //   createdAt: result.created_at ? result.created_at.toISOString() : null,
+  //   updatedAt: result.updated_at ? result.updated_at.toISOString() : null,
+  // });
 
   // Mengubah hasil flat menjadi objek bersarang
   return {
@@ -88,7 +88,7 @@ export async function getDashboard(): Promise<IDashboard | null> {
 
 // Fungsi untuk memperbarui seluruh data dashboard
 export async function updateDashboard(data: IDashboardUpdate): Promise<boolean> {
-  const { hero, lurah, workingHours, contact } = data;
+  const { hero, lurah, workingHours, contact, socialMedia } = data;
 
   // Membuat query dinamis
   const fields: string[] = [];
@@ -114,6 +114,10 @@ export async function updateDashboard(data: IDashboardUpdate): Promise<boolean> 
     if (contact.email !== undefined) { fields.push('contact_email = ?'); values.push(contact.email); }
     if (contact.address !== undefined) { fields.push('contact_address = ?'); values.push(contact.address); }
     if (contact.whatsapp !== undefined) { fields.push('contact_whatsapp = ?'); values.push(contact.whatsapp); }
+  }
+
+  if (socialMedia) {
+    fields.push('social_media = ?'); values.push(socialMedia); // Simpan sebagai JSON
   }
 
   if (fields.length === 0) {

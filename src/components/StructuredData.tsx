@@ -28,13 +28,13 @@ export default function StructuredData({ type, data }: StructuredDataProps) {
 // Predefined structured data for common types
 export const organizationData = {
   name: 'Desa Benteng Gajah',
-  url: 'https://www.kelurahanbilokka.my.id',
-  logo: 'https://www.kelurahanbilokka.my.id/logo.png',
+  url: process.env.NEXT_PUBLIC_BASE_URL,
+  logo: `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`,
   description: 'Website resmi Desa Benteng Gajah, menyediakan informasi dan layanan untuk masyarakat.',
   address: {
     '@type': 'PostalAddress',
-    addressLocality: 'Bilokka',
-    addressRegion: 'Nusa Tenggara Timur',
+    addressLocality: 'Benteng Gajah',
+    addressRegion: 'Sulawesi Selatan',
     addressCountry: 'ID',
   },
   contactPoint: {
@@ -43,14 +43,13 @@ export const organizationData = {
     availableLanguage: 'Indonesian',
   },
   sameAs: [
-    'https://www.facebook.com/kelurahanbilokka',
-    'https://www.instagram.com/kelurahanbilokka',
+
   ],
 }
 
 export const websiteData = {
   name: 'Desa Benteng Gajah',
-  url: 'https://www.kelurahanbilokka.my.id',
+  url: process.env.NEXT_PUBLIC_BASE_URL,
   description: 'Website resmi Desa Benteng Gajah',
   inLanguage: 'id-ID',
   isAccessibleForFree: true,

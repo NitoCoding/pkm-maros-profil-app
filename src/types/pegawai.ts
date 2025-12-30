@@ -1,11 +1,13 @@
 // src/types/pegawai.ts
 
 export interface IPegawai {
-  id: string; // ID adalah number (AUTO_INCREMENT)
+  id: number;
+  id_uuid: string;
   nama: string;
   jabatan: string;
   fotoUrl: string;
-  urutanTampil: number;
+  tampilkanDiBeranda: boolean;
+  urutanBeranda: number | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,4 +1,4 @@
-// src/app/api/berita/route.ts
+//  pkm-maros-profil-app\src\app\api\berita\route.ts
 import { NextRequest, NextResponse } from "next/server";
 import {
   tambahBerita,
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
       if (!berita) {
         return NextResponse.json({ error: "Berita not found" }, { status: 404 });
       }
-      console.log('Fetched berita by ID:', berita);
+      // // console.log('Fetched berita by ID:', berita);
       return NextResponse.json({ success: true, data: berita });
     }
 
@@ -115,12 +115,12 @@ export async function PUT(request: NextRequest) {
     }
 
     const data = await request.json();
-    // console.log(id)
-    console.log(data)
+    // // console.log(id)
+    // // console.log(data)
     const { id, ...updateData } = data;
 
     if (!id) {
-      console.log(id)
+      // // console.log(id)
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 

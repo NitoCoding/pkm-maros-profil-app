@@ -9,7 +9,11 @@ import { formatDateLong } from "@/libs/utils/date";
 import Image from "next/image";
 
 export default function AdminBeritaPage() {
-  const { berita, loading, error, refresh } = useBeritaAdmin({ pageSize: 20 });
+  const pageSize = 10;
+  const { berita, loading, error, hasMore, loadMore, refresh } = useBeritaAdmin({
+    pageSize: pageSize
+  });
+
   const [deleting, setDeleting] = useState<number | null>(null);
 
   const handleDelete = async (id: number, judul: string) => {
@@ -26,7 +30,6 @@ export default function AdminBeritaPage() {
       refresh();
     } catch (error: any) {
       toast.error(error.message || "Terjadi kesalahan saat menghapus berita");
-      console.error("Error deleting berita:", error);
     } finally {
       setDeleting(null);
     }
@@ -45,7 +48,7 @@ export default function AdminBeritaPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Kelola Berita</h1>
-          <p className="text-gray-600">Kelola artikel dan berita Desa Bilokka</p>
+          <p className="text-gray-600">Kelola artikel dan berita Desa</p>
         </div>
         <Link
           href="/admin/berita/add"
@@ -56,27 +59,27 @@ export default function AdminBeritaPage() {
         </Link>
       </div>
 
-      {/* ERROR HANDLER */}
+      {/* ERROR */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
           <p className="font-medium">Gagal memuat data berita</p>
           <p className="text-sm">{error}</p>
-          <button
-            onClick={refresh}
-            className="mt-2 text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded transition-colors"
-          >
+          <button onClick={refresh} className="mt-2 text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded">
             Coba Lagi
           </button>
         </div>
       )}
 
-      {/* LOADING */}
-      {loading && berita.length === 0 ? (
+      {/* LOADING PERTAMA KALI */}
+      {loading && berita.length === 0 && (
         <div className="flex justify-center items-center py-12">
           <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
           <span className="ml-2 text-gray-600">Memuat data berita...</span>
         </div>
-      ) : berita.length === 0 ? (
+      )}
+
+      {/* KOSONG */}
+      {!loading && !error && berita.length === 0 && (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <p className="text-gray-600 text-lg mb-4">Belum ada berita yang dibuat</p>
           <Link
@@ -86,88 +89,59 @@ export default function AdminBeritaPage() {
             Buat Berita Pertama
           </Link>
         </div>
-      ) : (
-        // TABEL BERITA
+      )}
+
+      {/* TABEL BERITA */}
+      {berita.length > 0 && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white rounded-2xl overflow-hidden border-separate border-spacing-0">
               <thead>
                 <tr className="bg-blue-600 text-white">
+                  <th className="p-3 text-center font-semibold uppercase tracking-wider w-12">
+                    #
+                  </th>
                   <th className="p-3 text-left font-semibold uppercase tracking-wider">Berita</th>
-                  <th className="p-3 text-left font-semibold uppercase tracking-wider">Kategori</th>
-                  {/* <th className="p-3 text-left font-semibold uppercase tracking-wider">Tags</th> */}
+                  <th className="p-3 text-left font-semibold uppercase tracking-wider">Tags</th>
                   <th className="p-3 text-left font-semibold uppercase tracking-wider">Dibuat</th>
                   <th className="p-3 text-left font-semibold uppercase tracking-wider">Status</th>
                   <th className="p-3 text-center font-semibold uppercase tracking-wider">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {berita.map((item, idx) => (
+                {berita.map((item, index) => (
                   <tr key={item.id} className="hover:bg-blue-50 transition">
-                    {/* Judul & Gambar */}
+                    <td className="p-3 text-center text-sm text-gray-600 font-medium">
+                      {index + 1}
+                    </td>
                     <td className="p-3 flex items-center gap-3">
-                      {/* {item.gambar && (
-                        <Image
-                          src={item.gambar}
-                          alt={item.judul}
-                          width={60}
-                          height={40}
-                          className="rounded-md object-cover"
-                        />
-                      )} */}
                       <div>
                         <div className="text-sm font-medium text-gray-900 line-clamp-2">{item.judul}</div>
                         <div className="text-xs text-gray-500">{item.slug}</div>
                       </div>
                     </td>
-
-                    <td className="p-3 text-sm text-gray-900">{item.kategori || "-"}</td>
-
-                    {/* <td className="p-3 text-sm text-gray-700">
-                      {Array.isArray(item.tags)
-                        ? item.tags.join(", ")
-                        : item.tags || "-"}
-                    </td> */}
-
-                    <td className="p-3 text-sm text-gray-500">
-                      {formatDateLong(item.createdAt)}
-                    </td>
-
+                    <td className="p-3 text-sm text-gray-900">{Array.isArray(item.kategori) ? item.kategori.join(", ") : item.kategori || "-"}</td>
+                    <td className="p-3 text-sm text-gray-500">{formatDateLong(item.createdAt)}</td>
                     <td className="p-3">
                       <span className={getStatusBadge(item.status)}>
                         {item.status === "published" ? "Dipublikasi" : "Draft"}
                       </span>
                     </td>
-
-                    {/* Aksi */}
                     <td className="p-3 text-sm font-medium w-[10%]">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/berita/${item.slug}`}
-                          target="_blank"
-                          className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
-                          title="Lihat berita"
-                        >
+                      <div className="flex items-center gap-2 justify-center">
+                        <Link href={`/berita/${item.slug}`} target="_blank" className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded" title="Lihat">
                           <EyeIcon size={16} />
                         </Link>
-                        <Link
-                          href={`/admin/berita/edit/${item.id}`}
-                          className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded"
-                          title="Edit berita"
-                        >
+                        <Link href={`/admin/berita/edit/${item.id}`} className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded" title="Edit">
                           <Edit size={16} />
                         </Link>
                         <button
                           onClick={() => handleDelete(item.id, item.judul)}
                           disabled={deleting === item.id}
                           className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded disabled:opacity-50"
-                          title="Hapus berita"
+                          title="Hapus"
                         >
-                          {deleting === item.id ? (
-                            <Loader2 size={16} className="animate-spin" />
-                          ) : (
-                            <Trash size={16} />
-                          )}
+                          {deleting === item.id ? <Loader2 size={16} className="animate-spin" /> : <Trash size={16} />}
                         </button>
                       </div>
                     </td>
@@ -176,14 +150,36 @@ export default function AdminBeritaPage() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
 
-      {/* LOADING SAAT REFRESH */}
-      {loading && berita.length > 0 && (
-        <div className="flex justify-center items-center py-4">
-          <Loader2 className="animate-spin h-6 w-6 text-blue-600" />
-          <span className="ml-2 text-gray-600">Memuat data...</span>
+          {/* LOADING TAMBAHAN & TOMBOL LOAD MORE */}
+          <div className="p-4 border-t border-gray-200">
+            {loading && berita.length > 0 && (
+              <div className="flex justify-center items-center py-4">
+                <Loader2 className="animate-spin h-6 w-6 text-blue-600" />
+                <span className="ml-2 text-gray-600">Memuat berita lainnya...</span>
+              </div>
+            )}
+
+            {/* TOMBOL LOAD MORE */}
+            {hasMore && !loading && (
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
+                >
+                  Muat Berita Lainnya
+                </button>
+              </div>
+            )}
+
+            {/* AKHIR DATA */}
+            {!hasMore && berita.length > pageSize && (
+              <p className="text-center text-gray-500 text-sm py-4">
+                Semua berita telah dimuat
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

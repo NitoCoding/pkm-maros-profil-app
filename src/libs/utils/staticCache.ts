@@ -58,7 +58,7 @@ export class StaticCacheManager {
 			// Save to localStorage
 			localStorage.setItem(config.key, JSON.stringify(cacheItem));
 			
-			console.log(`✅ ${config.description} cached for ${config.duration / 60000} minutes`);
+			// console.log(`✅ ${config.description} cached for ${config.duration / 60000} minutes`);
 		} catch (error) {
 			console.error(`Error setting ${type} cache:`, error);
 		}
@@ -74,7 +74,7 @@ export class StaticCacheManager {
 			// Try memory cache first
 			const memoryItem = this.cache.get(config.key);
 			if (memoryItem && this.isValid(memoryItem)) {
-				console.log(`⚡ ${config.description} loaded from memory cache`);
+				// console.log(`⚡ ${config.description} loaded from memory cache`);
 				return memoryItem.data;
 			}
 
@@ -87,7 +87,7 @@ export class StaticCacheManager {
 			if (this.isValid(cacheItem)) {
 				// Update memory cache
 				this.cache.set(config.key, cacheItem);
-				console.log(`⚡ ${config.description} loaded from localStorage cache`);
+				// console.log(`⚡ ${config.description} loaded from localStorage cache`);
 				return cacheItem.data;
 			}
 
@@ -119,7 +119,7 @@ export class StaticCacheManager {
 			// Remove from localStorage
 			localStorage.removeItem(config.key);
 			
-			console.log(`🗑️ ${config.description} cache cleared`);
+			// console.log(`🗑️ ${config.description} cache cleared`);
 		} catch (error) {
 			console.error(`Error removing ${type} cache:`, error);
 		}
@@ -138,7 +138,7 @@ export class StaticCacheManager {
 				localStorage.removeItem(config.key);
 			});
 			
-			console.log('🗑️ All static component cache cleared');
+			// console.log('🗑️ All static component cache cleared');
 		} catch (error) {
 			console.error('Error clearing static cache:', error);
 		}
@@ -238,14 +238,14 @@ export const footerStaticCache = {
 // Utility untuk debugging cache
 export const debugStaticCache = () => {
 	const info = staticCacheManager.getAllStaticCacheInfo();
-	console.log('📊 Static Cache Status:', info);
+	// console.log('📊 Static Cache Status:', info);
 	return info;
 };
 
 // Utility untuk clear cache saat update data
 export const clearStaticCacheOnUpdate = () => {
 	staticCacheManager.clearAllStaticCache();
-	console.log('🔄 Static cache cleared due to data update');
+	// console.log('🔄 Static cache cleared due to data update');
 }; 
 
 // Utility functions for managing static cache
@@ -265,7 +265,7 @@ export function clearSpecificCache(type: keyof typeof CACHE_KEYS) {
 		
 		const key = CACHE_KEYS[type];
 		localStorage.removeItem(key);
-		console.log(`[CACHE] Cleared ${type} cache`);
+		// console.log(`[CACHE] Cleared ${type} cache`);
 		
 		return true;
 	} catch (error) {
@@ -285,7 +285,7 @@ export function clearAllStaticCaches() {
 			localStorage.removeItem(key);
 		});
 		
-		console.log('[CACHE] All static caches cleared');
+		// console.log('[CACHE] All static caches cleared');
 		return true;
 	} catch (error) {
 		console.error('[CACHE] Error clearing all caches:', error);
@@ -338,7 +338,7 @@ export function forceRefreshAllCaches() {
 	if (success) {
 		// Optionally trigger a page reload to force fresh data fetch
 		// window.location.reload();
-		console.log('[CACHE] All caches cleared. Components will fetch fresh data on next render.');
+		// console.log('[CACHE] All caches cleared. Components will fetch fresh data on next render.');
 	}
 	return success;
 }

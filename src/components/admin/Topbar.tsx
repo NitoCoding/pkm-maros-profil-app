@@ -32,7 +32,7 @@ export default function Topbar() {
 
 	const handleLogout = async () => {
 		// Logout logic here
-		console.log('Logout clicked')
+		// // console.log('Logout clicked')
 		// router.push('/login')
 		await logout()
 	}

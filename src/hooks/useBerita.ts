@@ -1,5 +1,5 @@
-// src/hooks/useBerita.ts
-import { useState, useEffect, useCallback } from 'react';
+// pkm-maros-profil-app\src\hooks\useBerita.ts
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { IBerita } from '@/types/berita';
 
 interface UseBeritaResult {
@@ -17,72 +17,84 @@ interface UseBeritaOptions {
 }
 
 export function useBerita(options: UseBeritaOptions = {}): UseBeritaResult {
-  const { pageSize = 10, initialLoad = true } = options;
-  const [berita, setBerita] = useState<IBerita[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [cursor, setCursor] = useState<string | null>(null);
+  const { pageSize = 12, initialLoad = true } = options;
+  const [berita, setBerita] = useState<IBerita[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [cursor, setCursor] = useState<string | null>(null)
 
-  // ✅ Gunakan useCallback agar stabil dan bisa jadi dependency useEffect
+  // PAKAI REF supaya cursor up-to-date tanpa trigger re-render & dependency hell
+  const cursorRef = useRef<string | null>(null)
+
+  // Update ref setiap cursor berubah (tapi tidak trigger useEffect)
+  useEffect(() => {
+    cursorRef.current = cursor
+  }, [cursor])
+
   const fetchBerita = useCallback(
     async (reset = false) => {
       try {
-        setLoading(true);
-        setError(null);
+        setLoading(true)
+        setError(null)
 
         const params = new URLSearchParams({
           pageSize: pageSize.toString(),
-        });
+        })
 
-        if (!reset && cursor) {
-          params.append('cursor', cursor);
+        // Gunakan cursor dari ref (selalu up-to-date)
+        const currentCursor = reset ? null : cursorRef.current
+        if (currentCursor) {
+          params.append('cursor', currentCursor)
         }
 
-        const response = await fetch(`/api/berita?${params.toString()}`);
-        const result = await response.json();
+        const response = await fetch(`/api/berita?${params.toString()}`)
+        const result = await response.json()
 
         if (!response.ok) {
-          throw new Error(result.error || 'Failed to fetch berita');
+          throw new Error(result.error || 'Failed to fetch berita')
         }
 
         if (result.success) {
-          const newBerita = result.data.data || [];
+          const newBerita = result.data.data || []
+
           if (reset) {
-            setBerita(newBerita);
+            setBerita(newBerita)
           } else {
-            setBerita((prev) => [...prev, ...newBerita]);
+            setBerita(prev => [...prev, ...newBerita])
           }
-          setHasMore(result.data.hasMore || false);
-          setCursor(result.data.nextCursor || null);
+
+          setHasMore(result.data.hasMore ?? false)
+          setCursor(result.data.nextCursor || null) // ← update state + ref otomatis update
         }
       } catch (err: any) {
-        setError(err.message);
-        console.error('Error fetching berita:', err);
+        setError(err.message)
+        console.error('Error fetching berita:', err)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     },
-    [pageSize, cursor] // dependency yang mempengaruhi fetch
-  );
+    [pageSize] // ← HANYA pageSize! cursor pakai ref → aman!
+  )
 
   const loadMore = useCallback(() => {
-    if (!loading && hasMore) {
-      fetchBerita(false);
-    }
-  }, [loading, hasMore, fetchBerita]);
+    if (loading || !hasMore) return
+    fetchBerita(false)
+  }, [loading, hasMore, fetchBerita])
 
   const refresh = useCallback(() => {
-    setCursor(null);
-    fetchBerita(true);
-  }, [fetchBerita]);
+    setCursor(null)
+    cursorRef.current = null
+    setBerita([])
+    setHasMore(true)
+    fetchBerita(true)
+  }, [fetchBerita])
 
-  // ✅ Masukkan fetchBerita dan initialLoad ke dependency array
   useEffect(() => {
     if (initialLoad) {
-      fetchBerita(true);
+      refresh()
     }
-  }, [initialLoad, fetchBerita]);
+  }, [initialLoad, refresh]) // ← refresh stabil, tidak tergantung cursor
 
   return {
     berita,
@@ -91,77 +103,87 @@ export function useBerita(options: UseBeritaOptions = {}): UseBeritaResult {
     hasMore,
     loadMore,
     refresh,
-  };
+  }
 }
 
 
 // Hook untuk admin - dapat mengakses semua berita (termasuk draft)
-export function useBeritaAdmin(options: UseBeritaOptions = {}): UseBeritaResult {
-  const { pageSize = 10, initialLoad = true } = options;
-  const [berita, setBerita] = useState<IBerita[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [cursor, setCursor] = useState<string | null>(null);
+// Hook untuk admin - dapat mengakses semua berita (termasuk draft)
+export function useBeritaAdmin({ pageSize = 10, initialLoad = true }: UseBeritaOptions = {}): UseBeritaResult {
+  const [berita, setBerita] = useState<IBerita[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [cursor, setCursor] = useState<string | null>(null)
+
+  // Gunakan ref untuk cursor agar tidak trigger re-render
+  const cursorRef = useRef<string | null>(null)
+  useEffect(() => {
+    cursorRef.current = cursor
+  }, [cursor])
 
   const fetchBerita = useCallback(
     async (reset = false) => {
       try {
-        setLoading(true);
-        setError(null);
+        setLoading(true)
+        setError(null)
 
         const params = new URLSearchParams({
           pageSize: pageSize.toString(),
           admin: 'true',
-        });
+        })
 
-        if (!reset && cursor) {
-          params.append('cursor', cursor);
+        const currentCursor = reset ? null : cursorRef.current
+        if (currentCursor) {
+          params.append('cursor', currentCursor)
         }
 
-        const response = await fetch(`/api/berita?${params.toString()}`);
-        const result = await response.json();
+        const response = await fetch(`/api/berita?${params.toString()}`)
+        const result = await response.json()
 
         if (!response.ok) {
-          throw new Error(result.error || 'Failed to fetch berita');
+          throw new Error(result.error || 'Failed to fetch berita')
         }
 
         if (result.success) {
-          const newBerita = result.data.data || [];
+          const newBerita = result.data.data || []
           if (reset) {
-            setBerita(newBerita);
+            setBerita(newBerita)
           } else {
-            setBerita((prev) => [...prev, ...newBerita]);
+            setBerita(prev => [...prev, ...newBerita])
           }
-          setHasMore(result.data.hasMore || false);
-          setCursor(result.data.nextCursor || null);
+          setHasMore(result.data.hasMore ?? false)
+          setCursor(result.data.nextCursor || null)
         }
       } catch (err: any) {
-        setError(err.message);
-        console.error('Error fetching berita (admin):', err);
+        setError(err.message)
+        console.error('Error fetching berita (admin):', err)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     },
-    [pageSize, cursor]
-  );
+    [pageSize] // ← HANYA pageSize! cursor pakai ref
+  )
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
-      fetchBerita(false);
+      fetchBerita(false)
     }
-  }, [loading, hasMore, fetchBerita]);
+  }, [loading, hasMore, fetchBerita])
 
   const refresh = useCallback(() => {
-    setCursor(null);
-    fetchBerita(true);
-  }, [fetchBerita]);
+    setCursor(null)
+    cursorRef.current = null
+    setBerita([])
+    setHasMore(true)
+    fetchBerita(true)
+  }, [fetchBerita])
 
   useEffect(() => {
     if (initialLoad) {
-      fetchBerita(true);
+      refresh()
     }
-  }, [initialLoad, fetchBerita]); // ✅ tambahkan dependencies di sini
+  }, [initialLoad, refresh])
 
   return {
     berita,
@@ -170,7 +192,7 @@ export function useBeritaAdmin(options: UseBeritaOptions = {}): UseBeritaResult 
     hasMore,
     loadMore,
     refresh,
-  };
+  }
 }
 
 
@@ -255,8 +277,8 @@ export function useBeritaBySlug(slug: string) {
 }
 
 // Hook untuk mendapatkan berita terbaru
-export function useLatestBerita() {
-  const [berita, setBerita] = useState<IBerita | null>(null);
+export function useLatestBerita(count: number = 3) {
+  const [berita, setBerita] = useState<IBerita[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -266,27 +288,25 @@ export function useLatestBerita() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch('/api/berita?pageSize=1');
+        const response = await fetch(`/api/berita?pageSize=${count}`);
         const result = await response.json();
 
         if (!response.ok) {
           throw new Error(result.error || 'Failed to fetch latest berita');
         }
 
-        if (result.success) {
-          const latest = result.data.data && result.data.data.length > 0 ? result.data.data[0] : null;
-          setBerita(latest);
-        }
+        const data = result.data?.data.slice(0, count) || [];
+        setBerita(data);
       } catch (err: any) {
         setError(err.message);
-        console.error('Error fetching latest berita:', err);
+        setBerita([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchLatestBerita();
-  }, []);
+  }, [count]);
 
   return { berita, loading, error };
 }

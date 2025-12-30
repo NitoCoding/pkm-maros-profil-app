@@ -1,7 +1,7 @@
 // src/hooks/useAuth.tsx
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -44,18 +44,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    checkAuth();
+  const routerRef = useRef(router);
 
-    const syncLogout = (event: StorageEvent) => {
-      if (event.key === 'logout') {
-        setUser(null);
-        router.push('/login');
-      }
-    };
-    window.addEventListener('storage', syncLogout);
-    return () => window.removeEventListener('storage', syncLogout);
-  }, []);
+useEffect(() => {
+  routerRef.current = router;
+}, [router]);
+
+useEffect(() => {
+  checkAuth();
+
+  const syncLogout = (event: StorageEvent) => {
+    if (event.key === 'logout') {
+      setUser(null);
+      routerRef.current.push('/login');
+    }
+  };
+
+  window.addEventListener('storage', syncLogout);
+  return () => window.removeEventListener('storage', syncLogout);
+}, []);
 
   const login = async (email: string, password: string) => {
     const res = await fetch('/api/auth/login', {

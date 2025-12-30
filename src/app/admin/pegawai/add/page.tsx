@@ -1,22 +1,33 @@
 'use client'
 
-import {useForm} from 'react-hook-form'
-import {zodResolver} from '@hookform/resolvers/zod'
-import {z} from 'zod'
-import {useRouter} from 'next/navigation'
-import {ArrowLeft, Loader2} from 'lucide-react'
-import Link from 'next/link'
-import {useState, useCallback} from 'react'
-import {useDropzone} from 'react-dropzone'
+import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Save, Loader2, Upload } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useDropzone } from 'react-dropzone'
 import Image from 'next/image'
 
+// --- Zod Schema ---
 const pegawaiSchema = z.object({
 	nama: z.string().min(3, 'Nama wajib diisi'),
 	jabatan: z.string().min(3, 'Jabatan wajib diisi'),
-	foto: z.string().url('URL foto tidak valid'),
-	urutanTampil: z.string().min(1, 'Urutan tampil wajib diisi'),
-})
+	fotoUrl: z.string().url('URL foto tidak valid'),
+	tampilkanDiBeranda: z.boolean().catch(false),
+	urutanBeranda: z.number()
+		.int()
+		.min(1, 'Urutan harus antara 1–4')
+		.max(4, 'Urutan harus antara 1–4')
+		.optional(),
+}).refine(
+	(data) => !data.tampilkanDiBeranda || (data.tampilkanDiBeranda && data.urutanBeranda !== undefined),
+	{
+		message: 'Harus memilih urutan (1–4) jika ingin muncul di beranda',
+		path: ['urutanBeranda'],
+	}
+)
 
 type PegawaiFormValues = z.infer<typeof pegawaiSchema>
 
@@ -34,10 +45,11 @@ const uploadImage = async (file: File): Promise<string> => {
 
 		if (!response.ok) {
 			const error = await response.json()
-			throw new Error(error.message || 'Failed to upload image')
+			throw new Error(error.message || 'Gagal mengupload gambar')
 		}
 
 		const result = await response.json()
+		toast.success('Gambar berhasil diupload!')
 		return result.url
 	} catch (error) {
 		toast.error('Gagal mengupload gambar')
@@ -50,98 +62,78 @@ export default function TambahPegawaiPage() {
 	const router = useRouter()
 	const [loading, setLoading] = useState(false)
 	const [uploading, setUploading] = useState(false)
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
 	const {
 		register,
 		handleSubmit,
 		setValue,
 		watch,
-		formState: {errors},
+		formState: { errors },
 	} = useForm<PegawaiFormValues>({
 		resolver: zodResolver(pegawaiSchema),
 		defaultValues: {
 			nama: '',
 			jabatan: '',
-			foto: '',
-			urutanTampil: '',
-		},
+			fotoUrl: '',
+			tampilkanDiBeranda: false,
+			urutanBeranda: 1,
+		} as const,
 	})
+
+	const fotoUrl = watch('fotoUrl')
+	const tampilkanDiBeranda = watch('tampilkanDiBeranda')
 
 	// Dropzone config
 	const onDrop = useCallback(
 		async (acceptedFiles: File[]) => {
 			if (!acceptedFiles[0]) return
-			
-			console.log('Uploading file:', acceptedFiles[0])
 			setUploading(true)
-			setPreviewUrl(URL.createObjectURL(acceptedFiles[0]))
-			
 			try {
 				const url = await uploadImage(acceptedFiles[0])
-				setValue('foto', url, {shouldValidate: true})
-				toast.success('Gambar berhasil diupload')
+				setValue('fotoUrl', url, { shouldValidate: true })
 			} catch (error) {
-				// Error already handled in uploadImage function
-				setPreviewUrl(null)
+				// Sudah dihandle
 			} finally {
 				setUploading(false)
 			}
 		},
-		[setValue],
+		[setValue]
 	)
-	const {getRootProps, getInputProps, isDragActive} = useDropzone({
+
+	const { getRootProps, getInputProps, isDragActive } = useDropzone({
 		onDrop,
-		accept: {'image/*': []},
+		accept: { 'image/*': [] },
 		multiple: false,
 		maxSize: 5 * 1024 * 1024, // 5MB
 	})
 
-	const gambarUrl = watch('foto')
-
+	// Submit handler
 	const onSubmit = async (data: PegawaiFormValues) => {
 		try {
 			setLoading(true)
 
 			const payload = {
 				...data,
-				createdAt: new Date().toISOString()
+				createdAt: new Date().toISOString(),
 			}
 
-			console.log('📤 Sending payload:', payload)
-
-			// Use makeAuthenticatedRequest for automatic token refresh
 			const response = await fetch('/api/pegawai', {
 				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload),
 			})
 
-			console.log('📥 Response status:', response.status)
-			console.log('📥 Response ok:', response.ok)
-
 			const result = await response.json()
-			console.log('📥 API Response:', result)
 
 			if (!response.ok) {
-				console.error('❌ API Error:', result)
 				throw new Error(result.error || 'Gagal menyimpan pegawai')
 			}
 
-			if (result.success) {
-				console.log('✅ Success result:', result.data)
-				toast.success('Pegawai berhasil ditambahkan!')
-				router.push('/admin/pegawai')
-			} else {
-				throw new Error(result.error || 'Gagal menyimpan pegawai')
-			}
+			toast.success('Pegawai berhasil ditambahkan!')
+			router.push('/admin/pegawai')
 		} catch (error: any) {
-			console.error('❌ Submit error:', error)
-			
-			// Don't show error toast if user was redirected to login
-			if (error.message !== 'NO_TOKEN' && 
-				error.message !== 'TOKEN_REFRESH_FAILED' && 
-				error.message !== 'TOKEN_STILL_INVALID') {
-				toast.error(error.message || 'Terjadi kesalahan saat menyimpan pegawai')
+			if (!error.message.includes('TOKEN')) {
+				toast.error(error.message || 'Terjadi kesalahan saat menyimpan')
 			}
 		} finally {
 			setLoading(false)
@@ -149,129 +141,173 @@ export default function TambahPegawaiPage() {
 	}
 
 	return (
-		<div className='mx-auto py-8 px-6'>
-			<h1 className='text-2xl font-bold mb-6'>Tambah Pegawai Baru</h1>
-			<form
-				onSubmit={handleSubmit(onSubmit)}
-				className='bg-white rounded-xl border border-gray-200 shadow px-6 py-8 space-y-5'
-			>
-				<div className='flex items-center mb-8'>
-					<Link
-            href='/admin/pegawai'
-            className='flex items-center text-gray-600 hover:text-gray-900 mb-4'
-          >
-            <ArrowLeft size={18} />
-            Kembali
-          </Link>
+		<div className="p-6">
+			{/* HEADER */}
+			<div className="flex items-center gap-4 mb-6">
+				<button
+					onClick={() => router.back()}
+					className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+				>
+					<ArrowLeft size={20} />
+				</button>
+				<div>
+					<h1 className="text-2xl font-bold text-gray-900">Tambah Pegawai Baru</h1>
+					<p className="text-gray-600">Daftarkan staf atau perangkat desa</p>
 				</div>
-				<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                    <div className='space-y-4'>
+			</div>
 
-					<div>
-						<label className='font-medium'>Nama</label>
-						<input
-							{...register('nama')}
-							className={`border w-full px-3 py-2 rounded mt-1 ${
-								errors.nama && 'border-red-500'
-							}`}
-							placeholder='Nama pegawai'
-						/>
-						{errors.nama && (
-							<div className='text-red-600 text-sm'>{errors.nama.message}</div>
-						)}
-					</div>
-					<div>
-						<label className='font-medium'>Jabatan</label>
-						<input
-							{...register('jabatan')}
-							className={`border w-full px-3 py-2 rounded mt-1 ${
-								errors.jabatan && 'border-red-500'
-							}`}
-							placeholder='Jabatan pegawai'
-						/>
-						{errors.jabatan && (
-                            <div className='text-red-600 text-sm'>
-								{errors.jabatan.message}
-							</div>
-						)}
-					</div>
-					<div>
-						<label className='font-medium'>Urutan Tampil <span className='text-xs text-gray-400'>
-                            (gunakan angka, misal 1, 2, 3 untuk urutan tampil pegawai)
-                        </span></label>
-						<input
-							{...register('urutanTampil')}
-							type='number'
-							className={`border w-full px-3 py-2 rounded mt-1 ${
-								errors.urutanTampil && 'border-red-500'
-							}`}
-							placeholder='Urutan tampil pegawai'
-						/>
-						{errors.urutanTampil && (
-							<div className='text-red-600 text-sm'>
-								{errors.urutanTampil.message}
-							</div>
-						)}
-					</div>
-                        </div>
-					<div>
-						<label className='font-medium'>Gambar Pegawai</label>
-						<div
-							{...getRootProps()}
-							className={`mt-1 border-2 border-dashed rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer transition 
-                ${
-									isDragActive
-										? 'border-blue-400 bg-blue-50'
-										: 'border-gray-300 bg-gray-50'
-								}
-                ${uploading ? 'opacity-60 pointer-events-none' : ''}
-              `}
-						>
-							<input {...getInputProps()} />
-							{uploading ? (
-								<span className='flex items-center gap-2 text-blue-600'>
-									<Loader2 className='animate-spin' size={18} /> Mengupload...
-								</span>
-							) : gambarUrl ? (
-								<div className='text-center'>
-									<div className='relative w-48 h-32'>
+			<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+				{/* INFORMASI PEGAWAI */}
+				<div className="bg-white rounded-lg shadow p-6">
+					<h2 className="text-lg font-semibold mb-4">Informasi Pegawai</h2>
 
-									<Image
-										src={gambarUrl}
-										fill
-										alt='Preview'
-										className='w-48 h-32 object-cover rounded mb-2 border mx-auto'
-										/>
-										</div>
-									<p className='text-sm text-green-600'>✓ Gambar berhasil diupload</p>
-								</div>
-							) : (
-								<div className='text-center'>
-									<span className='text-gray-400 block mb-2'>
-										Klik atau drag file gambar di sini
-									</span>
-									<span className='text-xs text-gray-500'>
-										Format: JPG, PNG, WebP (Maksimal 5MB)
-									</span>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								Nama Lengkap *
+							</label>
+							<input
+								{...register('nama')}
+								type="text"
+								placeholder="Contoh: Ahmad Supriadi"
+								className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.nama ? 'border-red-500' : 'border-gray-300'
+									}`}
+							/>
+							{errors.nama && (
+								<p className="text-red-500 text-xs mt-1">{errors.nama.message}</p>
+							)}
+						</div>
+
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								Jabatan *
+							</label>
+							<input
+								{...register('jabatan')}
+								type="text"
+								placeholder="Contoh: Kepala Desa"
+								className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.jabatan ? 'border-red-500' : 'border-gray-300'
+									}`}
+							/>
+							{errors.jabatan && (
+								<p className="text-red-500 text-xs mt-1">{errors.jabatan.message}</p>
+							)}
+						</div>
+					</div>
+
+					{/* TAMPILKAN DI BERANDA */}
+					<div className="mt-6 pt-6 border-t border-gray-200">
+						<div>
+							<label className="flex items-start gap-2 text-sm font-medium text-gray-700 mb-1">
+								<input
+									type="checkbox"
+									{...register('tampilkanDiBeranda')}
+									className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+								/>
+								<span>Tampilkan di Beranda Desa</span>
+							</label>
+							<p className="text-xs text-gray-500 mb-3">
+								Jika dicentang, pegawai akan muncul di halaman utama (maksimal 4 orang).
+							</p>
+
+							{tampilkanDiBeranda && (
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-1">
+										Urutan di Beranda (1–4) *
+									</label>
+									<select
+										{...register('urutanBeranda', { valueAsNumber: true })}
+										className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.urutanBeranda ? 'border-red-500' : 'border-gray-300'
+											}`}
+									>
+										<option value="">Pilih posisi</option>
+										{[1, 2, 3, 4].map(num => (
+											<option key={num} value={num}>{num}</option>
+										))}
+									</select>
+									{errors.urutanBeranda && (
+										<p className="text-red-500 text-xs mt-1">{errors.urutanBeranda.message}</p>
+									)}
+									<p className="text-xs text-gray-500 mt-1">
+										1 = paling atas, 4 = paling bawah
+									</p>
 								</div>
 							)}
 						</div>
-						<input {...register('foto')} type='hidden' />
-						{errors.foto && (
-							<div className='text-red-600 text-sm'>{errors.foto.message}</div>
-						)}
 					</div>
 				</div>
-				<div className='pt-3 flex justify-end'>
-					<button
-						type='submit'
-						disabled={loading || uploading}
-						className='bg-blue-600 text-white px-6 py-2 rounded font-semibold flex items-center gap-2 hover:bg-blue-700 transition disabled:opacity-60'
+
+				{/* FOTO PEGAWAI */}
+				<div className="bg-white rounded-lg shadow p-6">
+					<h2 className="text-lg font-semibold mb-4">Foto Pegawai</h2>
+
+					<div
+						{...getRootProps()}
+						className={`mt-1 border-2 border-dashed rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer transition 
+                        ${isDragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50'}
+                        ${uploading ? 'opacity-60 pointer-events-none' : ''}`}
 					>
-						{(loading || uploading) && (
-							<Loader2 size={18} className='animate-spin' />
+						<input {...getInputProps()} />
+						{uploading ? (
+							<span className="flex items-center gap-2 text-blue-600">
+								<Loader2 className="animate-spin" size={18} /> Mengupload...
+							</span>
+						) : fotoUrl ? (
+							<div className="text-center">
+								<div className="relative w-48 h-32 mx-auto mb-2">
+									<Image
+										src={fotoUrl}
+										alt="Preview Foto Pegawai"
+										fill
+										className="object-cover rounded border"
+									/>
+								</div>
+								<p className="text-sm text-green-600">✓ Foto berhasil diupload</p>
+							</div>
+						) : (
+							<div className="text-center">
+								<Upload size={24} className="mx-auto mb-2 text-gray-400" />
+								<span className="text-gray-400 block mb-2">
+									Klik atau drag file gambar di sini
+								</span>
+								<span className="text-xs text-gray-500">
+									Format: JPG, PNG, WebP (Maksimal 5MB)
+								</span>
+							</div>
 						)}
-						{loading ? 'Menyimpan...' : uploading ? 'Mengupload...' : 'Simpan'}
+					</div>
+
+					<input {...register('fotoUrl')} type="hidden" />
+					{errors.fotoUrl && (
+						<p className="text-red-500 text-xs mt-2">{errors.fotoUrl.message}</p>
+					)}
+				</div>
+
+				{/* SUBMIT BUTTON */}
+				<div className="flex justify-end gap-4">
+					<button
+						type="button"
+						onClick={() => router.back()}
+						className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+					>
+						Batal
+					</button>
+					<button
+						type="submit"
+						disabled={loading || uploading}
+						className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+					>
+						{(loading || uploading) ? (
+							<>
+								<Loader2 size={16} className="animate-spin" />
+								{loading ? 'Menyimpan...' : 'Mengupload...'}
+							</>
+						) : (
+							<>
+								<Save size={16} />
+								Simpan Pegawai
+							</>
+						)}
 					</button>
 				</div>
 			</form>

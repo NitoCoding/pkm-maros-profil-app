@@ -1,7 +1,7 @@
 // src/app/api/user/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  getAllUsers,
+
   createUser,
   getUserById,
   updateUser,
@@ -9,6 +9,7 @@ import {
   changeUserPassword,
   resetUserPassword,
   getUserByEmail,
+  getAllUsersPaginated,
 } from '@/libs/api/user';
 import { IUserCreate, IUserUpdate, IPasswordChange, IPasswordReset } from '@/types/user';
 
@@ -17,9 +18,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
+    const cursor = searchParams.get('cursor');
 
+    // Get specific user by ID
     if (id) {
-      // Get specific user by ID
       const user = await getUserById(parseInt(id));
       if (!user) {
         return NextResponse.json(
@@ -27,13 +30,21 @@ export async function GET(request: NextRequest) {
           { status: 404 }
         );
       }
-
       return NextResponse.json({ success: true, data: user });
-    } else {
-      // Get all users
-      const users = await getAllUsers();
-      return NextResponse.json({ success: true, data: users });
     }
+
+    // Get paginated users
+    // const { data, hasMore, nextCursor } = await getAllUsersPaginated(pageSize, cursor);
+    // return NextResponse.json({
+    //   success: true,
+    //   data: {
+    //     data,
+    //     hasMore,
+    //     nextCursor,
+    //   },
+    // });
+    const result = await getAllUsersPaginated(pageSize, cursor);
+    return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
     console.error('Error in GET /api/user:', error);
     return NextResponse.json(
@@ -67,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     // Create new user
     const newUser = await createUser(userData);
-    
+
     return NextResponse.json({
       success: true,
       data: newUser,
@@ -101,7 +112,7 @@ export async function PUT(request: NextRequest) {
     if (isPasswordChange) {
       // Change password
       const passwordData: IPasswordChange = await request.json();
-      
+
       if (!passwordData.current_password || !passwordData.new_password) {
         return NextResponse.json(
           { success: false, error: 'Current password and new password are required' },
@@ -110,7 +121,7 @@ export async function PUT(request: NextRequest) {
       }
 
       const success = await changeUserPassword(userId, passwordData.current_password, passwordData.new_password);
-      
+
       if (!success) {
         return NextResponse.json(
           { success: false, error: 'Failed to change password. Please check your current password.' },
@@ -125,9 +136,9 @@ export async function PUT(request: NextRequest) {
     } else {
       // Update user
       const userData: IUserUpdate = await request.json();
-      
+
       const success = await updateUser(userId, userData);
-      
+
       if (!success) {
         return NextResponse.json(
           { success: false, error: 'Failed to update user' },
@@ -137,7 +148,7 @@ export async function PUT(request: NextRequest) {
 
       // Get updated user
       const updatedUser = await getUserById(userId);
-      
+
       return NextResponse.json({
         success: true,
         data: updatedUser,
@@ -167,7 +178,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const success = await deleteUser(parseInt(id));
-    
+
     if (!success) {
       return NextResponse.json(
         { success: false, error: 'Failed to delete user' },

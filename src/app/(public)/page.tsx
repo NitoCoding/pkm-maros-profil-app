@@ -11,7 +11,7 @@ import HomePageClient from './HomePageClient';
 export const metadata: Metadata = {
 	title: 'Beranda',
 	description: 'Website resmi Desa Benteng Gajah',
-	keywords: 'kelurahan, bilokka, Desa Benteng Gajah, pemerintah, desa',
+	keywords: 'Desa Benteng Gajah, pemerintah, desa',
 	openGraph: {
 		title: 'Desa Benteng Gajah',
 		description: 'Website resmi Desa Benteng Gajah',
@@ -21,4 +21,9 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
 	return <HomePageClient />
+	// return (
+	// <main className="min-h-screen flex items-center justify-center bg-gray-50">
+    //   <div className="force-tailwind">TEST</div>
+    // </main>
+	// )
 }

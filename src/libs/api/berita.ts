@@ -1,4 +1,4 @@
-// src/libs/berita.ts
+// pkm-maros-profil-app\src\libs\api\berita.ts
 import { executeQuery, executeSingleQuery } from '@/libs/database';
 import { IBerita, IBeritaUpdate, IBeritaPaginatedResponse } from '@/types/berita';
 
@@ -24,7 +24,7 @@ async function createUniqueSlug(judul: string, currentId: number | null = null):
 // Menambah berita baru
 
 export async function tambahBerita(data: any): Promise<IBerita> { // Sementara gunakan `any` untuk mempermudah
-  console.log('Adding berita with data:', data);
+  // console.log('Adding berita with data:', data);
   
   const slug = await createUniqueSlug(data.judul);
 
@@ -36,16 +36,18 @@ export async function tambahBerita(data: any): Promise<IBerita> { // Sementara g
     data.isi,
     data.gambar || null, // Untuk kolom gambar_url
     data.status,
-    JSON.stringify(data.tags || []), // Untuk kolom kategori (asumsi ini untuk tags)
+    data.kategori,
     data.authorName || data.authorEmail || 'Unknown', // Untuk kolom penulis
+    JSON.stringify(data.tags || []), // Untuk kolom kategori (asumsi ini untuk tags)
+    data.tanggal
   ];
 
-  console.log('Final params for DB insert:', params);
+  // console.log('Final params for DB insert:', params);
 
   // --- PERBAIKAN: Query harus memiliki 8 placeholder ---
   const result = await executeQuery(
-    `INSERT INTO berita (judul, slug, ringkasan, isi, gambar_url, status, kategori, penulis)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, // 8 placeholder
+    `INSERT INTO berita (judul, slug, ringkasan, isi, gambar_url, status, kategori, penulis, tags, tanggal)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // 8 placeholder
     params // 8 parameter
   );
 
@@ -55,70 +57,93 @@ export async function tambahBerita(data: any): Promise<IBerita> { // Sementara g
   return newBerita;
 }
 // Mengambil berita dengan paginasi (publik)
-export async function ambilBeritaPaginate(pageSize: number, cursor: string | null = null): Promise<IBeritaPaginatedResponse> {
-	let query = `
-    SELECT id, judul, slug, ringkasan, gambar_url, status, views, komentar_count, kategori, penulis, created_at, updated_at
+// src/libs/berita.ts atau di mana pun kamu simpan
+export async function ambilBeritaPaginate(
+  pageSize: number,
+  cursor: string | null = null
+): Promise<IBeritaPaginatedResponse> {
+  let query = `
+    SELECT 
+      id, judul, slug, ringkasan, gambar_url, status, views, tags, tanggal,
+      komentar_count, kategori, penulis, created_at, updated_at
     FROM berita
     WHERE status = 'published'
   `;
-	const params: any[] = [];
 
-	if (cursor) {
-		query += ` AND created_at < ?`;
-		params.push(new Date(cursor));
-	}
+  const params: any[] = [];
 
-	query += ` ORDER BY created_at DESC LIMIT ?`;
-	params.push(pageSize + 1); // Ambil 1 ekstra untuk cek hasMore
+  // PERBAIKAN: Selalu gunakan WHERE, lalu AND untuk cursor
+  if (cursor) {
+    query += ` AND id < ?`;
+    params.push(parseInt(cursor));
+  }
 
-	const results = await executeQuery<any>(query, params);
-	const data = results.map(row => ({
-		...row,
-		gambar: row.gambar_url,
-		kategori: JSON.parse(row.kategori),
-		createdAt: row.created_at.toISOString(),
-		updatedAt: row.updated_at.toISOString(),
-	}));
+  query += ` ORDER BY id DESC LIMIT ?`;
 
-	const hasMore = data.length > pageSize;
-	if (hasMore) data.pop(); // Hapus item ekstra
+  // console.log('Query:', query);
+  params.push(pageSize + 1); // ambil 1 ekstra
 
-	const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].createdAt : null;
+  const results = await executeQuery<any>(query, params);
 
-	return { data, hasMore, nextCursor };
+  const data = results.map(row => ({
+    ...row,
+    gambar: row.gambar_url,
+    tags: JSON.parse(row.tags || '[]'),
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  }));
+
+  const hasMore = data.length > pageSize;
+  if (hasMore) data.pop(); // buang item ekstra
+
+  const nextCursor = data.length > 0 ? data[data.length - 1].id.toString() : null;
+
+  return { data, hasMore, nextCursor };
 }
 
-// Mengambil berita dengan paginasi (admin, termasuk draft)
-export async function ambilBeritaPaginateAdmin(pageSize: number, cursor: string | null = null): Promise<IBeritaPaginatedResponse> {
-	let query = `
-    SELECT id, judul, slug, ringkasan, gambar_url, status, views, komentar_count, kategori, penulis, created_at, updated_at
+export async function ambilBeritaPaginateAdmin(
+  pageSize: number,
+  cursor: string | null = null
+): Promise<IBeritaPaginatedResponse> {
+  let query = `
+    SELECT 
+      id, judul, slug, ringkasan, gambar_url, status, views, tags, tanggal,
+      komentar_count, kategori, penulis, created_at, updated_at
     FROM berita
   `;
-	const params: any[] = [];
 
-	if (cursor) {
-		query += ` WHERE created_at < ?`;
-		params.push(new Date(cursor));
-	}
+  const params: any[] = [];
 
-	query += ` ORDER BY created_at DESC LIMIT ?`;
-	params.push(pageSize + 1);
+  // Kalau ada cursor, mulai dengan WHERE
+  if (cursor) {
+    query += ` WHERE created_at < ?`;
+    params.push(new Date(cursor));
+  }
 
-	const results = await executeQuery<any>(query, params);
-	const data = results.map(row => ({
-		...row,
-		kategori: JSON.parse(row.kategori),
-		gambar: row.gambar_url,
-		createdAt: row.created_at.toISOString(),
-		updatedAt: row.updated_at.toISOString(),
-	}));
+  // Kalau tidak ada cursor, tetap pakai WHERE dummy supaya sintaks aman
+  // Atau bisa pakai trik ini (lebih bersih):
+  query += cursor ? ` AND` : ` WHERE`;
+  query += ` TRUE`; // selalu true, biar sintaks tetap valid
 
-	const hasMore = data.length > pageSize;
-	if (hasMore) data.pop();
+  query += ` ORDER BY created_at DESC LIMIT ?`;
+  params.push(pageSize + 1);
 
-	const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].createdAt : null;
+  const results = await executeQuery<any>(query, params);
 
-	return { data, hasMore, nextCursor };
+  const data = results.map(row => ({
+    ...row,
+    gambar: row.gambar_url,
+    tags: JSON.parse(row.tags || '[]'),
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  }));
+
+  const hasMore = data.length > pageSize;
+  if (hasMore) data.pop();
+
+  const nextCursor = data.length > 0 ? data[data.length - 1].createdAt : null;
+
+  return { data, hasMore, nextCursor };
 }
 
 // Mengambil satu berita berdasarkan ID
@@ -129,12 +154,12 @@ export async function ambilBeritaById(id: number): Promise<IBerita | null> {
 
 	if (!result) return null;
 
-		// console.log('Fetched berita by ID:', result);
+		// // console.log('Fetched berita by ID:', result);
 	return {
 		...result,
 		gambar: result.gambar_url,
-		kategori: JSON.parse(result.kategori),
-		// kategori: result.kategori,
+		tags: JSON.parse(result.tags),
+		kategori: result.kategori,
 		// gambar: result.gambar_url,
 		createdAt: result.created_at.toISOString(),
 		updatedAt: result.updated_at.toISOString(),
@@ -147,14 +172,15 @@ export async function ambilBeritaBySlug(slug: string): Promise<IBerita | null> {
     SELECT * FROM berita WHERE slug = ? AND status = 'published'
   `, [slug]);
 
-  console.log('Fetched berita by slug:', result);
+  // console.log('Fetched berita by slug:', result);
 
 	if (!result) return null;
 
 	return {
 		...result,
-		kategori: JSON.parse(result.kategori),
+		kategori: result.kategori,
 		gambar: result.gambar_url,
+    tags: result.tags ? JSON.parse(result.tags) : [],
 		createdAt: result.created_at.toISOString(),
 		updatedAt: result.updated_at.toISOString(),
 	};
@@ -206,10 +232,14 @@ export async function updateBerita(id: number, data: IBeritaUpdate): Promise<boo
 		fields.push('status = ?');
 		values.push(data.status);
 	}
-	if (data.kategori !== undefined) {
-		fields.push('kategori = ?');
-		values.push(JSON.stringify(data.kategori));
+	if (data.tags !== undefined) {
+		fields.push('tags = ?');
+		values.push(JSON.stringify(data.tags));
 	}
+  if (data.kategori !== undefined) {
+    fields.push('kategori = ?');
+    values.push(data.kategori);
+  }
 	// if (data.updatedBy !== undefined) {
 	// 	fields.push('updated_by = ?');
 	// 	values.push(data.updatedBy);
@@ -233,6 +263,6 @@ export async function updateBerita(id: number, data: IBeritaUpdate): Promise<boo
 
 // Menghapus berita
 export async function hapusBerita(id: number): Promise<boolean> {
-	const [result] = await executeQuery('DELETE FROM berita WHERE id = ?', [id]);
+	const result = await executeQuery('DELETE FROM berita WHERE id = ?', [id]);
 	return (result as any).affectedRows > 0;
 }

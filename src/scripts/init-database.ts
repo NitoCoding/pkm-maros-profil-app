@@ -4,17 +4,17 @@ import { migrateData } from '../libs/migration';
 
 async function initDatabase() {
   try {
-    console.log('🚀 Initializing database...');
+    // console.log('🚀 Initializing database...');
     
     // Test connection
     await executeQuery('SELECT 1');
-    console.log('✅ Database connection established');
+    // console.log('✅ Database connection established');
     
     // Run migration
     // await migrateData();
-    console.log('✅ Data migration completed');
+    // console.log('✅ Data migration completed');
     
-    console.log('🎉 Database initialization completed successfully');
+    // console.log('🎉 Database initialization completed successfully');
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     process.exit(1);

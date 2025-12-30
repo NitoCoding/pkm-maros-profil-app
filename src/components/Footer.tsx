@@ -111,8 +111,7 @@ export default function Footer() {
 							<li className='flex items-start'>
 								<MapPin className='h-5 w-5 mt-1 mr-3 text-accent flex-shrink-0' />
 								<span>
-									Bilokka, Kec. Panca Lautang, Kabupaten Sidenreng Rappang,
-									Sulawesi Selatan 91672
+									Benteng Gajah, Tompobulu, Kabupaten Maros, Sulawesi Selatan
 								</span>
 							</li>
 							<li className='flex items-center'>
@@ -133,7 +132,7 @@ export default function Footer() {
 
 				<div className='border-t border-white border-opacity-20 pt-6 text-center text-sm'>
 					<p>
-						&copy; {new Date().getFullYear()} KKN GEL.114 Unhas 2025. Hak Cipta
+						&copy; {new Date().getFullYear()} PKM Unhas 2025. Hak Cipta
 						Dilindungi.
 					</p>
 				</div>

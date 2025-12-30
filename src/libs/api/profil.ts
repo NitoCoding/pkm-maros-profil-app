@@ -71,7 +71,7 @@ export async function upsertProfil(data: Omit<IProfil, 'id' | 'createdAt' | 'upd
       if (data.gambarUrl !== undefined) { fields.push('gambar_url'); placeholders.push('?'); values.push(data.gambarUrl); }
       if (data.videoUrl !== undefined) { fields.push('video_url'); placeholders.push('?'); values.push(data.videoUrl); }
 
-      console.log(data.gambarUrl)
+      // console.log(data.gambarUrl)
       
       await executeQuery(`
         INSERT INTO profil_kelurahan (${fields.join(', ')})

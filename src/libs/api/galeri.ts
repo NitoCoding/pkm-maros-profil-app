@@ -7,31 +7,27 @@ import { v4 as uuidv4 } from 'uuid'; // Install library UUID: npm install uuid @
 export async function tambahGaleri(data: Omit<IGaleri, 'id' | 'createdAt' | 'updatedAt'>): Promise<IGaleri> {
   const newId = uuidv4(); // Generate UUID untuk ID
 
-  console.log([
-      newId,
-      data.src,
-      data.alt,
-      data.caption,
-      data.tanggal, // Asumsikan data.tanggal adalah 'YYYY-MM-DD'
-      JSON.stringify(data.tags || []),
-    ]);
+
   const result = await executeQuery(
-    `INSERT INTO galeri (id, src, alt, caption, tanggal, tags)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO galeri ( src, alt, caption, tanggal, tags, id_uuid)
+     VALUES ( ?, ?, ?, ?, ?, ?)`,
     [
-      newId,
+
       data.src,
       data.alt,
       data.caption,
       data.tanggal, // Asumsikan data.tanggal adalah 'YYYY-MM-DD'
       JSON.stringify(data.tags || []),
+      newId,
     ]
   );
+
+  const insertId = (result as any).insertId;
 
   // Karena id sudah kita buat, kita tidak perlu mengambil dari DB
   const newGaleri: IGaleri = {
     ...data,
-    id: newId,
+    id: insertId.toString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -48,11 +44,11 @@ export async function ambilGaleriPaginate(pageSize: number, cursor: string | nul
   const params: any[] = [];
 
   if (cursor) {
-    query += ` WHERE created_at < ?`;
-    params.push(new Date(cursor));
+    query += ` WHERE id < ?`;
+    params.push(parseInt(cursor));
   }
 
-  query += ` ORDER BY created_at DESC LIMIT ?`;
+  query += ` ORDER BY id DESC LIMIT ?`;
   params.push(pageSize + 1);
 
   const results = await executeQuery<any>(query, params);
@@ -67,7 +63,7 @@ export async function ambilGaleriPaginate(pageSize: number, cursor: string | nul
   const hasMore = data.length > pageSize;
   if (hasMore) data.pop();
 
-  const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].createdAt : null;
+  const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].id.toString() : null;
 
   return { data, hasMore, nextCursor };
 }
@@ -105,7 +101,7 @@ export async function updateGaleri(id: string, data: IGaleriUpdate): Promise<boo
   values.push(id);
   const query = `UPDATE galeri SET ${fields.join(', ')} WHERE id = ?`;
 
-  console.log(query, values);
+  // console.log(query, values);
 
   const updateResult = await executeQuery(query, values);
   return (updateResult as any).affectedRows > 0;
@@ -113,6 +109,6 @@ export async function updateGaleri(id: string, data: IGaleriUpdate): Promise<boo
 
 // Menghapus galeri
 export async function hapusGaleri(id: string): Promise<boolean> {
-  const [result] = await executeQuery('DELETE FROM galeri WHERE id = ?', [id]);
+  const result = await executeQuery('DELETE FROM galeri WHERE id = ?', [id]);
   return (result as any).affectedRows > 0;
 }

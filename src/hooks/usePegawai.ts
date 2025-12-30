@@ -25,7 +25,6 @@ export function usePegawai(
   const [hasMore, setHasMore] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
 
-  // ✅ Bungkus fetchPegawai dengan useCallback agar tidak berubah setiap render
   const fetchPegawai = useCallback(async (reset = false) => {
     try {
       setLoading(true);
@@ -43,7 +42,7 @@ export function usePegawai(
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch pegawai');
+        throw new Error(result.error || 'Gagal memuat data pegawai');
       }
 
       if (result.success) {
@@ -64,7 +63,7 @@ export function usePegawai(
     } finally {
       setLoading(false);
     }
-  }, [cursor, pageSize]); // dependensi penting saja
+  }, [cursor, pageSize]);
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -77,7 +76,6 @@ export function usePegawai(
     fetchPegawai(true);
   }, [fetchPegawai]);
 
-  // ✅ useEffect dengan dependensi lengkap
   useEffect(() => {
     if (initialLoad) {
       fetchPegawai(true);
@@ -93,7 +91,6 @@ export function usePegawai(
     loadMore,
   };
 }
-
 
 // Hook untuk single pegawai by id
 export function usePegawaiById(id: number) {
@@ -131,4 +128,34 @@ export function usePegawaiById(id: number) {
   }, [id]);
 
   return { pegawai, loading, error };
+}
+
+export function usePegawaiBeranda() {
+  const { pegawai, loading, error, refresh } = usePegawai({ pageSize: 4 });
+
+  const pegawaiUntukBeranda = pegawai
+    .filter(p => p.tampilkanDiBeranda && p.urutanBeranda !== null)
+    .sort((a, b) => (a.urutanBeranda || 0) - (b.urutanBeranda || 0))
+    .slice(0, 4);
+
+  return {
+    pegawai: pegawaiUntukBeranda,
+    loading,
+    error,
+    refresh,
+  };
+}
+
+export function usePegawaiProfil() {
+  const base = usePegawai();
+
+  // Urutkan alfabet atau by createdAt
+  const pegawaiUrut = [...base.pegawai].sort((a, b) =>
+    a.nama.localeCompare(b.nama)
+  );
+
+  return {
+    ...base,
+    pegawai: pegawaiUrut,
+  };
 }
