@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { IProdukUMKM } from '@/types/umkm';
+import { UmkmAdminFilters } from '@/libs/constant/umkmFilter';
 
+// ============================================
+// HOOK UNTUK PUBLIC (LOAD MORE)
+// ============================================
 interface UseProdukUMKMOptions {
   pageSize?: number;
   initialLoad?: boolean;
@@ -24,7 +28,6 @@ export function useProdukUMKM(
   const [hasMore, setHasMore] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
 
-  // ✅ Bungkus fetch dengan useCallback agar stabil
   const fetchUmkm = useCallback(async (reset = false) => {
     try {
       setLoading(true);
@@ -62,7 +65,7 @@ export function useProdukUMKM(
     } finally {
       setLoading(false);
     }
-  }, [cursor, pageSize]); // ✅ dependensi relevan saja
+  }, [cursor, pageSize]);
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -75,7 +78,6 @@ export function useProdukUMKM(
     fetchUmkm(true);
   }, [fetchUmkm]);
 
-  // ✅ Tambahkan fetchUmkm & initialLoad ke dependensi agar konsisten
   useEffect(() => {
     if (initialLoad) {
       fetchUmkm(true);
@@ -114,7 +116,7 @@ export function useProdukUMKMById(id: string) {
         }
 
         if (result.success) {
-          setUmkm(result.data); // PERBAIKAN: akses result.data langsung
+          setUmkm(result.data);
         }
       } catch (err: any) {
         setError(err.message);
@@ -150,7 +152,7 @@ export function useLatestProdukUMKM(limit = 6) {
         }
 
         if (result.success) {
-          setUmkm(result.data.data || []); // PERBAIKAN: akses result.data.data
+          setUmkm(result.data.data || []);
         }
       } catch (err: any) {
         setError(err.message);
@@ -164,4 +166,102 @@ export function useLatestProdukUMKM(limit = 6) {
   }, [limit]);
 
   return { umkm, loading, error };
+}
+
+// ============================================
+// HOOK UNTUK ADMIN PAGINATION DENGAN FILTER
+// ============================================
+interface UseProdukUMKMAdminPaginatedOptions {
+  pageSize?: number;
+  filters?: UmkmAdminFilters;
+}
+
+interface UseProdukUMKMAdminPaginatedReturn {
+  umkm: IProdukUMKM[];
+  loading: boolean;
+  error: string | null;
+  total: number;
+  page: number;
+  totalPages: number;
+  setPage: (page: number) => void;
+  refresh: () => void;
+}
+
+export function useProdukUMKMAdminPaginated({
+  pageSize = 12,
+  filters = {
+    search: '',
+    kategori: '',
+    hargaMin: '',
+    hargaMax: ''
+  }
+}: UseProdukUMKMAdminPaginatedOptions = {}): UseProdukUMKMAdminPaginatedReturn {
+  const [umkm, setUmkm] = useState<IProdukUMKM[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchUmkm = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Build query params
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('pageSize', pageSize.toString());
+
+      if (filters.search) {
+        params.append('search', filters.search);
+      }
+      if (filters.kategori) {
+        params.append('kategori', filters.kategori);
+      }
+      if (filters.hargaMin) {
+        params.append('hargaMin', filters.hargaMin);
+      }
+      if (filters.hargaMax) {
+        params.append('hargaMax', filters.hargaMax);
+      }
+
+      const response = await fetch(`/api/produk-umkm/admin?${params.toString()}`);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch produk UMKM');
+      }
+
+      if (result.success) {
+        setUmkm(result.data || []);
+        setTotal(result.total || 0);
+        setTotalPages(result.totalPages || 1);
+      }
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error fetching produk UMKM:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, filters]);
+
+  const refresh = useCallback(() => {
+    fetchUmkm();
+  }, [fetchUmkm]);
+
+  useEffect(() => {
+    fetchUmkm();
+  }, [fetchUmkm]);
+
+  return {
+    umkm,
+    loading,
+    error,
+    total,
+    page,
+    totalPages,
+    setPage,
+    refresh
+  };
 }

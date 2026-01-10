@@ -12,6 +12,7 @@ import Image from 'next/image'
 import CKEditorWrapper from '@/components/ckeditor/CKEditorWrapper'
 import { IBerita } from '@/types/berita'
 import { useBeritaById } from '@/hooks/useBerita'
+import { beritaKategori } from '@/libs/constant/beritaKategori'
 
 const beritaSchema = z.object({
 	judul: z.string().min(1, 'Judul harus diisi'),
@@ -36,17 +37,6 @@ function slugify(text: string) {
 		.trim()
 }
 
-const kategoriOptions = [
-	'Teknologi',
-	'Pertanian',
-	'Kesehatan',
-	'Pendidikan',
-	'Ekonomi',
-	'Lingkungan',
-	'Infrastruktur',
-	'Sosial',
-	'Lainnya',
-]
 
 export default function EditBeritaPage() {
 	const params = useParams()
@@ -56,7 +46,7 @@ export default function EditBeritaPage() {
 	const [slugEdited, setSlugEdited] = useState(false)
 	const [tagInput, setTagInput] = useState('')
 
-	const { berita: fetchedBerita, loading: isLoading, error } = useBeritaById(Number(id))
+	const { berita: fetchedBerita, loading: isLoading, error } = useBeritaById(id)
 
 	const {
 		register,
@@ -179,7 +169,7 @@ export default function EditBeritaPage() {
 
 			// // console.log('Submitting data:', data)
 			const payload = {
-				id: Number(id),
+				id: id,
 				...data,
 			}
 
@@ -343,8 +333,8 @@ export default function EditBeritaPage() {
 							className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.kategori ? 'border-red-500' : ''}`}
 						>
 							<option value="">Pilih Kategori</option>
-							{kategoriOptions.map((kategori) => (
-								<option key={kategori} value={kategori.toLowerCase()}>
+							{beritaKategori.map((kategori) => (
+								<option key={kategori} value={kategori}>
 									{kategori}
 								</option>
 							))}

@@ -1,13 +1,42 @@
 // pkm-maros-profil-app\src\libs\api\inovasi.ts
 import { executeQuery, executeSingleQuery } from '@/libs/database';
-import { IInovasi } from '@/types/inovasi';
+import { IInovasi, IInovasiPaginatedResponse, IInovasiCursorPaginatedResponse } from '@/types/inovasi';
+import { InovasiAdminFilters } from '@/libs/constant/inovasiFilter';
 import { v4 as uuidv4 } from 'uuid'; // Install library UUID: npm install uuid @types/uuid
 
-// Interface untuk paginasi response
-export interface IInovasiPaginatedResponse {
-  data: IInovasi[];
-  hasMore: boolean;
-  nextCursor: string | null;
+// ============================================================================
+// FILTER UTILITIES
+// ============================================================================
+export function buildInovasiFilterWhereClause(filters: InovasiAdminFilters): { whereClause: string; params: any[] } {
+  const conditions: string[] = [];
+  const params: any[] = [];
+
+  if (filters.search?.trim()) {
+    conditions.push('(judul LIKE ? OR deskripsi LIKE ?)');
+    const pattern = `%${filters.search.trim()}%`;
+    params.push(pattern, pattern);
+  }
+  if (filters.kategori?.trim()) {
+    conditions.push('kategori = ?');
+    params.push(filters.kategori.trim());
+  }
+  if (filters.tahun?.trim()) {
+    conditions.push('tahun = ?');
+    params.push(filters.tahun.trim());
+  }
+
+  return {
+    whereClause: conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '',
+    params
+  };
+}
+
+export function hasActiveInovasiFilters(filters: InovasiAdminFilters): boolean {
+  return !!(
+    filters.search?.trim() ||
+    filters.kategori?.trim() ||
+    filters.tahun?.trim()
+  );
 }
 
 // Membuat slug yang unik
@@ -82,7 +111,7 @@ export async function ambilInovasiPaginate(
   cursor: string | null = null,
   kategori?: string | null,
   tahun?: number | null
-): Promise<IInovasiPaginatedResponse> {
+): Promise<IInovasiCursorPaginatedResponse> {
   let query = `
     SELECT id, slug, judul, kategori, deskripsi, tahun, gambar, alt_text, link_proyek, link_dana_desa, social_media, created_at, updated_at
     FROM inovasi
@@ -128,13 +157,13 @@ export async function ambilInovasiPaginate(
   return { data, hasMore, nextCursor };
 }
 
-// Mengambil inovasi dengan paginasi (admin, semua data)
+// Mengambil inovasi dengan paginasi (admin, semua data) - cursor-based
 export async function ambilInovasiPaginateAdmin(
   pageSize: number,
   cursor: string | null = null,
   kategori?: string | null,
   tahun?: number | null
-): Promise<IInovasiPaginatedResponse> {
+): Promise<IInovasiCursorPaginatedResponse> {
   let query = `
     SELECT id, slug, judul, kategori, deskripsi, tahun, gambar, alt_text, link_proyek, link_dana_desa, social_media, created_at, updated_at
     FROM inovasi
@@ -178,6 +207,60 @@ export async function ambilInovasiPaginateAdmin(
   const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].id.toString() : null;
 
   return { data, hasMore, nextCursor };
+}
+
+// Mengambil inovasi dengan paginasi (admin dengan filter) - page-based
+export async function ambilInovasiPaginateAdminWithFilters(
+  page: number = 1,
+  pageSize: number = 10,
+  filters: InovasiAdminFilters = {}
+): Promise<IInovasiPaginatedResponse> {
+  // Build WHERE clause dari filters
+  const { whereClause, params } = buildInovasiFilterWhereClause(filters);
+
+  // Count total query
+  const countQuery = `
+    SELECT COUNT(*) as total
+    FROM inovasi
+    ${whereClause}
+  `;
+  const countResult = await executeSingleQuery<{ total: number }>(countQuery, params);
+  const total = countResult?.total || 0;
+
+  // Calculate offset
+  const offset = (page - 1) * pageSize;
+
+  // Data query
+  const dataQuery = `
+    SELECT
+      id, slug, judul, kategori, deskripsi, tahun, gambar, alt_text, link_proyek, link_dana_desa, social_media, created_at, updated_at
+    FROM inovasi
+    ${whereClause}
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `;
+  const results = await executeQuery<any>(dataQuery, [...params, pageSize, offset]);
+
+  const data = results.map(row => ({
+    ...row,
+    gambar: JSON.parse(row.gambar || '[]'),
+    socialMedia: JSON.parse(row.social_media || '{}'),
+    linkProyek: row.link_proyek,
+    linkDanaDesa: row.link_dana_desa,
+    altText: row.alt_text,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  }));
+
+  const totalPages = Math.ceil(total / pageSize);
+
+  return {
+    data,
+    total,
+    page,
+    pageSize,
+    totalPages
+  };
 }
 
 // Mengambil satu inovasi berdasarkan ID

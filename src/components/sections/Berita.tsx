@@ -1,14 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import BeritaCard from './CardBerita'
-import HeaderPage from './HeaderPage'
+
 import { useLatestBerita } from '@/hooks/useBerita'
 import { Loader2 } from 'lucide-react'
 import { IBerita } from '@/types/berita'
+import HeaderPage from '../layout/HeaderPage'
+import BeritaCard from '../cards/CardBerita'
 
 export default function Berita() {
-    const { berita, loading, error } = useLatestBerita()
+    const { berita, loading, error, refresh } = useLatestBerita()
 
     if (loading) {
         return (
@@ -32,7 +33,7 @@ export default function Berita() {
                     <div className='text-center py-12'>
                         <p className='text-red-600 mb-4'>Gagal memuat berita: {error}</p>
                         <button
-                            onClick={() => window.location.reload()}
+                            onClick={refresh}
                             className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700'
                         >
                             Coba Lagi

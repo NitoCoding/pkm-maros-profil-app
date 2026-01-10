@@ -1,9 +1,9 @@
 import { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import Footer from '@/components/Footer'
-import Navbar from '@/components/Navbar'
-import FooterCached from '@/components/FooterCached'
-import CacheDebugger from '@/components/CacheDebugger'
+import Footer from '@/components/layout/Footer'
+import Navbar from '@/components/layout/Navbar'
+import FooterCached from '@/components/layout/FooterCached'
+import CacheDebugger from '@/components/utils/CacheDebugger'
 
 // Metadata untuk layout publik
 // export const metadata: Metadata = {

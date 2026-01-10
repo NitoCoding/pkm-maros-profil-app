@@ -26,9 +26,18 @@ export interface IBerita {
 // Tipe untuk data yang bisa di-update (semua field opsional)
 export type IBeritaUpdate = Partial<Omit<IBerita, 'id' | 'createdAt' | 'createdBy'>>;
 
-// Tipe untuk respons paginasi
-export interface IBeritaPaginatedResponse {
+// Tipe untuk respons paginasi cursor-based (untuk public & infinite scroll)
+export interface IBeritaCursorPaginatedResponse {
   data: IBerita[];
   hasMore: boolean;
-  nextCursor: string | null; // Kita akan menggunakan stringified timestamp sebagai cursor
+  nextCursor: string | null;
+}
+
+// Tipe untuk respons paginasi page-based (untuk admin)
+export interface IBeritaPaginatedResponse {
+  data: IBerita[];
+  total: number; // Total rows matching filters
+  page: number; // Current page (1-based)
+  pageSize: number; // Items per page
+  totalPages: number; // Total pages
 }

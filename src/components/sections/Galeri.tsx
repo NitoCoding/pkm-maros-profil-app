@@ -1,13 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import GaleriCard from './CardGaleri'
-import HeaderPage from './HeaderPage'
+
 import { useLatestGaleri } from '@/hooks/useGaleri'
 import { Loader2 } from 'lucide-react'
+import HeaderPage from '../layout/HeaderPage'
+import GaleriCard from '../cards/CardGaleri'
 
 export default function Galeri() {
-	const { galeri, loading, error } = useLatestGaleri(6)
+	const { galeri, loading, error, refresh } = useLatestGaleri(6)
 
 	if (loading) {
 		return (
@@ -30,8 +31,8 @@ export default function Galeri() {
 					<HeaderPage title='Galeri Terbaru' description='Dokumentasi kegiatan terkini di Desa Benteng Gajah' />
 					<div className='text-center py-12'>
 						<p className='text-red-600 mb-4'>Gagal memuat galeri: {error}</p>
-						<button 
-							onClick={() => window.location.reload()}
+						<button
+							onClick={refresh}
 							className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700'
 						>
 							Coba Lagi

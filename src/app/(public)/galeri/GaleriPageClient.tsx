@@ -1,9 +1,9 @@
 'use client'
 
-import HeaderPage from '@/components/HeaderPage'
-import Main from '@/components/Main'
-import GaleriCard from '@/components/CardGaleri'
-import PageHead from '@/components/PageHead'
+import HeaderPage from '@/components/layout/HeaderPage'
+import Main from '@/components/layout/Main'
+import GaleriCard from '@/components/cards/CardGaleri'
+import PageHead from '@/components/layout/PageHead'
 import { useGaleri } from '@/hooks/useGaleri'
 import { Loader2 } from 'lucide-react'
 import { LoadMoreButton } from '@/components/ui/LoadMoreButton'
@@ -16,7 +16,7 @@ export default function GaleriPageClient() {
 
     return (
         <>
-            <div className='pt-12 min-h-screen pb-3'>
+            <div className=' min-h-screen pb-3'>
                 <Main>
                     <div className='mt-5 px-4 sm:px-6 lg:px-8'>
                         <div className='container mx-auto max-w-7xl'>

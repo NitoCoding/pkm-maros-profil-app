@@ -19,9 +19,18 @@ export interface IGaleri {
 // Tipe untuk data yang bisa di-update
 export type IGaleriUpdate = Partial<Omit<IGaleri, 'id' | 'createdAt' | 'createdBy'>>;
 
-// Tipe respons paginasi tetap sama
-export interface IGaleriPaginatedResponse {
+// Tipe respons paginasi cursor-based (untuk infinite scroll)
+export interface IGaleriCursorPaginatedResponse {
     data: IGaleri[];
     hasMore: boolean;
     nextCursor: string | null;
+}
+
+// Tipe respons paginasi page-based (untuk admin dengan filter)
+export interface IGaleriPaginatedResponse {
+    data: IGaleri[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
 }

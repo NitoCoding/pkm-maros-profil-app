@@ -1,8 +1,8 @@
 'use client'
 
-import HeaderPage from '@/components/HeaderPage'
-import Main from '@/components/Main'
-import CardUmkm from '@/components/CardUmkm'
+import HeaderPage from '@/components/layout/HeaderPage'
+import Main from '@/components/layout/Main'
+import CardUmkm from '@/components/cards/CardUmkm'
 import { useProdukUMKM } from '@/hooks/useProdukUMKM'
 import { LoadMoreButton } from '@/components/ui/LoadMoreButton'
 import { ErrorState } from '@/components/ui/ErrorState'
@@ -14,7 +14,7 @@ export default function UmkmPageClient() {
 
     return (
         <>
-            <div className='pt-12 min-h-screen pb-3'>
+            <div className='min-h-screen'>
                 <Main>
                     <div className='mt-5 px-4 sm:px-6 lg:px-8'>
                         <div className='container mx-auto max-w-7xl'>

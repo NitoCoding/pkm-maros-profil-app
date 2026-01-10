@@ -19,14 +19,16 @@ const MENU_ITEMS: IMenu[] = [
 			{label: 'Geografis', href: '/profil/geografis', show: true},
 		],
 	},
-	{
-		label: 'Potensi Desa',
-		show: true,
-		children: [
-			{label: 'Wisata', href: '/potensi/wisata', show: true},
-			{label: 'Inovasi', href: '/potensi/inovasi', show: true},
-		],
-	},
+	// {
+	// 	label: 'Potensi Desa',
+	// 	show: true,
+	// 	children: [
+	// 		{label: 'Wisata', href: '/potensi/wisata', show: true},
+	// 		{label: 'Inovasi', href: '/potensi/inovasi', show: true},
+	// 	],
+	// },
+	{label: 'Wisata Alam', href: '/potensi/wisata', show: true},
+	{label: 'BUMdes', href: '/potensi/inovasi', show: true},
 	// {
 	// 	label: 'Layanan',
 	// 	show: true,
@@ -35,7 +37,7 @@ const MENU_ITEMS: IMenu[] = [
 	// 		{label: 'Pengaduan', href: '/layanan/pengaduan', show: true},
 	// 	],
 	// },
-	{label: 'UMKM', href: '/umkm', show: true},
+	// {label: 'UMKM', href: '/umkm', show: true},
 	{label: 'Galeri', href: '/galeri', show: true},
 	{label: 'Berita', href: '/berita', show: true},
 	// {label: 'Logout', href: '/auth/logout', show: true},
@@ -103,23 +105,47 @@ export default function Navbar() {
 				}`}
 			>
 				<div className='max-w-7xl mx-auto flex items-center justify-between'>
-					<a
+					<Link
+						href='/'
 						className={`text-lg font-semibold flex items-center gap-2 hover:shadow-slate-900 hover:backdrop-blur-sm hover:bg-opacity-50 transition-all duration-300 ${
 							isCarouselPassed ? 'text-black' : 'text-white'
 						}`}
 					>
+						{/* <Image
+							src='/logo_kemdikbud.png'
+							alt='Kemendikbud'
+							width={50}
+							height={50}
+							className='object-contain'
+						/>
+						<Image
+							src='/bima-dikti-white.png'
+							alt='Bima Dikti'
+							width={135}
+							height={42}
+							className='object-contain'
+						/>
+						<Image
+							src='/Logo-Resmi-Unhas-1.png'
+							alt='Unhas'
+							width={50}
+							height={50}
+							className='object-contain'
+							priority
+						/> */}
 						<Image
 							src='/logo.png'
 							alt='Logo'
-							width={70}
-							height={70}
+							width={50}
+							height={50}
 							className='rounded-full object-cover'
+							priority
 						/>
 						<div className='flex flex-col'>
 							<h1>Desa Benteng Gajah</h1>
 							<p className='text-sm'>Kecamatan Tompobulu</p>
 						</div>
-					</a>
+					</Link>
 					<div className='flex items-center gap-6'>
 						<button
 							className={`lg:hidden ${
@@ -201,22 +227,48 @@ export default function Navbar() {
 						}}
 					>
 						<div className='flex items-center justify-between'>
-							<a
-								className='text-lg font-semibold flex items-center gap-2 hover:shadow-slate-900 hover:backdrop-blur-sm hover:bg-opacity-50 transition-all duration-300 
+							<Link
+								href='/'
+								className='text-lg font-semibold flex items-center gap-2 hover:shadow-slate-900 hover:backdrop-blur-sm hover:bg-opacity-50 transition-all duration-300
 									text-black px-3.5 py-3'
 							>
 								<Image
+									src='/logo_kemdikbud.png'
+									alt='Kemendikbud'
+									width={50}
+									height={50}
+									className='object-contain'
+									priority
+								/>
+								<Image
+									src='/bima-dikti-white.png'
+									alt='Bima Dikti'
+									width={135}
+									height={42}
+									className='object-contain'
+									priority
+								/>
+								<Image
+									src='/Logo-Resmi-Unhas-1.png'
+									alt='Unhas'
+									width={50}
+									height={50}
+									className='object-contain'
+									priority
+								/>
+								<Image
 									src='/logo.png'
 									alt='Logo'
-									width={70}
-									height={70}
+									width={50}
+									height={50}
 									className='rounded-full object-cover'
+									priority
 								/>
 								<div className='flex flex-col'>
 									<h1>Desa Benteng Gajah</h1>
-									<p className='text-sm'>Kecamatan Panca Lautang</p>
+									<p className='text-sm'>Kecamatan Tompobulu</p>
 								</div>
-							</a>
+							</Link>
 							<div className='flex justify-end p-4'>
 								<button onClick={() => setMobileOpen(false)}>
 									<X size={24} />

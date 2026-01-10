@@ -21,6 +21,66 @@ const dbConfig = {
 // Create connection pool
 const pool = mysql.createPool(dbConfig);
 
+// ============================================================================
+// SECURITY: Whitelist of allowed table names to prevent SQL Injection
+// ============================================================================
+const ALLOWED_TABLES = [
+  'berita',
+  'wisata',
+  'galeri',
+  'pegawai',
+  'umkm',
+  'produk_umkm',
+  'users',
+  'profil',
+  'umum',
+  'inovasi',
+  'stok',
+  'penduduk',
+  'admin_users',
+] as const;
+
+type AllowedTable = typeof ALLOWED_TABLES[number];
+
+/**
+ * Validate table name against whitelist to prevent SQL injection
+ */
+export function validateTableName(table: string): AllowedTable {
+  if (!ALLOWED_TABLES.includes(table as AllowedTable)) {
+    throw new Error(
+      `Invalid table name "${table}". Table not in whitelist. ` +
+      `This could be a SQL injection attempt.`
+    );
+  }
+  return table as AllowedTable;
+}
+
+/**
+ * Validate column names to prevent SQL injection
+ * Only allows alphanumeric characters and underscores
+ */
+export function validateColumnName(column: string): string {
+  // Only allow letters, numbers, and underscores
+  const validPattern = /^[a-zA-Z0-9_]+$/;
+
+  if (!validPattern.test(column)) {
+    throw new Error(
+      `Invalid column name "${column}". ` +
+      `Column names must only contain letters, numbers, and underscores. ` +
+      `This could be a SQL injection attempt.`
+    );
+  }
+
+  return column;
+}
+
+/**
+ * Validate multiple column names
+ */
+export function validateColumnNames(columns: string[]): string[] {
+  return columns.map(validateColumnName);
+}
+
 // Test connection
 // Test connection
 export async function testConnection() {
@@ -92,18 +152,22 @@ export async function insertData(
 ): Promise<{ id: number; data: Record<string, any> }> {
   let connection;
   try {
-    const columns = Object.keys(data);
+    // SECURITY: Validate table name against whitelist
+    const validTable = validateTableName(table);
+
+    // SECURITY: Validate all column names
+    const columns = validateColumnNames(Object.keys(data));
     const placeholders = columns.map(() => '?').join(', ');
     const values = Object.values(data);
-    
+
     const query = `
-      INSERT INTO ${table} (${columns.join(', ')})
+      INSERT INTO ${validTable} (${columns.join(', ')})
       VALUES (${placeholders})
     `;
-    
+
     connection = await pool.getConnection();
     const [result] = await connection.execute(query, values);
-    
+
     return {
       id: (result as any).insertId,
       data
@@ -124,19 +188,23 @@ export async function updateData(
 ): Promise<number> {
   let connection;
   try {
-    const columns = Object.keys(data);
+    // SECURITY: Validate table name against whitelist
+    const validTable = validateTableName(table);
+
+    // SECURITY: Validate all column names
+    const columns = validateColumnNames(Object.keys(data));
     const placeholders = columns.map((column) => `${column} = ?`).join(', ');
     const values = Object.values(data);
-    
+
     const query = `
-      UPDATE ${table}
+      UPDATE ${validTable}
       SET ${placeholders}
       WHERE id = ?
     `;
-    
+
     connection = await pool.getConnection();
     const [result] = await connection.execute(query, [...values, id]);
-    
+
     return (result as any).affectedRows;
   } catch (error) {
     console.error('Update operation error:', error);
@@ -153,11 +221,14 @@ export async function deleteData(
 ): Promise<number> {
   let connection;
   try {
-    const query = `DELETE FROM ${table} WHERE id = ?`;
-    
+    // SECURITY: Validate table name against whitelist
+    const validTable = validateTableName(table);
+
+    const query = `DELETE FROM ${validTable} WHERE id = ?`;
+
     connection = await pool.getConnection();
     const [result] = await connection.execute(query, [id]);
-    
+
     return (result as any).affectedRows;
   } catch (error) {
     console.error('Delete operation error:', error);
@@ -180,21 +251,25 @@ export async function batchInsertData(
       return { ids: [], count: 0 };
     }
 
-    const columns = Object.keys(dataArray[0]);
-    const placeholders = dataArray.map(() => 
+    // SECURITY: Validate table name against whitelist
+    const validTable = validateTableName(table);
+
+    // SECURITY: Validate all column names
+    const columns = validateColumnNames(Object.keys(dataArray[0]));
+    const placeholders = dataArray.map(() =>
       `(${columns.map(() => '?').join(', ')})`
     ).join(', ');
-    
+
     const values = dataArray.flatMap(item => Object.values(item));
-    
+
     const query = `
-      INSERT INTO ${table} (${columns.join(', ')})
+      INSERT INTO ${validTable} (${columns.join(', ')})
       VALUES ${placeholders}
     `;
-    
+
     connection = await pool.getConnection();
     const [result] = await connection.execute(query, values);
-    
+
     return {
       ids: Array.from({ length: dataArray.length }, (_, i) => (result as any).insertId + i),
       count: (result as any).affectedRows
@@ -241,8 +316,14 @@ export async function recordExists(
 ): Promise<boolean> {
   let connection;
   try {
-    const query = `SELECT 1 FROM ${table} WHERE ${field} = ? LIMIT 1`;
-    
+    // SECURITY: Validate table name against whitelist
+    const validTable = validateTableName(table);
+
+    // SECURITY: Validate field name
+    const validField = validateColumnName(field);
+
+    const query = `SELECT 1 FROM ${validTable} WHERE ${validField} = ? LIMIT 1`;
+
     connection = await pool.getConnection();
     const [rows] = await connection.execute(query, [value]);
     return (rows as any[]).length > 0;
@@ -262,26 +343,34 @@ export async function upsertData(
 ): Promise<{ id: number; data: Record<string, any>; isNew: boolean }> {
   let connection;
   try {
-    const columns = Object.keys(data);
+    // SECURITY: Validate table name against whitelist
+    const validTable = validateTableName(table);
+
+    // SECURITY: Validate all column names
+    const columns = validateColumnNames(Object.keys(data));
+
+    // SECURITY: Validate conflict field names
+    const validConflictFields = validateColumnNames(conflictFields);
+
     const placeholders = columns.map(() => '?').join(', ');
     const values = Object.values(data);
-    
+
     const updateClause = columns
-      .filter(col => !conflictFields.includes(col))
+      .filter(col => !validConflictFields.includes(col))
       .map(col => `${col} = VALUES(${col})`)
       .join(', ');
-    
+
     const query = `
-      INSERT INTO ${table} (${columns.join(', ')})
+      INSERT INTO ${validTable} (${columns.join(', ')})
       VALUES (${placeholders})
       ON DUPLICATE KEY UPDATE ${updateClause}
     `;
-    
+
     connection = await pool.getConnection();
     const [result] = await connection.execute(query, values);
-    
+
     const isNew = (result as any).affectedRows === 1;
-    
+
     return {
       id: isNew ? (result as any).insertId : data.id || (result as any).insertId,
       data,

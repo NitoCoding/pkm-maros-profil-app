@@ -1,6 +1,7 @@
 // pkm-maros-profil-app\src\libs\api\berita.ts
 import { executeQuery, executeSingleQuery } from '@/libs/database';
-import { IBerita, IBeritaUpdate, IBeritaPaginatedResponse } from '@/types/berita';
+import { IBerita, IBeritaUpdate, IBeritaPaginatedResponse, IBeritaCursorPaginatedResponse } from '@/types/berita';
+import { buildFilterWhereClause, BeritaAdminFilters } from '@/libs/utils/filterBuilder';
 
 // Membuat slug yang unik
 async function createUniqueSlug(judul: string, currentId: number | null = null): Promise<string> {
@@ -61,7 +62,7 @@ export async function tambahBerita(data: any): Promise<IBerita> { // Sementara g
 export async function ambilBeritaPaginate(
   pageSize: number,
   cursor: string | null = null
-): Promise<IBeritaPaginatedResponse> {
+): Promise<IBeritaCursorPaginatedResponse> {
   let query = `
     SELECT 
       id, judul, slug, ringkasan, gambar_url, status, views, tags, tanggal,
@@ -104,7 +105,7 @@ export async function ambilBeritaPaginate(
 export async function ambilBeritaPaginateAdmin(
   pageSize: number,
   cursor: string | null = null
-): Promise<IBeritaPaginatedResponse> {
+): Promise<IBeritaCursorPaginatedResponse> {
   let query = `
     SELECT 
       id, judul, slug, ringkasan, gambar_url, status, views, tags, tanggal,
@@ -144,6 +145,58 @@ export async function ambilBeritaPaginateAdmin(
   const nextCursor = data.length > 0 ? data[data.length - 1].createdAt : null;
 
   return { data, hasMore, nextCursor };
+}
+
+// Mengambil berita dengan paginasi (admin) dengan filter
+export async function ambilBeritaPaginateAdminWithFilters(
+  page: number = 1,
+  pageSize: number = 10,
+  filters: BeritaAdminFilters = {}
+): Promise<IBeritaPaginatedResponse> {
+  // Use centralized utility
+  const { whereClause, params } = buildFilterWhereClause(filters);
+
+  // Count total query
+  const countQuery = `
+    SELECT COUNT(*) as total
+    FROM berita
+    ${whereClause}
+  `;
+  const countResult = await executeSingleQuery<{ total: number }>(countQuery, params);
+  const total = countResult?.total || 0;
+
+  // Calculate offset
+  const offset = (page - 1) * pageSize;
+
+  // Data query
+  const dataQuery = `
+    SELECT
+      id, judul, slug, ringkasan, gambar_url, status, views, tags, tanggal,
+      komentar_count, kategori, penulis, created_at, updated_at
+    FROM berita
+    ${whereClause}
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `;
+  const results = await executeQuery<any>(dataQuery, [...params, pageSize, offset]);
+
+  const data = results.map(row => ({
+    ...row,
+    gambar: row.gambar_url,
+    tags: JSON.parse(row.tags || '[]'),
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  }));
+
+  const totalPages = Math.ceil(total / pageSize);
+
+  return {
+    data,
+    total,
+    page,
+    pageSize,
+    totalPages
+  };
 }
 
 // Mengambil satu berita berdasarkan ID

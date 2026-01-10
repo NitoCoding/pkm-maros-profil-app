@@ -1,6 +1,7 @@
 'use client'
 
-import {Leaf, MapPin, Phone, Mail, Clock} from 'lucide-react'
+import {MapPin, Phone, Mail, Clock} from 'lucide-react'
+import Image from 'next/image'
 import { useFooterCached } from '@/hooks/useCachedData';
 import Link from 'next/link';
 
@@ -143,6 +144,40 @@ export default function FooterCached() {
 								⚡ Cache (30m)
 							</div>
 						)}
+					</div>
+				</div>
+
+				{/* Logos Section */}
+				<div className='border-t border-white border-opacity-20 pt-6 pb-4'>
+					<div className='flex flex-col md:flex-row items-center justify-center gap-6'>
+						<div className='flex items-center justify-center'>
+							<Image
+								src='/logo_kemdikbud.png'
+								alt='Logo Kemendikbud'
+								width={50}
+								height={50}
+								className='object-contain'
+							/>
+						</div>
+						<div className='flex items-center justify-center'>
+							<Image
+								src='/bima-dikti-white.png'
+								alt='Bima Dikti'
+								width={135}
+								height={42}
+								className='object-contain'
+							/>
+						</div>
+						<div className='flex items-center justify-center'>
+							<Image
+								src='/Logo-Resmi-Unhas-1.png'
+								alt='Bima Dikti'
+								width={50}
+								height={42}
+								className='object-contain'
+								priority
+							/>
+						</div>
 					</div>
 				</div>
 

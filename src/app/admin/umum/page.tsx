@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useUmum, useUmumMutation } from '@/hooks/useUmum';
 import { IUmum } from '@/types/umum';
-import CardPenduduk from '@/components/CardPenduduk';
+import CardPenduduk from '@/components/cards/CardPenduduk';
 import { BarChart3, Users, School, Heart, MapPin, Edit, Save, X, Upload } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import CKEditorWrapper from '@/components/ckeditor/CKEditorWrapper';

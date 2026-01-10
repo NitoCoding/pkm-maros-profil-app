@@ -5,6 +5,17 @@ import { usePathname } from 'next/navigation'
 import { Home, Newspaper, Image, HardDrive, Users, Store, Rocket, Star, Landmark, Menu, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
+// Custom fade-in animation untuk sidebar text
+const fadeStyle = `
+@keyframes fadeIn {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+.animate-fade-in {
+animation: fadeIn 200ms ease-out 300ms forwards;
+}
+`
+
 const navItems = [
   { label: 'Dashboard', href: '/admin', icon: Home },
   { label: 'Profil Desa', href: '/admin/profil', icon: Star },
@@ -18,9 +29,13 @@ const navItems = [
   { label: 'User', href: '/admin/user', icon: Users },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  isCollapsed: boolean
+  onToggle: () => void
+}
+
+export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const pathname = usePathname()
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -30,14 +45,7 @@ export default function Sidebar() {
       const width = window.innerWidth
       const newIsMobile = width < 768
       setIsMobile(newIsMobile)
-      
-      // Auto-collapse di desktop jika ukuran layar kecil
-      if (!newIsMobile && width < 1024) {
-        setIsCollapsed(true)
-      } else if (!newIsMobile && width >= 1024) {
-        setIsCollapsed(false)
-      }
-      
+
       // Tutup mobile menu saat resize ke desktop
       if (!newIsMobile) {
         setIsMobileMenuOpen(false)
@@ -53,12 +61,13 @@ export default function Sidebar() {
     if (isMobile) {
       setIsMobileMenuOpen(!isMobileMenuOpen)
     } else {
-      setIsCollapsed(!isCollapsed)
+      onToggle()
     }
   }
 
   return (
     <>
+      <style>{fadeStyle}</style>
       <aside
   className={`fixed top-0 left-0 h-full bg-white border-r flex flex-col transition-all duration-300 z-[888] ${
     isMobile
@@ -71,7 +80,7 @@ export default function Sidebar() {
   }`}
 >
   {/* Brand / Logo dengan Toggle Button */}
-  <div className='flex items-center gap-3 px-6 py-6 bg-blue-600 text-white shadow relative'>
+  <div className='flex items-center gap-3 px-6 py-6 bg-blue-600 text-white shadow relative h-20'>
     {/* Toggle Button di dalam brand */}
     <button
       onClick={toggleSidebar}
@@ -92,7 +101,9 @@ export default function Sidebar() {
     </button>
     
     <span className='text-2xl font-extrabold tracking-tight'>B</span>
-    {(!isCollapsed || isMobile) && <span className='font-bold text-lg'>Desa Benteng Gajah</span>}
+    {(!isCollapsed || isMobile) && (
+      <span className='font-bold text-lg opacity-0 animate-fade-in'>Desa Benteng Gajah</span>
+    )}
   </div>
 
         {/* Navigation */}
@@ -125,7 +136,9 @@ export default function Sidebar() {
                         isActive ? 'text-blue-600' : 'text-gray-400'
                       }`}
                     />
-                    {(!isCollapsed || isMobile) && <span>{item.label}</span>}
+                    {(!isCollapsed || isMobile) && (
+                      <span className='opacity-0 animate-fade-in'>{item.label}</span>
+                    )}
                   </Link>
                 </li>
               )

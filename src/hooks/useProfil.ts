@@ -171,5 +171,68 @@ export function useVideo() {
 }
 
 export function useSambutan() {
-  return useProfilByJenis('sambutan');
+  const [sambutan, setSambutan] = useState<{ judul: string; isi: string; gambar: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSambutan = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/profil?jenis=sambutan');
+
+      // Check if response is OK before parsing JSON
+      if (!response.ok) {
+        console.warn('Sambutan API response not OK:', response.status, response.statusText);
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+
+      // Check content type to ensure we're getting JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('Sambutan API did not return JSON, content-type:', contentType);
+        const text = await response.text();
+        console.warn('Response text (first 200 chars):', text.substring(0, 200));
+        throw new Error('API did not return JSON');
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setSambutan(result.data);
+      } else {
+        console.warn('Sambutan API returned success=false or no data');
+        // Set fallback data
+        setSambutan({
+          judul: 'Sambutan Lurah',
+          isi: 'Selamat datang di website resmi Desa Benteng Gajah. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
+          gambar: ''
+        });
+      }
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error fetching sambutan:', err);
+
+      // Set fallback data on error
+      setSambutan({
+        judul: 'Sambutan Lurah',
+        isi: 'Selamat datang di website resmi Desa Benteng Gajah. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
+        gambar: ''
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSambutan();
+  }, []);
+
+  return {
+    sambutan,
+    loading,
+    error,
+    refresh: fetchSambutan,
+  };
 }

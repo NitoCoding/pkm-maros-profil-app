@@ -4,6 +4,7 @@ import {
   tambahWisata,
   ambilWisataPaginate,
   ambilWisataPaginateAdmin,
+  ambilWisataPaginateAdminWithFilters,
   ambilWisataById,
   updateWisata,
   hapusWisata,
@@ -11,6 +12,9 @@ import {
   ambilWisataBySlugAdmin,
 } from "@/libs/api/wisata";
 import { IWisataUpdate } from "@/types/wisata-admin";
+import { WisataAdminFilters } from "@/libs/constant/wisataFilter";
+import { transformId, transformIds, transformPaginatedResponse } from "@/libs/utils/responseTransform";
+import { decodeId } from "@/libs/utils/hashids";
 
 // Middleware akan menangani autentikasi dan menambahkan info user ke header
 // Kita bisa mengaksesnya dari request.headers
@@ -43,10 +47,10 @@ export async function POST(request: NextRequest) {
 
     // // console.log("📬 Data diterima dari client:", JSON.stringify(data, null, 2));
     const result = await tambahWisata(wisataData);
-    
+
     return NextResponse.json({
       success: true,
-      data: result,
+      data: transformId(result),
       message: "Wisata berhasil dibuat"
     }, { status: 201 });
     
@@ -64,37 +68,48 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const page = parseInt(searchParams.get("page") || "1");
     const cursor = searchParams.get("cursor");
     const isAdmin = searchParams.get("admin") === "true";
 
     // If slug is provided, get single wisata by slug
     const slug = searchParams.get("slug");
     if (slug) {
-      const wisata = isAdmin 
+      const wisata = isAdmin
         ? await ambilWisataBySlugAdmin(slug)
         : await ambilWisataBySlug(slug);
       if (!wisata) {
         return NextResponse.json({ error: "Wisata not found" }, { status: 404 });
       }
-      return NextResponse.json({ success: true, data: wisata });
+      return NextResponse.json({ success: true, data: transformId(wisata) });
     }
 
     // If id is provided, get single wisata by id
     const id = searchParams.get("id");
     if (id) {
-      const wisata = await ambilWisataById(id);
+      const wisata = await ambilWisataById(decodeId(id).toString());
       if (!wisata) {
         return NextResponse.json({ error: "Wisata not found" }, { status: 404 });
       }
-      return NextResponse.json({ success: true, data: wisata });
+      return NextResponse.json({ success: true, data: transformId(wisata) });
     }
 
-    // Otherwise return paginated list
-    const result = isAdmin
-      ? await ambilWisataPaginateAdmin(pageSize, cursor)
-      : await ambilWisataPaginate(pageSize, cursor);
-      
-    return NextResponse.json({ success: true, data: result });
+    // Build filters from search params
+    const filters: WisataAdminFilters = {
+      search: searchParams.get('search') || ''
+    };
+
+    // Return paginated list
+    let result;
+    if (isAdmin) {
+      // Admin mode: use page-based pagination with filters
+      result = await ambilWisataPaginateAdminWithFilters(page, pageSize, filters);
+    } else {
+      // Public mode: use cursor-based pagination (existing behavior)
+      result = await ambilWisataPaginate(pageSize, cursor);
+    }
+
+    return NextResponse.json({ success: true, data: transformPaginatedResponse(result) });
   } catch (error: any) {
     console.error("Error fetching wisata:", error);
     return NextResponse.json(
@@ -124,7 +139,7 @@ export async function PUT(request: NextRequest) {
       updatedBy: parseInt(user.userId),
     };
 
-    const success = await updateWisata(id, dataWithTimestamp);
+    const success = await updateWisata(decodeId(id).toString(), dataWithTimestamp);
     
     if (!success) {
       return NextResponse.json({ error: "Failed to update wisata or no changes made" }, { status: 400 });
@@ -159,7 +174,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const success = await hapusWisata(id);
+    const success = await hapusWisata(decodeId(id).toString());
     
     if (!success) {
       return NextResponse.json({ error: "Wisata not found" }, { status: 404 });

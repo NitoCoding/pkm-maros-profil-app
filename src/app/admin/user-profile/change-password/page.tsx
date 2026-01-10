@@ -9,7 +9,7 @@ import { IPasswordChange } from '@/types/user';
 import { ArrowLeft, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
-import PageHead from '@/components/PageHead';
+import PageHead from '@/components/layout/PageHead';
 
 export default function ChangePasswordPage() {
     const router = useRouter();

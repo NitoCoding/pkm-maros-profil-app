@@ -1,6 +1,6 @@
 'use client'
 // pkm-maros-profil-app\src\app\(public)\berita\[slug]\page.tsx
-import Main from '@/components/Main'
+import Main from '@/components/layout/Main'
 import { IBerita } from '@/types/berita'
 import { CalendarDays, User, Loader2 } from 'lucide-react'
 import Image from 'next/image'
@@ -9,7 +9,7 @@ import { prepareHTMLForRender, estimateReadingTime, getHTMLPreview } from '@/lib
 import { useBeritaBySlug, useBerita } from '@/hooks/useBerita'
 import { useParams } from 'next/navigation'
 import { formatDateLong } from '@/libs/utils/date'
-import PageHead from '@/components/PageHead'
+import PageHead from '@/components/layout/PageHead'
 
 export default function BeritaDetail() {
     const params = useParams()

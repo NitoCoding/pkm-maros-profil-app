@@ -1,17 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Edit, Trash, Plus, EyeIcon, Loader2 } from "lucide-react";
-import { useBeritaAdmin } from "@/hooks/useBerita";
+import { useState, useEffect, useRef } from "react";
+import { Edit, Trash, Plus, EyeIcon, Loader2, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useBeritaAdminPaginated } from "@/hooks/useBerita";
+import { BeritaAdminFilters } from "@/libs/utils/filterBuilder";
 import { toast } from "react-hot-toast";
 import { formatDateLong } from "@/libs/utils/date";
 import Image from "next/image";
+import { beritaKategori } from "@/libs/constant/beritaKategori";
+import { KategoriBadge, StatusBadge } from "@/libs/utils/kategoriBadge";
 
 export default function AdminBeritaPage() {
-  const pageSize = 10;
-  const { berita, loading, error, hasMore, loadMore, refresh } = useBeritaAdmin({
-    pageSize: pageSize
+  const [pageSize, setPageSize] = useState(25);
+
+  // Filter state - simple state, no memoization needed!
+  const [filters, setFilters] = useState<BeritaAdminFilters>({
+    search: '',
+    status: 'all',
+    kategori: '',
+    tanggalMulai: '',
+    tanggalAkhir: ''
+  });
+
+  // Pass filters directly - hook handles optimization
+  const { berita, loading, error, total, page, totalPages, setPage, refresh } = useBeritaAdminPaginated({
+    pageSize: pageSize,
+    filters: filters
   });
 
   const [deleting, setDeleting] = useState<number | null>(null);
@@ -35,12 +50,17 @@ export default function AdminBeritaPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const base = "px-2 py-1 rounded-full text-xs font-medium";
-    return status === "published"
-      ? `${base} bg-green-100 text-green-800`
-      : `${base} bg-yellow-100 text-yellow-800`;
+  const resetFilters = () => {
+    setFilters({
+      search: '',
+      status: 'all',
+      kategori: '',
+      tanggalMulai: '',
+      tanggalAkhir: ''
+    });
   };
+
+  const hasActiveFilters = filters.search || filters.status !== 'all' || filters.kategori || filters.tanggalMulai || filters.tanggalAkhir;
 
   return (
     <div className="p-6">
@@ -58,6 +78,140 @@ export default function AdminBeritaPage() {
           Tambah Berita
         </Link>
       </div>
+
+      {/* FILTER SECTION */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+        {/* HEADER */}
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <h3 className="text-sm font-semibold text-gray-700">
+            Filter Berita
+          </h3>
+
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <X size={14} />
+              Reset
+            </button>
+          )}
+        </div>
+
+        {/* MAIN FILTER */}
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* SEARCH */}
+            <div className="relative md:col-span-2">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Cari judul atau ringkasan berita…"
+                value={filters.search}
+                onChange={(e) =>
+                  setFilters({ ...filters, search: e.target.value })
+                }
+                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* STATUS */}
+            <select
+              value={filters.status}
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  status: e.target.value as 'all' | 'published' | 'draft',
+                })
+              }
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm
+                   focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Semua Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 border-t">
+            {/* KATEGORI */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">
+                Kategori
+              </label>
+              <select
+                value={filters.kategori}
+                onChange={(e) =>
+                  setFilters({ ...filters, kategori: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Semua Kategori</option>
+                {beritaKategori.map((kat) => (
+                  <option key={kat} value={kat}>
+                    {kat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* TANGGAL MULAI */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">
+                Tanggal Mulai
+              </label>
+              <input
+                type="date"
+                value={filters.tanggalMulai}
+                onChange={(e) =>
+                  setFilters({ ...filters, tanggalMulai: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* TANGGAL AKHIR */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">
+                Tanggal Akhir
+              </label>
+              <input
+                type="date"
+                value={filters.tanggalAkhir}
+                onChange={(e) =>
+                  setFilters({ ...filters, tanggalAkhir: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* PAGE SIZE */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">
+                Data per halaman
+              </label>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
 
       {/* ERROR */}
       {error && (
@@ -123,9 +277,10 @@ export default function AdminBeritaPage() {
                     <td className="p-3 text-sm text-gray-900">{Array.isArray(item.kategori) ? item.kategori.join(", ") : item.kategori || "-"}</td>
                     <td className="p-3 text-sm text-gray-500">{formatDateLong(item.createdAt)}</td>
                     <td className="p-3">
-                      <span className={getStatusBadge(item.status)}>
-                        {item.status === "published" ? "Dipublikasi" : "Draft"}
-                      </span>
+                      <StatusBadge
+                        status={item.status}
+                        style="solid"
+                      />
                     </td>
                     <td className="p-3 text-sm font-medium w-[10%]">
                       <div className="flex items-center gap-2 justify-center">
@@ -151,33 +306,80 @@ export default function AdminBeritaPage() {
             </table>
           </div>
 
-          {/* LOADING TAMBAHAN & TOMBOL LOAD MORE */}
+          {/* PAGINATION & TOTAL ROWS */}
           <div className="p-4 border-t border-gray-200">
+            {/* Total Rows Info */}
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-sm text-gray-600">
+                Menampilkan <span className="font-semibold">{(page - 1) * pageSize + 1}</span> sampai{' '}
+                <span className="font-semibold">{Math.min(page * pageSize, total)}</span> dari{' '}
+                <span className="font-semibold">{total}</span> berita
+              </p>
+              <p className="text-sm text-gray-500">
+                Halaman <span className="font-semibold">{page}</span> dari {totalPages}
+              </p>
+            </div>
+
+            {/* Loading */}
             {loading && berita.length > 0 && (
               <div className="flex justify-center items-center py-4">
-                <Loader2 className="animate-spin h-6 w-6 text-blue-600" />
-                <span className="ml-2 text-gray-600">Memuat berita lainnya...</span>
+                <Loader2 className="animate-spin h-5 w-5 text-blue-600" />
+                <span className="ml-2 text-gray-600 text-sm">Memuat...</span>
               </div>
             )}
 
-            {/* TOMBOL LOAD MORE */}
-            {hasMore && !loading && (
-              <div className="text-center">
+            {/* Pagination Controls */}
+            {totalPages > 1 && !loading && (
+              <div className="flex justify-center items-center gap-2">
+                {/* Previous Button */}
                 <button
-                  type="button"
-                  onClick={loadMore}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1}
+                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Halaman Sebelumnya"
                 >
-                  Muat Berita Lainnya
+                  <ChevronLeft size={16} />
+                </button>
+
+                {/* Page Numbers */}
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`min-w-[40px] px-3 py-2 rounded-lg text-sm font-medium transition-colors ${page === pageNum
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  onClick={() => setPage(page + 1)}
+                  disabled={page === totalPages}
+                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Halaman Selanjutnya"
+                >
+                  <ChevronRight size={16} />
                 </button>
               </div>
-            )}
-
-            {/* AKHIR DATA */}
-            {!hasMore && berita.length > pageSize && (
-              <p className="text-center text-gray-500 text-sm py-4">
-                Semua berita telah dimuat
-              </p>
             )}
           </div>
         </div>

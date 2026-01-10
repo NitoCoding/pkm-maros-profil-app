@@ -1,13 +1,13 @@
 "use client";
 
-import HeaderPage from "@/components/HeaderPage";
-import Main from "@/components/Main";
+import HeaderPage from "@/components/layout/HeaderPage";
+import Main from "@/components/layout/Main";
 import { IGeografi } from "@/types/geografi";
 import { IUmum } from "@/types/umum";
 import { MapPin } from "lucide-react";
-import MapSimple from "@/components/MapSimple";
+import MapSimple from "@/components/maps/MapSimple";
 import { useUmumByJenis } from "@/hooks/useUmum";
-import PageHead from "@/components/PageHead";
+import PageHead from "@/components/layout/PageHead";
 
 export default function GeografiPage() {
   const { umum, loading, error } = useUmumByJenis("geografi");

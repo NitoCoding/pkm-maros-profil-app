@@ -4,6 +4,7 @@ import {
   tambahInovasi,
   ambilInovasiPaginate,
   ambilInovasiPaginateAdmin,
+  ambilInovasiPaginateAdminWithFilters,
   ambilInovasiById,
   updateInovasi,
   hapusInovasi,
@@ -11,6 +12,9 @@ import {
   ambilInovasiBySlugAdmin,
 } from "@/libs/api/inovasi";
 import { IInovasi } from "@/types/inovasi";
+import { InovasiAdminFilters } from "@/libs/constant/inovasiFilter";
+import { transformId, transformIds, transformPaginatedResponse } from "@/libs/utils/responseTransform";
+import { decodeId } from "@/libs/utils/hashids";
 
 // Middleware akan menangani autentikasi dan menambahkan info user ke header
 // Kita bisa mengaksesnya dari request.headers
@@ -44,10 +48,10 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await tambahInovasi(inovasiData);
-    
+
     return NextResponse.json({
       success: true,
-      data: result,
+      data: transformId(result),
       message: "Inovasi berhasil dibuat"
     }, { status: 201 });
     
@@ -65,6 +69,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const page = parseInt(searchParams.get("page") || "1");
     const cursor = searchParams.get("cursor");
     const isAdmin = searchParams.get("admin") === "true";
     const kategori = searchParams.get("kategori");
@@ -76,31 +81,42 @@ export async function GET(request: NextRequest) {
     // If slug is provided, get single inovasi by slug
     const slug = searchParams.get("slug");
     if (slug) {
-      const inovasi = isAdmin 
+      const inovasi = isAdmin
         ? await ambilInovasiBySlugAdmin(slug)
         : await ambilInovasiBySlug(slug);
       if (!inovasi) {
         return NextResponse.json({ error: "Inovasi not found" }, { status: 404 });
       }
-      return NextResponse.json({ success: true, data: inovasi });
+      return NextResponse.json({ success: true, data: transformId(inovasi) });
     }
 
     // If id is provided, get single inovasi by id
     const id = searchParams.get("id");
     if (id) {
-      const inovasi = await ambilInovasiById(id);
+      const inovasi = await ambilInovasiById(decodeId(id).toString());
       if (!inovasi) {
         return NextResponse.json({ error: "Inovasi not found" }, { status: 404 });
       }
-      return NextResponse.json({ success: true, data: inovasi });
+      return NextResponse.json({ success: true, data: transformId(inovasi) });
     }
 
-    // Otherwise return paginated list
-    const result = isAdmin
-      ? await ambilInovasiPaginateAdmin(pageSize, cursor, kategori, tahunNumber)
-      : await ambilInovasiPaginate(pageSize, cursor, kategori, tahunNumber);
-      
-    return NextResponse.json({ success: true, data: result });
+    // Build filters from search params
+    const filters: InovasiAdminFilters = {};
+    if (searchParams.has('search')) filters.search = searchParams.get('search') || undefined;
+    if (kategori) filters.kategori = kategori;
+    if (tahun) filters.tahun = tahun;
+
+    // Return paginated list
+    let result;
+    if (isAdmin) {
+      // Admin mode: use page-based pagination with filters
+      result = await ambilInovasiPaginateAdminWithFilters(page, pageSize, filters);
+    } else {
+      // Public mode: use cursor-based pagination (existing behavior)
+      result = await ambilInovasiPaginate(pageSize, cursor, kategori, tahunNumber);
+    }
+
+    return NextResponse.json({ success: true, data: transformPaginatedResponse(result) });
   } catch (error: any) {
     console.error("Error fetching inovasi:", error);
     return NextResponse.json(
@@ -130,7 +146,7 @@ export async function PUT(request: NextRequest) {
       updatedBy: user.userId,
     };
 
-    const success = await updateInovasi(id, dataWithTimestamp);
+    const success = await updateInovasi(decodeId(id).toString(), dataWithTimestamp);
     
     if (!success) {
       return NextResponse.json({ error: "Failed to update inovasi or no changes made" }, { status: 400 });
@@ -164,7 +180,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const success = await hapusInovasi(id);
+    const success = await hapusInovasi(decodeId(id).toString());
     
     if (!success) {
       return NextResponse.json({ error: "Inovasi not found" }, { status: 404 });

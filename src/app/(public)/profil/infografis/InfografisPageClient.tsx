@@ -1,9 +1,9 @@
 "use client";
 
-import HeaderPage from "@/components/HeaderPage";
-import Main from "@/components/Main";
-import PageHead from "@/components/PageHead";
-import CardPenduduk from "@/components/CardPenduduk";
+import HeaderPage from "@/components/layout/HeaderPage";
+import Main from "@/components/layout/Main";
+import PageHead from "@/components/layout/PageHead";
+import CardPenduduk from "@/components/cards/CardPenduduk";
 import { Users, School, Heart, MapPin, BarChart3 } from "lucide-react";
 import { useInfografi, usePenduduk, useSaranaPendidikan, useSaranaKesehatan } from "@/hooks/useUmum";
 import { IUmum } from "@/types/umum";
@@ -82,11 +82,23 @@ export default function InfografiPage() {
                     </p>
                     {parsedInfografi?.data?.infografi?.gambar && (
                       <div className="mt-4">
-                        <Image
-                          src={parsedInfografi.data.infografi.gambar || 'default-image.jpg'} 
-                          alt="Infografi" 
-                          className="w-full max-w-md rounded-lg border border-gray-200"
-                        />
+                        {parsedInfografi.data.infografi.gambar.startsWith('data:') ? (
+                          // Use regular img tag for base64 images
+                          <img
+                            src={parsedInfografi.data.infografi.gambar}
+                            alt="Infografi"
+                            className="w-full max-w-md rounded-lg border border-gray-200"
+                          />
+                        ) : (
+                          // Use Next.js Image for regular URLs
+                          <Image
+                            src={parsedInfografi.data.infografi.gambar}
+                            alt="Infografi"
+                            width={800}
+                            height={600}
+                            className="w-full max-w-md rounded-lg border border-gray-200"
+                          />
+                        )}
                       </div>
                     )}
                   </div>

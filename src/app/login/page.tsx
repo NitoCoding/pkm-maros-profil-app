@@ -4,6 +4,7 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import { toast } from 'react-hot-toast';
 
 function LoginPageContent() {
   const router = useRouter();
@@ -12,14 +13,12 @@ function LoginPageContent() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   // Handler login Email/Password (Menggunakan API)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
 
     try {
@@ -39,11 +38,11 @@ function LoginPageContent() {
         router.push(redirect);
       } else {
         // Login gagal, tampilkan pesan error dari API
-        setError(data.error || 'Login failed');
+        toast.error(data.error || 'Login failed');
       }
     } catch (err: any) {
       // Error jaringan atau error lainnya
-      setError('Network error. Please try again.');
+      toast.error('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -51,7 +50,6 @@ function LoginPageContent() {
 
   // Handler login Google (Masih menggunakan API yang Anda siapkan)
   const handleGoogleLogin = async () => {
-    setError(null);
     setGoogleLoading(true);
 
     try {
@@ -77,10 +75,10 @@ function LoginPageContent() {
         // Login berhasil, API sudah mengatur cookie
         router.push(redirect);
       } else {
-        setError(data.error || 'Google login failed');
+        toast.error(data.error || 'Google login failed');
       }
     } catch (err: any) {
-      setError('Network error. Please try again.');
+      toast.error('Network error. Please try again.');
     } finally {
       setGoogleLoading(false);
     }
@@ -100,9 +98,6 @@ function LoginPageContent() {
         <p className='text-gray-600 mb-4 w-full text-center'>
           Masuk ke akun Anda untuk mengelola konten Desa Benteng Gajah.
         </p>
-        {error && (
-          <div className='mb-4 text-red-600 text-center text-sm'>{error}</div>
-        )}
         <form onSubmit={handleSubmit}>
           <div className='mb-4'>
             <label className='block text-sm font-medium mb-2' htmlFor='email'>

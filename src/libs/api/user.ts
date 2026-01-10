@@ -158,7 +158,7 @@ export async function resetUserPassword(email: string): Promise<string> {
     [passwordHash, email]
   );
 
-  if ((result as any).affectedRows > 0) {
+  if ((result as any).affectedRows === 0) {
     throw new Error('User not found');
   }
 

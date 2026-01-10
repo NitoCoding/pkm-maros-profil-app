@@ -11,7 +11,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 
 // Dynamic import YouTubePlayer dengan SSR disabled
-const YouTubePlayer = dynamic(() => import("@/components/YouTubePlayer"), {
+const YouTubePlayer = dynamic(() => import("@/components/utils/YouTubePlayer"), {
   ssr: false,
   loading: () => (
     <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center">

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { IDashboard, IDashboardUpdate } from '@/types/dashboard';
 
-// Hook untuk mengambil data dashboard
+// Hook untuk mengambil data dashboard (untuk admin - butuh auth)
 export function useDashboard() {
   const [dashboard, setDashboard] = useState<IDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,6 +28,51 @@ export function useDashboard() {
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching dashboard:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
+  return {
+    dashboard,
+    loading,
+    error,
+    refresh: fetchDashboard,
+  };
+}
+
+// Hook untuk mengambil data dashboard public (tanpa auth - untuk halaman public)
+export function usePublicDashboard() {
+  const [dashboard, setDashboard] = useState<IDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/public/dashboard');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to fetch public dashboard data (status: ${response.status})`);
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        setDashboard(result.data);
+      } else {
+        throw new Error('Invalid response format');
+      }
+
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error fetching public dashboard:', err);
     } finally {
       setLoading(false);
     }
@@ -103,9 +148,10 @@ export function useDashboardMutation() {
 // --- Hook khusus untuk setiap section (TIDAK PERLU DIUBAH) ---
 // Semua hook di bawah ini akan bekerja dengan benar setelah useDashboard diperbaiki
 
+// ADMIN hooks (butuh auth)
 export function useHero() {
   const { dashboard, loading, error, refresh } = useDashboard();
-  
+
   return {
     hero: dashboard?.hero || {
       image: '',
@@ -120,7 +166,7 @@ export function useHero() {
 
 export function useLurah() {
   const { dashboard, loading, error, refresh } = useDashboard();
-  
+
   return {
     lurah: dashboard?.lurah || {
       name: 'Nama Lurah',
@@ -135,7 +181,7 @@ export function useLurah() {
 
 export function useWorkingHours() {
   const { dashboard, loading, error, refresh } = useDashboard();
-  
+
   return {
     workingHours: dashboard?.workingHours || {
       days: 'Senin - Jumat',
@@ -150,7 +196,7 @@ export function useWorkingHours() {
 
 export function useContact() {
   const { dashboard, loading, error, refresh } = useDashboard();
-  
+
   return {
     contact: dashboard?.contact || {
       phone: '+62 123 456 789',
@@ -167,13 +213,75 @@ export function useContact() {
 
 export function useSocialMedia() {
   const { dashboard, loading, error, refresh } = useDashboard();
-  
+
   return {
     socialMedia: dashboard?.socialMedia || {
       facebook: '',
       instagram: '',
       youtube: '',
       tiktok: ''
+    },
+    loading,
+    error,
+    refresh,
+  };
+}
+
+// PUBLIC hooks (tanpa auth - untuk halaman public)
+export function usePublicHero() {
+  const { dashboard, loading, error, refresh } = usePublicDashboard();
+
+  return {
+    hero: dashboard?.hero || {
+      image: '',
+      title: 'Selamat Datang di Desa Benteng Gajah',
+      subtitle: 'Melayani Masyarakat dengan Sepenuh Hati'
+    },
+    loading,
+    error,
+    refresh,
+  };
+}
+
+export function usePublicLurah() {
+  const { dashboard, loading, error, refresh } = usePublicDashboard();
+
+  return {
+    lurah: dashboard?.lurah || {
+      name: 'Nama Lurah',
+      photo: '',
+      position: 'Lurah Desa Benteng Gajah'
+    },
+    loading,
+    error,
+    refresh,
+  };
+}
+
+export function usePublicWorkingHours() {
+  const { dashboard, loading, error, refresh } = usePublicDashboard();
+
+  return {
+    workingHours: dashboard?.workingHours || {
+      days: 'Senin - Jumat',
+      hours: '08:00 - 16:00',
+      note: 'Sabtu: 08:00 - 12:00 (Pelayanan Terbatas)'
+    },
+    loading,
+    error,
+    refresh,
+  };
+}
+
+export function usePublicContact() {
+  const { dashboard, loading, error, refresh } = usePublicDashboard();
+
+  return {
+    contact: dashboard?.contact || {
+      phone: '+62 123 456 789',
+      email: 'pemerintahan.daerah@example.com',
+      address: 'contoh alamat',
+      whatsapp: '+62 123 456 789'
     },
     loading,
     error,

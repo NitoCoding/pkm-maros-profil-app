@@ -1,8 +1,8 @@
 import { IUmum } from '@/types/umum';
-import { CardPendudukIcon } from './CardPenduduk';
-import CardPenduduk from './CardPenduduk';
-import HeaderPage from './HeaderPage';
+
 import { usePenduduk } from '@/hooks/useUmum';
+import HeaderPage from '../layout/HeaderPage';
+import CardPenduduk from '../cards/CardPenduduk';
 
 export default function AdmPenduduk() {
   const { umum: penduduk, loading, error } = usePenduduk();

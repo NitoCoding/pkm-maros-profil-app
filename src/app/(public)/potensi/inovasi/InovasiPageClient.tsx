@@ -1,8 +1,8 @@
 'use client'
 
-import HeaderPage from '@/components/HeaderPage'
-import Main from '@/components/Main'
-import InovasiCard from '@/components/InovasiCard'
+import HeaderPage from '@/components/layout/HeaderPage'
+import Main from '@/components/layout/Main'
+import InovasiCard from '@/components/cards/InovasiCard'
 import { useInovasi } from '@/hooks/useInovasi'
 import { LoadMoreButton } from '@/components/ui/LoadMoreButton'
 import { ErrorState } from '@/components/ui/ErrorState'

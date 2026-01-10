@@ -8,7 +8,7 @@ import { IUser, IUserUpdate, IPasswordChange } from '@/types/user';
 import { ArrowLeft, User, Mail, Camera, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
-import PageHead from '@/components/PageHead';
+import PageHead from '@/components/layout/PageHead';
 import Image from 'next/image';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 

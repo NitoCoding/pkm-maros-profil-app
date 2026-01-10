@@ -1,6 +1,7 @@
 // src/hooks/useInovasi.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { IInovasi } from '@/types/inovasi';
+import { InovasiAdminFilters } from '@/libs/constant/inovasiFilter';
 
 interface UseInovasiResult {
   inovasi: IInovasi[];
@@ -333,4 +334,151 @@ export function useInovasiKategori() {
   }, []);
 
   return { kategori, loading, error };
+}
+
+// ============================================================================
+// ADMIN PAGINATED WITH FILTERS (Page-based)
+// ============================================================================
+
+interface UseInovasiAdminPaginatedResult {
+  inovasi: IInovasi[];
+  loading: boolean;
+  error: string | null;
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  setPage: (page: number) => void;
+  refresh: () => void;
+}
+
+interface UseInovasiAdminPaginatedOptions {
+  pageSize?: number;
+  initialLoad?: boolean;
+  filters?: InovasiAdminFilters;
+}
+
+export function useInovasiAdminPaginated({
+  pageSize = 10,
+  initialLoad = true,
+  filters: externalFilters = {},
+}: UseInovasiAdminPaginatedOptions = {}): UseInovasiAdminPaginatedResult {
+  const [inovasi, setInovasi] = useState<IInovasi[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const fetchInovasi = useCallback(
+    async (currentPage: number, currentFilters: InovasiAdminFilters) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const params = new URLSearchParams({
+          pageSize: pageSize.toString(),
+          page: currentPage.toString(),
+          admin: 'true',
+        });
+
+        if (currentFilters.search?.trim()) {
+          params.append('search', currentFilters.search.trim());
+        }
+        if (currentFilters.kategori?.trim()) {
+          params.append('kategori', currentFilters.kategori.trim());
+        }
+        if (currentFilters.tahun?.trim()) {
+          params.append('tahun', currentFilters.tahun.trim());
+        }
+
+        const response = await fetch(`/api/inovasi?${params.toString()}`);
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch inovasi');
+        }
+
+        if (result.success) {
+          const newInovasi = result.data.data || [];
+          setInovasi(newInovasi);
+          setTotal(result.data.total || 0);
+          setTotalPages(result.data.totalPages || 0);
+          setPage(result.data.page || currentPage);
+        }
+      } catch (err: any) {
+        setError(err.message);
+        console.error('Error fetching inovasi (admin):', err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pageSize]
+  );
+
+  // Handle filter changes
+  const prevFiltersRef = useRef<InovasiAdminFilters>(externalFilters);
+
+  useEffect(() => {
+    const filtersChanged =
+      prevFiltersRef.current.search !== externalFilters.search ||
+      prevFiltersRef.current.kategori !== externalFilters.kategori ||
+      prevFiltersRef.current.tahun !== externalFilters.tahun;
+
+    if (filtersChanged) {
+      setPage(1);
+      fetchInovasi(1, externalFilters);
+      prevFiltersRef.current = externalFilters;
+    }
+  }, [externalFilters, fetchInovasi]);
+
+  // Handle pageSize changes
+  const prevPageSizeRef = useRef(pageSize);
+  useEffect(() => {
+    if (prevPageSizeRef.current !== pageSize) {
+      const newPage = Math.min(
+        page,
+        Math.ceil((prevPageSizeRef.current * (page - 1) + 1) / pageSize)
+      );
+      setPage(newPage);
+      fetchInovasi(newPage, externalFilters);
+      prevPageSizeRef.current = pageSize;
+    }
+  }, [pageSize, page, externalFilters, fetchInovasi]);
+
+  // Handle page changes
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setPage(newPage);
+      fetchInovasi(newPage, externalFilters);
+    },
+    [externalFilters, fetchInovasi]
+  );
+
+  const refresh = useCallback(() => {
+    fetchInovasi(page, externalFilters);
+  }, [page, externalFilters, fetchInovasi]);
+
+  // Initial load
+  const hasInitializedRef = useRef(false);
+  useEffect(() => {
+    if (!hasInitializedRef.current && initialLoad) {
+      fetchInovasi(1, externalFilters);
+      hasInitializedRef.current = true;
+      prevFiltersRef.current = externalFilters;
+      prevPageSizeRef.current = pageSize;
+    }
+  }, []);
+
+  return {
+    inovasi,
+    loading,
+    error,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    setPage: handlePageChange,
+    refresh,
+  };
 }

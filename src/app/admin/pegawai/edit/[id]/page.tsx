@@ -63,7 +63,7 @@ const uploadImage = async (file: File): Promise<string> => {
 export default function EditPegawaiPage() {
 	const router = useRouter()
 	const params = useParams()
-	const id = Number(params.id)
+	const id = params.id as string
 	const [loading, setLoading] = useState(false)
 	const [uploading, setUploading] = useState(false)
 

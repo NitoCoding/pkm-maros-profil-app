@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Sidebar from '@/components/admin/Sidebar'
 import Topbar from '@/components/admin/Topbar'
 import { Toaster } from 'react-hot-toast'
-import { setupAuthListener, isAuthenticated, logout } from '@/libs/auth/token'
+import { logout } from '@/libs/auth/token'
 import { usePathname, useRouter } from 'next/navigation'
 
 function isMobileOrTablet() {
@@ -24,20 +24,43 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
   const pathname = usePathname()
   const [showDeviceModal, setShowDeviceModal] = useState(false)
 
+  // Sidebar state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Dynamic margin untuk main content berdasarkan sidebar state
+  const contentMarginClass = isMobile
+    ? 'ml-0'
+    : isSidebarCollapsed
+    ? 'ml-16'
+    : 'ml-64'
+
+  // Deteksi ukuran layar untuk auto-collapse sidebar
   useEffect(() => {
-    const cleanup = setupAuthListener()
+    const handleResize = () => {
+      const width = window.innerWidth
+      const newIsMobile = width < 768
+      setIsMobile(newIsMobile)
 
-    const checkAuthAndDevice = async () => {
-      // // console.log('AdminLayout: Checking authentication...')
-      const authenticated = await isAuthenticated()
-      // // console.log('AdminLayout: Is authenticated?', authenticated)
-
-      if (!authenticated) {
-        // // console.log(`AdminLayout: Not authenticated, redirecting to login with redirect=${pathname}`)
-        const loginUrl = `/login?redirect=${encodeURIComponent(pathname)}`
-        return router.push(loginUrl)
+      // Auto-collapse di desktop jika ukuran layar kecil
+      if (!newIsMobile && width < 1024) {
+        setIsSidebarCollapsed(true)
+      } else if (!newIsMobile && width >= 1024) {
+        setIsSidebarCollapsed(false)
       }
+    }
 
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
+    // Note: Auth check is now handled by middleware (server-side)
+    // Client-side cannot access httpOnly cookies, so we don't check auth here
+    // The middleware will automatically redirect unauthenticated users to /login
+
+    const checkDevice = async () => {
       // ✅ Cek: apakah sudah konfirmasi akses non-PC di sesi ini?
       const hasConfirmed = sessionStorage.getItem('admin_device_warning_dismissed')
 
@@ -47,12 +70,8 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
       }
     }
 
-    checkAuthAndDevice()
-
-    return () => {
-      cleanup?.()
-    }
-  }, [router, pathname])
+    checkDevice()
+  }, [pathname])
 
   const handleLogout = () => {
     logout()
@@ -97,8 +116,11 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
 
       {/* Layout Admin */}
       <div className='flex h-screen bg-gray-100'>
-        <Sidebar />
-        <div className='flex-1 flex flex-col overflow-hidden'>
+        <Sidebar
+          isCollapsed={isSidebarCollapsed}
+          onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
+        <div className={`${contentMarginClass} flex-1 flex flex-col overflow-hidden transition-all duration-300`}>
           <Topbar />
           <main className='flex-1 overflow-x-hidden overflow-y-auto bg-gray-100'>
             {children}

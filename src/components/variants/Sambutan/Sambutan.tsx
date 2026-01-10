@@ -1,15 +1,15 @@
 "use client";
 import Image from 'next/image'
-import { useLurah } from '@/hooks/useDashboard'
+import { usePublicLurah } from '@/hooks/useDashboard'
 import { useSambutan } from '@/hooks/useProfil'
 import { prepareHTMLForRender } from '@/libs/utils/htmlUtils'
 import { Quote, Mail, Phone } from 'lucide-react'
-import PageHead from '@/components/PageHead'
+import PageHead from '@/components/layout/PageHead'
 import { error } from 'console';
 
 export default function Sambutan() {
-	const { lurah, loading: lurahLoading, error: lurahError, refresh: refreshLurah } = useLurah();
-	const { profil: sambutan, loading: sambutanLoading, error: sambutanError, refresh: refreshSambutan } = useSambutan();
+	const { lurah, loading: lurahLoading, error: lurahError, refresh: refreshLurah } = usePublicLurah();
+	const { sambutan, loading: sambutanLoading, error: sambutanError, refresh: refreshSambutan } = useSambutan();
 
 
 	if (lurahLoading || sambutanLoading) {

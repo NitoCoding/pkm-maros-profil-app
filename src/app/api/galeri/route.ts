@@ -3,11 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   tambahGaleri,
   ambilGaleriPaginate,
+  ambilGaleriPaginateAdminWithFilters,
   ambilGaleriById,
   updateGaleri,
   hapusGaleri,
 } from "@/libs/api/galeri";
 import { IGaleriUpdate } from "@/types/galeri";
+import { GaleriAdminFilters } from "@/libs/constant/galeriFilter";
+import { transformId, transformIds, transformPaginatedResponse } from "@/libs/utils/responseTransform";
+import { decodeId } from "@/libs/utils/hashids";
 
 // Middleware akan menangani autentikasi dan menambahkan info user ke header
 function getUserFromRequest(request: NextRequest) {
@@ -45,10 +49,10 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await tambahGaleri(galeriData);
-    
+
     return NextResponse.json({
       success: true,
-      data: result,
+      data: transformId(result),
       message: "Galeri berhasil dibuat"
     }, { status: 201 });
     
@@ -66,22 +70,37 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
-    const cursor = searchParams.get("cursor");
+    const page = parseInt(searchParams.get("page") || "1");
+    const isAdmin = searchParams.get("admin") === "true";
 
     // If id is provided, get single galeri by id
     const id = searchParams.get("id");
     if (id) {
-      const galeri = await ambilGaleriById(id);
+      const galeri = await ambilGaleriById(decodeId(id).toString());
       if (!galeri) {
         return NextResponse.json({ error: "Galeri not found" }, { status: 404 });
       }
-      return NextResponse.json({ success: true, data: galeri });
+      return NextResponse.json({ success: true, data: transformId(galeri) });
     }
 
-    // Otherwise return paginated list
-    const result = await ambilGaleriPaginate(pageSize, cursor);
-      
-    return NextResponse.json({ success: true, data: result });
+    // Build filters from search params
+    const filters: GaleriAdminFilters = {};
+    if (searchParams.has('search')) filters.search = searchParams.get('search') || undefined;
+    if (searchParams.has('tanggalMulai')) filters.tanggalMulai = searchParams.get('tanggalMulai') || undefined;
+    if (searchParams.has('tanggalAkhir')) filters.tanggalAkhir = searchParams.get('tanggalAkhir') || undefined;
+
+    // Return paginated list
+    let result;
+    if (isAdmin) {
+      // Admin mode: use page-based pagination with filters
+      result = await ambilGaleriPaginateAdminWithFilters(page, pageSize, filters);
+    } else {
+      // Public mode: use cursor-based pagination (existing behavior)
+      const cursor = searchParams.get("cursor");
+      result = await ambilGaleriPaginate(pageSize, cursor);
+    }
+
+    return NextResponse.json({ success: true, data: transformPaginatedResponse(result) });
   } catch (error: any) {
     console.error("Error fetching galeri:", error);
     return NextResponse.json(
@@ -110,9 +129,8 @@ export async function PUT(request: NextRequest) {
       ...updateData,
       updatedBy: user.userId,
     };
-    // // console.log(dataWithTimestamp)
 
-    const success = await updateGaleri(id, dataWithTimestamp);
+    const success = await updateGaleri(decodeId(id).toString(), dataWithTimestamp);
     
     if (!success) {
       return NextResponse.json({ error: "Failed to update galeri or no changes made" }, { status: 400 });
@@ -146,7 +164,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const success = await hapusGaleri(id);
+    const success = await hapusGaleri(decodeId(id).toString());
     
     if (!success) {
       return NextResponse.json({ error: "Galeri not found" }, { status: 404 });

@@ -107,7 +107,7 @@ export default function AdminDashboardPage() {
   const getModalTitle = () => {
     const titles: Record<string, string> = {
       hero: "Gambar Hero",
-      lurah: "Informasi Lurah",
+      lurah: "Informasi Pemimpin Daerah",
       workingHours: "Jam Kerja",
       contact: "Informasi Kontak",
       socialMedia: "Media Sosial",
@@ -206,7 +206,7 @@ export default function AdminDashboardPage() {
                 <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                   <User className="w-4 h-4 text-green-600" />
                 </div>
-                <h3 className="text-lg font-semibold">Informasi Lurah</h3>
+                <h3 className="text-lg font-semibold">Informasi Pemimpin Daerah</h3>
               </div>
               <button
                 onClick={() => openModal("lurah")}

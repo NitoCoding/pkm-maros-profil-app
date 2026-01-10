@@ -2,7 +2,7 @@
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Metadata } from 'next';
-import StructuredData, { organizationData, websiteData } from '@/components/StructuredData';
+import StructuredData, { organizationData, websiteData } from '@/components/utils/StructuredData';
 
 export const metadata: Metadata = {
     title: {

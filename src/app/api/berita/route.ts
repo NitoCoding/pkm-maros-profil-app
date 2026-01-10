@@ -4,6 +4,7 @@ import {
   tambahBerita,
   ambilBeritaPaginate,
   ambilBeritaPaginateAdmin,
+  ambilBeritaPaginateAdminWithFilters,
   ambilBeritaById,
   updateBerita,
   hapusBerita,
@@ -11,6 +12,18 @@ import {
   ambilBeritaBySlugAdmin,
 } from "@/libs/api/berita";
 import { IBeritaUpdate } from "@/types/berita";
+import { parseFilterParams, hasActiveFilters, BeritaAdminFilters } from "@/libs/utils/filterBuilder";
+import { transformId, transformIds, transformPaginatedResponse } from "@/libs/utils/responseTransform";
+import { decodeId } from "@/libs/utils/hashids";
+import {
+  handleApiError,
+  ValidationError,
+  NotFoundError,
+  AuthenticationError,
+  unauthorized,
+  notFound,
+  validationError,
+} from "@/libs/security/errorHandler";
 
 // Middleware akan menangani autentikasi dan menambahkan info user ke header
 // Kita bisa mengaksesnya dari request.headers
@@ -31,10 +44,15 @@ export async function POST(request: NextRequest) {
   try {
     const user = getUserFromRequest(request);
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorized("Authentication required");
     }
 
     const data = await request.json();
+
+    // Basic validation
+    if (!data.judul || !data.isi) {
+      return validationError("Judul and isi are required", "judul");
+    }
 
     const beritaData = {
       ...data,
@@ -44,19 +62,15 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await tambahBerita(beritaData);
-    
+
     return NextResponse.json({
       success: true,
-      data: result,
+      data: transformId(result),
       message: "Berita berhasil dibuat"
     }, { status: 201 });
-    
+
   } catch (error: any) {
-    console.error("Error creating berita:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to create berita" },
-      { status: 500 }
-    );
+    return handleApiError(error, request);
   }
 }
 
@@ -65,44 +79,51 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
-    const cursor = searchParams.get("cursor");
+    const page = parseInt(searchParams.get("page") || "1");
     const isAdmin = searchParams.get("admin") === "true";
 
     // If slug is provided, get single berita by slug
     const slug = searchParams.get("slug");
     if (slug) {
-      const berita = isAdmin 
+      const berita = isAdmin
         ? await ambilBeritaBySlugAdmin(slug)
         : await ambilBeritaBySlug(slug);
       if (!berita) {
-        return NextResponse.json({ error: "Berita not found" }, { status: 404 });
+        return notFound("Berita");
       }
-      return NextResponse.json({ success: true, data: berita });
+      return NextResponse.json({ success: true, data: transformId(berita) });
     }
 
     // If id is provided, get single berita by id
     const id = searchParams.get("id");
     if (id) {
-      const berita = await ambilBeritaById(parseInt(id));
+      const berita = await ambilBeritaById(decodeId(id));
       if (!berita) {
-        return NextResponse.json({ error: "Berita not found" }, { status: 404 });
+        return notFound("Berita");
       }
-      // // console.log('Fetched berita by ID:', berita);
-      return NextResponse.json({ success: true, data: berita });
+      return NextResponse.json({ success: true, data: transformId(berita) });
     }
 
-    // Otherwise return paginated list
-    const result = isAdmin
-      ? await ambilBeritaPaginateAdmin(pageSize, cursor)
-      : await ambilBeritaPaginate(pageSize, cursor);
-      
-    return NextResponse.json({ success: true, data: result });
+    // Use centralized utility to parse filters
+    const filters = parseFilterParams(searchParams);
+    const hasFilters = hasActiveFilters(filters);
+
+    // Return paginated list
+    let result;
+    if (isAdmin && hasFilters) {
+      // Use filtered query for admin with filters
+      result = await ambilBeritaPaginateAdminWithFilters(page, pageSize, filters);
+    } else if (isAdmin) {
+      // Use regular admin query with page-based pagination
+      result = await ambilBeritaPaginateAdminWithFilters(page, pageSize, {});
+    } else {
+      // Use public query (TODO: update to page-based too if needed)
+      result = await ambilBeritaPaginateAdminWithFilters(page, pageSize, { status: 'published' });
+    }
+
+    return NextResponse.json({ success: true, data: transformPaginatedResponse(result) });
   } catch (error: any) {
-    console.error("Error fetching berita:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch berita" },
-      { status: 500 }
-    );
+    return handleApiError(error, request);
   }
 }
 
@@ -111,17 +132,14 @@ export async function PUT(request: NextRequest) {
   try {
     const user = getUserFromRequest(request);
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorized("Authentication required");
     }
 
     const data = await request.json();
-    // // console.log(id)
-    // // console.log(data)
     const { id, ...updateData } = data;
 
     if (!id) {
-      // // console.log(id)
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+      return validationError("ID is required", "id");
     }
 
     const dataWithTimestamp: IBeritaUpdate = {
@@ -129,22 +147,18 @@ export async function PUT(request: NextRequest) {
       updatedBy: user.userId,
     };
 
-    const success = await updateBerita(parseInt(id), dataWithTimestamp);
-    
+    const success = await updateBerita(decodeId(id), dataWithTimestamp);
+
     if (!success) {
-      return NextResponse.json({ error: "Failed to update berita or no changes made" }, { status: 400 });
+      return notFound("Berita");
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: "Berita updated successfully" 
+      message: "Berita updated successfully"
     });
   } catch (error: any) {
-    console.error("Error updating berita:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to update berita" },
-      { status: 500 }
-    );
+    return handleApiError(error, request);
   }
 }
 
@@ -153,31 +167,27 @@ export async function DELETE(request: NextRequest) {
   try {
     const user = getUserFromRequest(request);
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorized("Authentication required");
     }
 
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+      return validationError("ID is required", "id");
     }
 
-    const success = await hapusBerita(parseInt(id));
-    
+    const success = await hapusBerita(decodeId(id));
+
     if (!success) {
-      return NextResponse.json({ error: "Berita not found" }, { status: 404 });
+      return notFound("Berita");
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: "Berita deleted successfully" 
+      message: "Berita deleted successfully"
     });
   } catch (error: any) {
-    console.error("Error deleting berita:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to delete berita" },
-      { status: 500 }
-    );
+    return handleApiError(error, request);
   }
 }

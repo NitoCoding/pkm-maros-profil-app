@@ -28,7 +28,7 @@ function isValidJenis(value: any): value is JenisProfil {
 	return allowedJenis.includes(value);
 }
 
-// GET /api/profil - Get all or specific profil
+// GET /api/profil - Get all or specific profil (PUBLIC - no auth required)
 export async function GET(request: NextRequest) {
 	try {
 		const { searchParams } = new URL(request.url);

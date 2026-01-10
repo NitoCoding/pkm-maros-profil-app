@@ -15,9 +15,18 @@ export interface IPegawai {
 // Tipe untuk data yang bisa di-update
 export type IPegawaiUpdate = Partial<Omit<IPegawai, 'id' | 'createdAt'>>;
 
-// Tipe respons paginasi
-export interface IPegawaiPaginatedResponse {
+// Tipe respons paginasi cursor-based (untuk infinite scroll)
+export interface IPegawaiCursorPaginatedResponse {
   data: IPegawai[];
   hasMore: boolean;
   nextCursor: string | null;
+}
+
+// Tipe respons paginasi page-based (untuk admin dengan filter)
+export interface IPegawaiPaginatedResponse {
+  data: IPegawai[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }

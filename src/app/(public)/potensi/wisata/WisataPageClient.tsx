@@ -1,8 +1,8 @@
 'use client'
 
-import HeaderPage from '@/components/HeaderPage'
-import Main from '@/components/Main'
-import WisataCard from '@/components/WisataCard'
+import HeaderPage from '@/components/layout/HeaderPage'
+import Main from '@/components/layout/Main'
+import WisataCard from '@/components/cards/WisataCard'
 import { useWisata } from '@/hooks/useWisata'
 import { LoadMoreButton } from '@/components/ui/LoadMoreButton'
 import { ErrorState } from '@/components/ui/ErrorState'

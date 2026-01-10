@@ -1,20 +1,20 @@
 "use client";
-import HeaderPage from "@/components/HeaderPage";
-import Main from "@/components/Main";
+import HeaderPage from "@/components/layout/HeaderPage";
+import Main from "@/components/layout/Main";
 import { IPegawai } from "@/types/pegawai";
 import { IProfil } from "@/types/profil";
 import Image from "next/image";
 import { useProfil } from "@/hooks/useProfil";
 import { usePegawai } from "@/hooks/usePegawai";
 import { prepareHTMLForRender } from "@/libs/utils/htmlUtils";
-import PageHead from "@/components/PageHead";
-import CardStokLite from "@/components/CardStokLite";
+import PageHead from "@/components/layout/PageHead";
+import CardStokLite from "@/components/cards/CardStokLite";
 import { getCardStokImageUrl } from "@/libs/utils/cloudinary";
 import { MapPin } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // Dynamic import YouTubePlayer dengan SSR disabled
-const YouTubePlayer = dynamic(() => import("@/components/YouTubePlayer"), {
+const YouTubePlayer = dynamic(() => import("@/components/utils/YouTubePlayer"), {
   ssr: false,
   loading: () => (
     <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
@@ -66,7 +66,7 @@ export default function TentangPageClient() {
                 {video?.videoUrl ? (
                   <div className="flex justify-center w-full max-w-md sm:max-w-lg md:max-w-4xl mx-auto bg-white rounded-lg p-4 sm:p-6 shadow-lg">
                     <div className="w-full">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-3 text-center">Video Profil</h3>
+                      <h3 className="text-xl sm:text-2xl font-bold mb-4 text-green-700 text-center">Video Profil</h3>
                       <YouTubePlayer url={video.videoUrl} />
                     </div>
                   </div>

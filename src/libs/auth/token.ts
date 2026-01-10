@@ -1,5 +1,17 @@
 // src/libs/auth/token.ts
-import { verifyToken, refreshToken } from './jwt';
+// Note: JWT functions are imported dynamically to prevent client-side import issues
+
+// Lazy import JWT functions (server-side only)
+async function getJWTFunctions() {
+  if (typeof window !== 'undefined') {
+    throw new Error('JWT functions can only be used on the server side');
+  }
+  const jwt = await import('./jwt');
+  return {
+    verifyToken: jwt.verifyToken,
+    refreshToken: jwt.refreshToken,
+  };
+}
 
 // CLIENT-SIDE FUNCTIONS
 // Store token in cookie (client-side)
@@ -40,49 +52,63 @@ export function removeToken() {
 export async function getValidToken(): Promise<string | null> {
   try {
     const token = getToken();
-    
+
     if (!token) {
       return null;
     }
-    
-    // Try to verify the token
-    verifyToken(token);
-    
-    return token;
-    
-  } catch (error) {
-    // Token is invalid, try to refresh it
-    try {
-      const currentToken = getToken();
-      if (currentToken) {
-        const freshToken = await refreshToken(currentToken);
-        setToken(freshToken);
-        return freshToken;
-      }
-    } catch (refreshError) {
-      // Refresh failed, remove token
-      removeToken();
+
+    // Try to verify the token via API
+    const response = await fetch('/api/auth/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    });
+
+    if (response.ok) {
+      return token;
     }
-    
+
+    // Token is invalid, try to refresh
+    const refreshResponse = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (refreshResponse.ok) {
+      return getToken(); // New token already set as cookie
+    }
+
+    // Refresh failed
+    removeToken();
+    return null;
+
+  } catch (error) {
     return null;
   }
 }
 
 // Check if user is authenticated (client-side)
 export async function isAuthenticated(): Promise<boolean> {
-  const token = getToken(); // Tidak perlu await di sini
-  if (!token) {
-    // // console.log('Client: isAuthenticated() -> false (no token)');
+  const token = getToken();
 
-    return true;
+  if (!token) {
+    return false;
   }
-  
+
+  // Verify token via API (server-side)
   try {
-    verifyToken(token);
-    // console.log('Client: isAuthenticated() -> true (token valid)');
-    return true;
+    const response = await fetch('/api/auth/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    });
+
+    return response.ok;
   } catch (error) {
-    // console.log('Client: isAuthenticated() -> false (token invalid)', error);
     return false;
   }
 }
@@ -94,17 +120,33 @@ export function setupAuthListener() {
     const token = getToken();
     if (token) {
       try {
-        verifyToken(token);
-      } catch (error) {
-        // Token is expired, try to refresh
-        try {
-          const freshToken = await refreshToken(token);
-          setToken(freshToken);
-        } catch (refreshError) {
-          // Refresh failed, redirect to login
-          removeToken();
-          window.location.href = '/login';
+        // Verify via API
+        const response = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token }),
+        });
+
+        if (!response.ok) {
+          // Token is expired, try to refresh
+          const refreshResponse = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            credentials: 'include',
+          });
+
+          if (!refreshResponse.ok) {
+            // Refresh failed, redirect to login
+            removeToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login';
+            }
+          }
         }
+      } catch (error) {
+        // Network error, ignore
+        console.warn('Auth check failed:', error);
       }
     }
   }, 5 * 60 * 1000); // 5 minutes
@@ -115,14 +157,23 @@ export function setupAuthListener() {
 // Get current user from token (client-side)
 export async function getCurrentUser(): Promise<any> {
   try {
-    const token = await getValidToken();
+    const token = getToken();
     if (!token) {
       return null;
     }
-    
-    const decoded = verifyToken(token);
-    return decoded;
-    
+
+    // Get user from API
+    const response = await fetch('/api/auth/me', {
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return data.user;
+
   } catch (error) {
     return null;
   }
@@ -148,7 +199,7 @@ export async function logout() {
 
     // Arahkan pengguna ke halaman login
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.href = '/';
     }
 
     return { success: true };
@@ -158,7 +209,7 @@ export async function logout() {
     // Fallback jika ada error jaringan
     removeToken();
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     return { success: false, error: 'Network error' };
   }
@@ -198,23 +249,25 @@ export async function removeAuthToken() {
 export async function getValidAuthToken(): Promise<string | null> {
   if (typeof window === 'undefined') {
     try {
+      const jwtFunctions = await getJWTFunctions();
       const token = await getAuthToken();
-      
+
       if (!token) {
         return null;
       }
-      
+
       // Try to verify the token
-      verifyToken(token);
-      
+      jwtFunctions.verifyToken(token);
+
       return token;
-      
+
     } catch (error) {
       // Token is invalid, try to refresh it
       try {
         const currentToken = await getAuthToken();
         if (currentToken) {
-          const freshToken = await refreshToken(currentToken);
+          const jwtFunctions = await getJWTFunctions();
+          const freshToken = await jwtFunctions.refreshToken(currentToken);
           await setAuthToken(freshToken);
           return freshToken;
         }
@@ -222,7 +275,7 @@ export async function getValidAuthToken(): Promise<string | null> {
         // Refresh failed, remove token
         await removeAuthToken();
       }
-      
+
       return null;
     }
   }
@@ -236,14 +289,15 @@ export async function isServerAuthenticated(): Promise<boolean> {
 export async function getServerCurrentUser(): Promise<any> {
   if (typeof window === 'undefined') {
     try {
+      const jwtFunctions = await getJWTFunctions();
       const token = await getValidAuthToken();
       if (!token) {
         return null;
       }
-      
-      const decoded = verifyToken(token);
+
+      const decoded = jwtFunctions.verifyToken(token);
       return decoded;
-      
+
     } catch (error) {
       return null;
     }

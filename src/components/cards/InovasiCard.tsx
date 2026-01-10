@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, Facebook } from 'lucide-react'
 import { IInovasi } from '@/types/inovasi'
-import SocialMediaIcons from './SocialMediaIcons'
+import SocialMediaIcons from '@/components/utils/SocialMediaIcons'
+import { KategoriBadge } from '@/libs/utils/kategoriBadge'
 
 export default function InovasiCard({ inovasi }: { inovasi: IInovasi }) {
     const [activeImage, setActiveImage] = useState(0)
@@ -110,6 +111,17 @@ export default function InovasiCard({ inovasi }: { inovasi: IInovasi }) {
                 {/* Kolom Kanan: Info */}
                 <div className='md:w-2/5 p-6 flex flex-col justify-between'>
                     <div>
+                        {/* Kategori Badge */}
+                        {inovasi.kategori && (
+                            <div className='mb-3'>
+                                <KategoriBadge
+                                    kategori={inovasi.kategori}
+                                    type='inovasi'
+                                    style='solid'
+                                />
+                            </div>
+                        )}
+
                         <h3 className='text-2xl font-bold text-gray-800'>
                             {inovasi.judul || 'Judul Tidak Tersedia'}
                         </h3>

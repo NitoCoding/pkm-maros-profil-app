@@ -1,6 +1,6 @@
 // src/app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { generateToken } from '@/libs/auth/jwt';
+import { generateTokenPair } from '@/libs/auth/jwt';
 import { validateUserCredentials } from '@/libs/auth/database';
 
 export async function POST(request: NextRequest) {
@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const token = await generateToken({
+    // Generate token pair (access + refresh)
+    const tokenPair = await generateTokenPair({
       id: user.id,
       email: user.email,
       name: user.name || '',
@@ -40,13 +41,24 @@ export async function POST(request: NextRequest) {
         role: user.role,
         avatar_url: user.avatar_url,
       },
+      tokenExpiresIn: tokenPair.accessExpiresIn, // 15 minutes
     });
 
-    response.cookies.set('token', token, {
+    // Set access token as cookie
+    response.cookies.set('token', tokenPair.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60, // 7 hari
+      maxAge: tokenPair.accessExpiresIn,
+      path: '/',
+    });
+
+    // Set refresh token as cookie (longer-lived)
+    response.cookies.set('refreshToken', tokenPair.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: tokenPair.refreshExpiresIn,
       path: '/',
     });
 

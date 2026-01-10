@@ -19,18 +19,6 @@ async function seedTestAccounts() {
         name: 'Admin User',
         role: 'admin'
       },
-      {
-        email: 'user@test.com',
-        password: 'user123',
-        name: 'Regular User',
-        role: 'user'
-      },
-      {
-        email: 'editor@test.com',
-        password: 'editor123',
-        name: 'Editor User',
-        role: 'editor'
-      }
     ];
     
     // Create test accounts

@@ -1,7 +1,7 @@
 // src/components/layout/PageWrapper.tsx
-import HeaderPage from '@/components/HeaderPage'
-import Main from '@/components/Main'
-import PageHead from '@/components/PageHead'
+import HeaderPage from '@/components/layout/HeaderPage'
+import Main from '@/components/layout/Main'
+import PageHead from '@/components/layout/PageHead'
 
 type PageWrapperProps = {
     title: string
@@ -28,7 +28,7 @@ export default function PageWrapper({
                         <HeaderPage
                             title={title}
                             description={description}
-                            customClass="mx-auto text-center mb-6"
+                            customClass="mx-auto text-center"
                         />
                         <div className={className}>
                             {children}

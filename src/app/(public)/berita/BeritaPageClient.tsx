@@ -1,9 +1,9 @@
 'use client'
 // pkm-maros-profil-app\src\app\(public)\berita\BeritaPageClient.tsx
 import { useBerita } from '@/hooks/useBerita'
-import BeritaCard from '@/components/CardBerita'
-import HeaderPage from '@/components/HeaderPage'
-import Main from '@/components/Main'
+import BeritaCard from '@/components/cards/CardBerita'
+import HeaderPage from '@/components/layout/HeaderPage'
+import Main from '@/components/layout/Main'
 import { Loader2 } from 'lucide-react'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -14,7 +14,7 @@ export default function BeritaPageClient() {
 	const { berita, loading, error, hasMore, loadMore } = useBerita({ pageSize: 12 })
 
 	return (
-		<div className='pt-12 min-h-screen pb-3'>
+		<div className='min-h-screen pb-3'>
 			<Main>
 				<div className='mt-5 px-4 sm:px-6 lg:px-8'>
 					<div className='container mx-auto max-w-7xl'>

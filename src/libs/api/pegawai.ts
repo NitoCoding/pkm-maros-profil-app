@@ -1,7 +1,31 @@
 // src/libs/pegawai.ts
 import { executeQuery, executeSingleQuery } from '@/libs/database';
-import { IPegawai, IPegawaiPaginatedResponse, IPegawaiUpdate } from '@/types/pegawai';
+import { IPegawai, IPegawaiPaginatedResponse, IPegawaiCursorPaginatedResponse, IPegawaiUpdate } from '@/types/pegawai';
+import { PegawaiAdminFilters } from '@/libs/constant/pegawaiFilter';
 import { v4 as uuidv4 } from 'uuid';
+
+// ============================================================================
+// FILTER UTILITIES
+// ============================================================================
+export function buildPegawaiFilterWhereClause(filters: PegawaiAdminFilters): { whereClause: string; params: any[] } {
+  const conditions: string[] = [];
+  const params: any[] = [];
+
+  if (filters.search?.trim()) {
+    conditions.push('(nama LIKE ? OR jabatan LIKE ?)');
+    const pattern = `%${filters.search.trim()}%`;
+    params.push(pattern, pattern);
+  }
+
+  return {
+    whereClause: conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '',
+    params
+  };
+}
+
+export function hasActivePegawaiFilters(filters: PegawaiAdminFilters): boolean {
+  return !!(filters.search?.trim());
+}
 
 // Menambah pegawai baru
 export async function tambahPegawai(data: Omit<IPegawai, 'id' | 'id_uuid' | 'createdAt' | 'updatedAt'>): Promise<IPegawai> {
@@ -29,22 +53,22 @@ export async function tambahPegawai(data: Omit<IPegawai, 'id' | 'id_uuid' | 'cre
 	return newPegawai;
 }
 
-// Mengambil pegawai dengan paginasi
-export async function ambilPegawaiPaginate(pageSize: number, cursor: string | null = null): Promise<IPegawaiPaginatedResponse> {
+// Mengambil pegawai dengan paginasi (cursor-based untuk infinite scroll)
+export async function ambilPegawaiPaginate(pageSize: number, cursor: string | null = null): Promise<IPegawaiCursorPaginatedResponse> {
 	let query = `
-    SELECT 
-      id, id_uuid, nama, jabatan, foto_url, tampilkan_di_beranda, urutan_beranda, 
+    SELECT
+      id, id_uuid, nama, jabatan, foto_url, tampilkan_di_beranda, urutan_beranda,
       created_at, updated_at
     FROM pegawai
   `;
 	const params: any[] = [];
 
 	if (cursor) {
-    query += ` AND id < ?`;
+    query += ` WHERE id < ?`;
     params.push(parseInt(cursor));
   }
 
-  query += ` ORDER BY id DESC LIMIT ?`;
+	query += ` ORDER BY id DESC LIMIT ?`;
   params.push(pageSize + 1);
 
 	const results = await executeQuery<any>(query, params);
@@ -66,6 +90,62 @@ export async function ambilPegawaiPaginate(pageSize: number, cursor: string | nu
 	const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].id.toString() : null;
 
 	return { data, hasMore, nextCursor };
+}
+
+// Mengambil pegawai dengan paginasi (page-based untuk admin dengan filter)
+export async function ambilPegawaiPaginateAdminWithFilters(
+  page: number = 1,
+  pageSize: number = 10,
+  filters: PegawaiAdminFilters = {}
+): Promise<IPegawaiPaginatedResponse> {
+  // Build WHERE clause dari filters
+  const { whereClause, params } = buildPegawaiFilterWhereClause(filters);
+
+  // Count total query
+  const countQuery = `
+    SELECT COUNT(*) as total
+    FROM pegawai
+    ${whereClause}
+  `;
+  const countResult = await executeSingleQuery<{ total: number }>(countQuery, params);
+  const total = countResult?.total || 0;
+
+  // Calculate offset
+  const offset = (page - 1) * pageSize;
+
+  // Data query
+  const dataQuery = `
+    SELECT
+      id, id_uuid, nama, jabatan, foto_url, tampilkan_di_beranda, urutan_beranda,
+      created_at, updated_at
+    FROM pegawai
+    ${whereClause}
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `;
+  const results = await executeQuery<any>(dataQuery, [...params, pageSize, offset]);
+
+  const data = results.map((row) => ({
+    id: row.id,
+    id_uuid: row.id_uuid,
+    nama: row.nama,
+    jabatan: row.jabatan,
+    fotoUrl: row.foto_url,
+    tampilkanDiBeranda: Boolean(row.tampilkan_di_beranda),
+    urutanBeranda: row.urutan_beranda,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  }));
+
+  const totalPages = Math.ceil(total / pageSize);
+
+  return {
+    data,
+    total,
+    page,
+    pageSize,
+    totalPages
+  };
 }
 
 // Mengambil satu pegawai berdasarkan ID

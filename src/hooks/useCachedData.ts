@@ -147,8 +147,8 @@ export function useHeroCached() {
   // Memoize fetchHeroData to prevent unnecessary re-renders
   const fetchHeroData = useMemo(() => async () => {
     try {
-      // console.log('[HERO] Fetching from /api/dashboard...');
-      const response = await fetch('/api/dashboard');
+      // console.log('[HERO] Fetching from /api/public/dashboard...');
+      const response = await fetch('/api/public/dashboard');
       const result = await response.json();
 
       // console.log('[HERO] API Response:', result);
@@ -163,11 +163,11 @@ export function useHeroCached() {
       // console.log('[HERO] Result data hero', result.data?.hero);
       // console.log('[HERO] Result hero', result.hero);
 
-      if (result.hero) {
+      if (result.success && result.data?.hero) {
         const heroData = {
-          image: result.hero.image || '',
-          title: result.hero.title || 'Selamat Datang Di Website Desa Benteng Gajah',
-          subtitle: result.hero.subtitle || 'Desa Benteng Gajah, Kecamatan Panca Lautang, Kabupaten Sidrap'
+          image: result.data.hero.image || '',
+          title: result.data.hero.title || 'Selamat Datang Di Website Desa Benteng Gajah',
+          subtitle: result.data.hero.subtitle || 'Desa Benteng Gajah, Kecamatan Panca Lautang, Kabupaten Sidrap'
         };
         // console.log('[HERO] Processed hero data:', heroData);
         return heroData;
@@ -196,7 +196,7 @@ export function useHeroCached() {
     title: 'Selamat Datang Di Website Desa Benteng Gajah',
     subtitle: 'Desa Benteng Gajah, Kecamatan Panca Lautang, Kabupaten Sidrap'
   };
-  
+
   return useCachedData(
     'HERO',
     fetchHeroData,
@@ -208,33 +208,32 @@ export function useSambutanCached() {
   // Memoize fetchSambutanData to prevent unnecessary re-renders
   const fetchSambutanData = useMemo(() => async () => {
     try {
-      // console.log('[SAMBUTAN] Fetching from /api/dashboard...');
-      const response = await fetch('/api/dashboard');
-      const result = await response.json();
+      // Fetch sambutan from profil API
+      const profilResponse = await fetch('/api/profil?jenis=sambutan');
+      const profilResult = await profilResponse.json();
 
-      // console.log('[SAMBUTAN] API Response:', result);
+      // Fetch lurah info from public dashboard API
+      const dashboardResponse = await fetch('/api/public/dashboard');
+      const dashboardResult = await dashboardResponse.json();
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch sambutan data');
+      // Combine data
+      let sambutanData = {
+        judul: 'Sambutan Lurah',
+        isi: 'Selamat datang di website resmi Desa Benteng Gajah. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
+        gambar: ''
+      };
+
+      if (profilResult.success && profilResult.data) {
+        sambutanData.judul = profilResult.data.judul || sambutanData.judul;
+        sambutanData.isi = profilResult.data.isi || sambutanData.isi;
+        sambutanData.gambar = profilResult.data.gambar || sambutanData.gambar;
       }
 
-      if (result.sambutan) {
-        const sambutanData = {
-          judul: result.sambutan.judul || 'Sambutan Lurah',
-          isi: result.sambutan.isi || 'Selamat datang di website resmi Desa Benteng Gajah. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
-          gambar: result.sambutan.gambar || ''
-        };
-        // console.log('[SAMBUTAN] Processed sambutan data:', sambutanData);
-        return sambutanData;
-      } else {
-        // Fallback data if no sambutan found
-        // console.log('[SAMBUTAN] No sambutan data found, using fallback');
-        return {
-          judul: 'Sambutan Lurah',
-          isi: 'Selamat datang di website resmi Desa Benteng Gajah. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
-          gambar: ''
-        };
+      if (dashboardResult.success && dashboardResult.data?.lurah?.photo) {
+        sambutanData.gambar = dashboardResult.data.lurah.photo || sambutanData.gambar;
       }
+
+      return sambutanData;
     } catch (error) {
       console.error('[SAMBUTAN] Error fetching sambutan data:', error);
       // Return fallback data on error
@@ -251,7 +250,7 @@ export function useSambutanCached() {
     isi: 'Selamat datang di website resmi Desa Benteng Gajah. Kami berkomitmen untuk memberikan pelayanan terbaik kepada masyarakat dengan mengutamakan transparansi, akuntabilitas, dan partisipasi aktif dari seluruh warga.',
     gambar: ''
   };
-  
+
   return useCachedData(
     'SAMBUTAN',
     fetchSambutanData,
@@ -263,8 +262,8 @@ export function useFooterCached() {
   // Memoize fetchFooterData to prevent unnecessary re-renders
   const fetchFooterData = useMemo(() => async () => {
     try {
-      // console.log('[FOOTER] Fetching from /api/dashboard...');
-      const response = await fetch('/api/dashboard');
+      // console.log('[FOOTER] Fetching from /api/public/dashboard...');
+      const response = await fetch('/api/public/dashboard');
       const result = await response.json();
 
       // console.log('[FOOTER] API Response:', result);
@@ -273,16 +272,16 @@ export function useFooterCached() {
         throw new Error(result.error || 'Failed to fetch footer data');
       }
 
-      if (result.contact) {
+      if (result.success && result.data?.contact) {
         const footerData = {
-          alamat: result.contact.address || 'Contoh Alamat',
-          telepon: result.contact.phone || '031 3970961',
-          email: result.contact.email || '',
-          jamKerja: result.workingHours?.hours || 'Senin - Jumat: 08.00 - 15.00',
+          alamat: result.data.contact.address || 'Contoh Alamat',
+          telepon: result.data.contact.phone || '031 3970961',
+          email: result.data.contact.email || '',
+          jamKerja: result.data.workingHours?.hours || 'Senin - Jumat: 08.00 - 15.00',
           sosialMedia: {
-            facebook: result.contact.facebook || '',
-            instagram: result.contact.instagram || '',
-            youtube: result.contact.youtube || ''
+            facebook: result.data.contact.facebook || '',
+            instagram: result.data.contact.instagram || '',
+            youtube: result.data.contact.youtube || ''
           }
         };
         // console.log('[FOOTER] Processed footer data:', footerData);

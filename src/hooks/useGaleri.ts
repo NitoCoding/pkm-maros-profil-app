@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { IGaleri } from '@/types/galeri'
 import { set } from 'zod'
+import { GaleriAdminFilters } from '@/libs/constant/galeriFilter'
 
 interface UseGaleriResult {
   galeri: IGaleri[]
@@ -185,6 +186,127 @@ export function useAdminGaleri(options: UseGaleriOptions = {}): UseGaleriResult 
   }
 }
 
+// ============================================================================
+// ADMIN GALERI WITH FILTERS & PAGE-BASED PAGINATION
+// ============================================================================
+interface UseGaleriAdminResult {
+  galeri: IGaleri[]
+  loading: boolean
+  error: string | null
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+  setPage: (page: number) => void
+  refresh: () => void
+}
+
+interface UseGaleriAdminOptions {
+  pageSize?: number
+  initialLoad?: boolean
+  filters?: GaleriAdminFilters
+  resetPageOnFilterChange?: boolean
+}
+
+export function useGaleriAdminPaginated({
+  pageSize = 10,
+  initialLoad = true,
+  filters: externalFilters = {},
+  resetPageOnFilterChange = true
+}: UseGaleriAdminOptions = {}): UseGaleriAdminResult {
+  const [galeri, setGaleri] = useState<IGaleri[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+
+  const fetchGaleri = useCallback(
+    async (currentPage: number, currentFilters: GaleriAdminFilters) => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const params = new URLSearchParams({
+          pageSize: pageSize.toString(),
+          page: currentPage.toString(),
+          admin: 'true',
+        })
+
+        if (currentFilters.search?.trim()) params.append('search', currentFilters.search.trim())
+        if (currentFilters.tanggalMulai?.trim()) params.append('tanggalMulai', currentFilters.tanggalMulai.trim())
+        if (currentFilters.tanggalAkhir?.trim()) params.append('tanggalAkhir', currentFilters.tanggalAkhir.trim())
+
+        const response = await fetch(`/api/galeri?${params.toString()}`)
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch galeri')
+        }
+
+        if (result.success) {
+          const newGaleri = result.data.data || []
+          setGaleri(newGaleri)
+          setTotal(result.data.total || 0)
+          setTotalPages(result.data.totalPages || 0)
+          setPage(result.data.page || currentPage)
+        }
+      } catch (err: any) {
+        setError(err.message)
+        console.error('Error fetching galeri (admin):', err)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [pageSize]
+  )
+
+  // Independent filter change handling
+  const prevFiltersRef = useRef<GaleriAdminFilters>(externalFilters)
+
+  useEffect(() => {
+    const hasChanged = JSON.stringify(prevFiltersRef.current) !== JSON.stringify(externalFilters)
+    if (hasChanged) {
+      const targetPage = resetPageOnFilterChange ? 1 : page
+      setPage(targetPage)
+      fetchGaleri(targetPage, externalFilters)
+      prevFiltersRef.current = externalFilters
+    }
+  }, [externalFilters, fetchGaleri, page, resetPageOnFilterChange])
+
+  // Handle page changes independently
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage)
+    fetchGaleri(newPage, externalFilters)
+  }, [externalFilters, fetchGaleri])
+
+  const refresh = useCallback(() => {
+    fetchGaleri(page, externalFilters)
+  }, [page, externalFilters, fetchGaleri])
+
+  // Initial load
+  const hasInitializedRef = useRef(false)
+  useEffect(() => {
+    if (!hasInitializedRef.current && initialLoad) {
+      fetchGaleri(1, externalFilters)
+      hasInitializedRef.current = true
+      prevFiltersRef.current = externalFilters
+    }
+  }, [])
+
+  return {
+    galeri,
+    loading,
+    error,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    setPage: handlePageChange,
+    refresh,
+  }
+}
+
 
 // Hook untuk single galeri by id
 export function useGaleriById(id: string) {
@@ -230,32 +352,36 @@ export function useLatestGaleri(limit = 6) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchLatestGaleri = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchLatestGaleri = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const response = await fetch(`/api/galeri?pageSize=${limit}`);
-        const result = await response.json();
+      const response = await fetch(`/api/galeri?pageSize=${limit}`);
+      const result = await response.json();
 
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to fetch latest galeri');
-        }
-
-        if (result.success) {
-          setGaleri(result.data.data || []); // PERBAIKAN: akses result.data.data
-        }
-      } catch (err: any) {
-        setError(err.message);
-        console.error('Error fetching latest galeri:', err);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch latest galeri');
       }
-    };
 
-    fetchLatestGaleri();
+      if (result.success) {
+        setGaleri(result.data.data || []); // PERBAIKAN: akses result.data.data
+      }
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error fetching latest galeri:', err);
+    } finally {
+      setLoading(false);
+    }
   }, [limit]);
 
-  return { galeri, loading, error };
+  useEffect(() => {
+    fetchLatestGaleri();
+  }, [fetchLatestGaleri]);
+
+  const refresh = useCallback(() => {
+    fetchLatestGaleri();
+  }, [fetchLatestGaleri]);
+
+  return { galeri, loading, error, refresh };
 }

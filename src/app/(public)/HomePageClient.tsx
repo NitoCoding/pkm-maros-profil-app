@@ -1,12 +1,12 @@
 "use client";
-import AdmPenduduk from '@/components/AdmPenduduk';
-import Berita from '@/components/Berita';
-import Galeri from '@/components/Galeri';
-import HeroCached from '@/components/HeroCached';
-import Main from '@/components/Main';
-import MapSimple from '@/components/MapSimple';
-import Sambutan from '@/components/Sambutan';
-import STOK from '@/components/STOK';
+import AdmPenduduk from '@/components/utils/AdmPenduduk';
+import Berita from '@/components/sections/Berita';
+import Galeri from '@/components/sections/Galeri';
+import HeroCached from '@/components/variants/Hero/HeroCached';
+import Main from '@/components/layout/Main';
+import MapSimple from '@/components/maps/MapSimple';
+import Sambutan from '@/components/variants/Sambutan/Sambutan';
+import STOK from '@/components/sections/STOK';
 
 
 export default function HomePageClient() {

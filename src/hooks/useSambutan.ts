@@ -20,11 +20,29 @@ export function useSambutan() {
 
 			// Fetch sambutan text from profil API
 			const profilResponse = await fetch('/api/profil?jenis=sambutan');
-			const profilResult = await profilResponse.json();
+			let profilData = null;
+
+			try {
+				const profilResult = await profilResponse.json();
+				if (profilResponse.ok && profilResult.success && profilResult.data) {
+					profilData = profilResult.data;
+				}
+			} catch (jsonError) {
+				console.warn('Failed to parse profil response:', jsonError);
+			}
 
 			// Fetch lurah data from dashboard API
 			const dashboardResponse = await fetch('/api/dashboard');
-			const dashboardResult = await dashboardResponse.json();
+			let lurahData = null;
+
+			try {
+				const dashboardResult = await dashboardResponse.json();
+				if (dashboardResponse.ok && dashboardResult.success && dashboardResult.data?.lurah) {
+					lurahData = dashboardResult.data.lurah;
+				}
+			} catch (jsonError) {
+				console.warn('Failed to parse dashboard response:', jsonError);
+			}
 
 			let sambutanData: ISambutan = {
 				judul: 'Sambutan Lurah',
@@ -35,32 +53,27 @@ export function useSambutan() {
 			};
 
 			// Process profil data (sambutan text)
-			if (profilResponse.ok && profilResult.success && profilResult.data) {
-				const profilSambutan = profilResult.data;
-                // // console.log('profilSambutan',profilSambutan);
-				sambutanData.judul = profilSambutan.judul || 'Sambutan Lurah';
-				sambutanData.isi = profilSambutan.isi || sambutanData.isi;
-				sambutanData.gambar = profilSambutan.gambar || '';
+			if (profilData) {
+				sambutanData.judul = profilData.judul || 'Sambutan Lurah';
+				// Pastikan isi adalah string valid
+				sambutanData.isi = typeof profilData.isi === 'string'
+					? profilData.isi
+					: sambutanData.isi;
+				sambutanData.gambar = profilData.gambar || '';
 			}
-            // // console.log(profilResult);
-            // // console.log(sambutanData);
 
 			// Process dashboard data (lurah info)
-			if (dashboardResponse.ok && dashboardResult.success && dashboardResult.data?.lurah) {
-				const lurahData = dashboardResult.data.lurah;
-                // // console.log('lurahData',lurahData);
+			if (lurahData) {
 				sambutanData.namaLurah = lurahData.name || 'H. ALIMUDDIN, S.Sos.';
 				sambutanData.jabatanLurah = lurahData.position || 'Lurah';
-                sambutanData.gambar = lurahData.photo || '';
+				sambutanData.gambar = lurahData.photo || sambutanData.gambar;
 			}
-            // // console.log('dashboardResult',dashboardResult);
-            // // console.log(sambutanData);
 
 			setSambutan(sambutanData);
 		} catch (err: any) {
 			setError(err.message);
 			console.error('Error fetching sambutan:', err);
-			
+
 			// Set fallback data on error
 			setSambutan({
 				judul: 'Sambutan Lurah',

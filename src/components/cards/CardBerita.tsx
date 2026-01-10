@@ -3,6 +3,7 @@ import { IBerita } from '@/types/berita';
 import { Calendar } from 'lucide-react';
 import { getHTMLPreview, estimateReadingTime } from '@/libs/utils/htmlUtils';
 import { formatDateLong } from '@/libs/utils/date';
+import { KategoriBadge, StatusBadge } from '@/libs/utils/kategoriBadge';
 
 export default function BeritaCard({ berita }: { berita: IBerita }) {
 	return (
@@ -19,6 +20,23 @@ export default function BeritaCard({ berita }: { berita: IBerita }) {
 				</div>
 				<div className="flex flex-col flex-1 p-4 sm:p-6">
 					<div className="flex-1">
+						{/* Badges */}
+						<div className="flex gap-2 mb-2">
+							{berita.kategori && (
+								<KategoriBadge
+									kategori={berita.kategori}
+									type="berita"
+									style="solid"
+								/>
+							)}
+							{berita.status && (
+								<StatusBadge
+									status={berita.status}
+									style="solid"
+								/>
+							)}
+						</div>
+
 						<h3 className="text-lg sm:text-xl font-semibold mb-3 line-clamp-2 text-gray-800">{berita.judul}</h3>
 						<p className="text-sm text-gray-600 line-clamp-3 leading-relaxed mb-4">
 							{getHTMLPreview(berita.isi, 120)}

@@ -51,3 +51,12 @@ export interface IWisataPaginatedResponse {
   hasMore: boolean
   nextCursor: string | null
 }
+
+// Tipe respons paginasi page-based (untuk admin dengan filter)
+export interface IWisataPagePaginatedResponse {
+  data: IWisata[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}

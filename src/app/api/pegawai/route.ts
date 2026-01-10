@@ -3,11 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   tambahPegawai,
   ambilPegawaiPaginate,
+  ambilPegawaiPaginateAdminWithFilters,
   ambilPegawaiById,
   updatePegawai,
   hapusPegawai,
 } from "@/libs/api/pegawai";
 import { IPegawaiUpdate } from "@/types/pegawai";
+import { PegawaiAdminFilters } from "@/libs/constant/pegawaiFilter";
+import { transformId, transformIds, transformPaginatedResponse } from "@/libs/utils/responseTransform";
+import { decodeId } from "@/libs/utils/hashids";
 
 // Middleware akan menangani autentikasi dan menambahkan info user ke header
 function getUserFromRequest(request: NextRequest) {
@@ -40,10 +44,10 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await tambahPegawai(pegawaiData);
-    
+
     return NextResponse.json({
       success: true,
-      data: result,
+      data: transformId(result),
       message: "Pegawai berhasil dibuat"
     }, { status: 201 });
     
@@ -61,20 +65,34 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
-    const cursor = searchParams.get("cursor");
+    const page = parseInt(searchParams.get("page") || "1");
+    const isAdmin = searchParams.get("admin") === "true";
     const id = searchParams.get("id");
 
     if (id) {
-      const pegawai = await ambilPegawaiById(parseInt(id));
+      const pegawai = await ambilPegawaiById(decodeId(id));
       if (!pegawai) {
         return NextResponse.json({ error: "Pegawai not found" }, { status: 404 });
       }
-      return NextResponse.json({ success: true, data: pegawai });
+      return NextResponse.json({ success: true, data: transformId(pegawai) });
     }
 
-    const result = await ambilPegawaiPaginate(pageSize, cursor);
-      
-    return NextResponse.json({ success: true, data: result });
+    // Build filters from search params
+    const filters: PegawaiAdminFilters = {};
+    if (searchParams.has('search')) filters.search = searchParams.get('search') || undefined;
+
+    // Return paginated list
+    let result;
+    if (isAdmin) {
+      // Admin mode: use page-based pagination with filters
+      result = await ambilPegawaiPaginateAdminWithFilters(page, pageSize, filters);
+    } else {
+      // Public mode: use cursor-based pagination (existing behavior)
+      const cursor = searchParams.get("cursor");
+      result = await ambilPegawaiPaginate(pageSize, cursor);
+    }
+
+    return NextResponse.json({ success: true, data: transformPaginatedResponse(result) });
   } catch (error: any) {
     console.error("Error fetching pegawai:", error);
     return NextResponse.json(
@@ -104,7 +122,7 @@ export async function PUT(request: NextRequest) {
       updatedBy: user.userId,
     };
 
-    const success = await updatePegawai(id, dataWithTimestamp);
+    const success = await updatePegawai(decodeId(id), dataWithTimestamp);
     
     if (!success) {
       return NextResponse.json({ error: "Failed to update pegawai or no changes made" }, { status: 400 });
@@ -138,7 +156,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const success = await hapusPegawai(parseInt(id));
+    const success = await hapusPegawai(decodeId(id));
     
     if (!success) {
       return NextResponse.json({ error: "Pegawai not found" }, { status: 404 });

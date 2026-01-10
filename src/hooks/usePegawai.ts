@@ -1,6 +1,7 @@
 // src/hooks/usePegawai.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { IPegawai } from '@/types/pegawai';
+import { PegawaiAdminFilters } from '@/libs/constant/pegawaiFilter';
 
 interface UsePegawaiOptions {
   pageSize?: number;
@@ -93,7 +94,7 @@ export function usePegawai(
 }
 
 // Hook untuk single pegawai by id
-export function usePegawaiById(id: number) {
+export function usePegawaiById(id: string | number) {
   const [pegawai, setPegawai] = useState<IPegawai | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -158,4 +159,121 @@ export function usePegawaiProfil() {
     ...base,
     pegawai: pegawaiUrut,
   };
+}
+
+// ============================================================================
+// ADMIN PEGAWAI WITH PAGINATION
+// ============================================================================
+interface UsePegawaiAdminResult {
+  pegawai: IPegawai[]
+  loading: boolean
+  error: string | null
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+  setPage: (page: number) => void
+  refresh: () => void
+}
+
+interface UsePegawaiAdminOptions {
+  pageSize?: number
+  initialLoad?: boolean
+  filters?: PegawaiAdminFilters
+}
+
+export function usePegawaiAdminPaginated({
+  pageSize = 10,
+  initialLoad = true,
+  filters: externalFilters = {}
+}: UsePegawaiAdminOptions = {}): UsePegawaiAdminResult {
+  const [pegawai, setPegawai] = useState<IPegawai[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+
+  const fetchPegawai = useCallback(
+    async (currentPage: number, currentFilters: PegawaiAdminFilters) => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const params = new URLSearchParams({
+          pageSize: pageSize.toString(),
+          page: currentPage.toString(),
+          admin: 'true',
+        })
+
+        if (currentFilters.search?.trim()) params.append('search', currentFilters.search.trim())
+
+        const response = await fetch(`/api/pegawai?${params.toString()}`)
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch pegawai')
+        }
+
+        if (result.success) {
+          const newPegawai = result.data.data || []
+          setPegawai(newPegawai)
+          setTotal(result.data.total || 0)
+          setTotalPages(result.data.totalPages || 0)
+          setPage(result.data.page || currentPage)
+        }
+      } catch (err: any) {
+        setError(err.message)
+        console.error('Error fetching pegawai (admin):', err)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [pageSize]
+  )
+
+  // Independent filter change handling
+  const prevFiltersRef = useRef<PegawaiAdminFilters>(externalFilters)
+
+  useEffect(() => {
+    const hasChanged = JSON.stringify(prevFiltersRef.current) !== JSON.stringify(externalFilters)
+    if (hasChanged) {
+      const targetPage = 1
+      setPage(targetPage)
+      fetchPegawai(targetPage, externalFilters)
+      prevFiltersRef.current = externalFilters
+    }
+  }, [externalFilters, fetchPegawai])
+
+  // Handle page changes independently
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage)
+    fetchPegawai(newPage, externalFilters)
+  }, [externalFilters, fetchPegawai])
+
+  const refresh = useCallback(() => {
+    fetchPegawai(page, externalFilters)
+  }, [page, externalFilters, fetchPegawai])
+
+  // Initial load
+  const hasInitializedRef = useRef(false)
+  useEffect(() => {
+    if (!hasInitializedRef.current && initialLoad) {
+      fetchPegawai(1, externalFilters)
+      hasInitializedRef.current = true
+      prevFiltersRef.current = externalFilters
+    }
+  }, [])
+
+  return {
+    pegawai,
+    loading,
+    error,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    setPage: handlePageChange,
+    refresh,
+  }
 }

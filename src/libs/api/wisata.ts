@@ -1,7 +1,33 @@
 // src/libs/api/wisata.ts
 import { executeQuery, executeSingleQuery } from '@/libs/database';
-import { IWisata, IWisataUpdate, IWisataPaginatedResponse } from '@/types/wisata-admin';
+import { IWisata, IWisataUpdate, IWisataPaginatedResponse, IWisataPagePaginatedResponse } from '@/types/wisata-admin';
+import { WisataAdminFilters } from '@/libs/constant/wisataFilter';
 import { v4 as uuidv4 } from 'uuid'; // Install library UUID: npm install uuid @types/uuid
+
+// ============================================================================
+// FILTER UTILITIES
+// ============================================================================
+export function buildWisataFilterWhereClause(filters: WisataAdminFilters): { whereClause: string; params: any[] } {
+  const conditions: string[] = [];
+  const params: any[] = [];
+
+  if (filters.search?.trim()) {
+    conditions.push('(nama LIKE ? OR deskripsi_singkat LIKE ?)');
+    const pattern = `%${filters.search.trim()}%`;
+    params.push(pattern, pattern);
+  }
+
+  return {
+    whereClause: conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '',
+    params
+  };
+}
+
+export function hasActiveWisataFilters(filters: WisataAdminFilters): boolean {
+  return !!(
+    filters.search?.trim()
+  );
+}
 
 // Membuat slug yang unik
 async function createUniqueSlug(nama: string, currentId: string | null = null): Promise<string> {
@@ -278,4 +304,55 @@ export async function updateWisata(id: string, data: IWisataUpdate): Promise<boo
 export async function hapusWisata(id: string): Promise<boolean> {
   const result = await executeQuery('DELETE FROM wisata WHERE id = ?', [id]);
   return (result as any).affectedRows > 0;
+}
+
+// Mengambil wisata dengan paginasi (admin dengan filter) - page-based
+export async function ambilWisataPaginateAdminWithFilters(
+  page: number = 1,
+  pageSize: number = 10,
+  filters: WisataAdminFilters = { search: '' }
+): Promise<IWisataPagePaginatedResponse> {
+  // Build WHERE clause dari filters
+  const { whereClause, params } = buildWisataFilterWhereClause(filters);
+
+  // Count total query
+  const countQuery = `
+    SELECT COUNT(*) as total
+    FROM wisata
+    ${whereClause}
+  `;
+  const countResult = await executeSingleQuery<{ total: number }>(countQuery, params);
+  const total = countResult?.total || 0;
+
+  // Calculate offset
+  const offset = (page - 1) * pageSize;
+
+  // Data query
+  const dataQuery = `
+    SELECT
+      id, slug, nama, deskripsi_singkat, gambar, alt_text, lokasi_link, created_at, updated_at
+    FROM wisata
+    ${whereClause}
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `;
+  const results = await executeQuery<any>(dataQuery, [...params, pageSize, offset]);
+
+  const data = results.map(row => ({
+    ...row,
+    gambar: JSON.parse(row.gambar || '[]'),
+    tags: JSON.parse(row.tags || '[]'),
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  }));
+
+  const totalPages = Math.ceil(total / pageSize);
+
+  return {
+    data,
+    total,
+    page,
+    pageSize,
+    totalPages
+  };
 }

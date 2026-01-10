@@ -1,6 +1,6 @@
 // "use client";
 
-import Hero from '@/components/Hero'
+import Hero from '@/components/variants/Hero/Hero'
 // import Image from 'next/image'
 // import PageHead from '@/components/PageHead'
 // import HeroDashboard from '@/components/HeroDashboard';

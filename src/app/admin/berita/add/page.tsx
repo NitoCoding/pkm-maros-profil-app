@@ -10,6 +10,7 @@ import { z } from 'zod'
 import { useDropzone } from 'react-dropzone'
 import Image from 'next/image'
 import CKEditorWrapper from '@/components/ckeditor/CKEditorWrapper'
+import { beritaKategori } from '@/libs/constant/beritaKategori'
 
 // --- Zod Schema ---
 const beritaSchema = z.object({
@@ -35,17 +36,6 @@ function slugify(text: string) {
     .trim()
 }
 
-const kategoriOptions = [
-  'Teknologi',
-  'Pertanian',
-  'Kesehatan',
-  'Pendidikan',
-  'Ekonomi',
-  'Lingkungan',
-  'Infrastruktur',
-  'Sosial',
-  'Lainnya',
-]
 
 export default function TambahBeritaPage() {
   const router = useRouter()
@@ -278,8 +268,8 @@ export default function TambahBeritaPage() {
                 }`}
             >
               <option value="">Pilih Kategori</option>
-              {kategoriOptions.map((kategori) => (
-                <option key={kategori} value={kategori.toLowerCase()}>
+              {beritaKategori.map((kategori) => (
+                <option key={kategori} value={kategori}>
                   {kategori}
                 </option>
               ))}
